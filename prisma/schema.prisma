@@ -1,0 +1,253 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      String   // UserRole enum
+  unitId    String
+  edipi     String?
+  rank      String?
+  grade     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cases      NjpCase[]  @relation("CreatedBy")
+  auditLogs  AuditLog[]
+}
+
+model NjpCase {
+  id          String   @id @default(uuid())
+  caseNumber  String   @unique
+  status      String   // CaseStatus enum
+  currentPhase String  // CasePhase enum
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id])
+
+  // Accused info
+  accusedLastName    String
+  accusedFirstName   String
+  accusedMiddleName  String   @default("")
+  accusedRank        String
+  accusedGrade       String
+  accusedEdipi       String
+  accusedUnit        String
+  accusedUnitGcmca   String
+
+  // Commander info
+  commanderGrade         String
+  commanderGradeCategory String
+  component              String // ACTIVE_DUTY or SMCR
+
+  // Vessel exception
+  vesselException        Boolean @default(false)
+  jurisdictionConfirmed  Boolean @default(false)
+
+  // Item 2
+  item2AcceptsNjp          Boolean?
+  item2CounselProvided     Boolean?
+  item2AccusedRefusedToSign Boolean?
+  item2SignedBy             String?
+  item2SignedAt             DateTime?
+
+  // Item 3
+  item3SignedBy String?
+  item3SignedAt DateTime?
+
+  // Item 4
+  item4Applicable    Boolean @default(false)
+  item4UaPeriod      String?
+  item4DeserterMarks String?
+
+  // Item 6
+  item6Date         String?
+  item6NoPunishment Boolean @default(false)
+
+  // Item 7
+  item7SuspensionDetails String?
+  item7SuspensionEndDate String?
+
+  // Items 8, 8A, 8B
+  item8AuthorityName  String?
+  item8AuthorityTitle String?
+  item8AuthorityUnit  String?
+  item8AuthorityRank  String?
+  item8AuthorityGrade String?
+  item8AuthorityEdipi String?
+
+  // Item 9
+  item9SignedBy String?
+  item9SignedAt DateTime?
+
+  // Item 10
+  item10Date String?
+
+  // Item 11
+  item11SignedBy String?
+  item11SignedAt DateTime?
+
+  // Item 12
+  item12IntendsToAppeal      Boolean?
+  item12AccusedRefusedToSign Boolean?
+  item12SignedBy             String?
+  item12SignedAt             DateTime?
+
+  // Item 13
+  item13AppealDate String?
+
+  // Item 14
+  item14Outcome              String?
+  item14PartialReliefDetails String?
+  item14SignedBy             String?
+  item14SignedAt             DateTime?
+
+  // Item 15
+  item15Date String?
+
+  // Item 16
+  item16SignedBy String?
+  item16SignedAt DateTime?
+  item16UdNumber String?
+  item16UdDate   String?
+
+  // JA Review
+  jaReviewRequired  Boolean @default(false)
+  jaReviewCompleted Boolean @default(false)
+  jaReviewerName    String?
+  jaReviewDate      String?
+  jaReviewSummary   String?
+
+  // OMPF
+  ompfConfirmed   Boolean @default(false)
+  ompfConfirmedBy String?
+  ompfConfirmedAt DateTime?
+
+  // Flags
+  statuteOfLimitationsWarning Boolean @default(false)
+  doublePunishmentFlag        Boolean @default(false)
+  fiveDayStayAlertTriggered   Boolean @default(false)
+
+  // Locked items (JSON array)
+  lockedItems String @default("[]")
+
+  // Relations
+  offenses           Offense[]
+  punishments        Punishment[]
+  remarks            Remark[]
+  suspensions        Suspension[]
+  vacationRecords    VacationRecord[]
+  auditLogs          AuditLog[]
+}
+
+model Offense {
+  id           String  @id @default(uuid())
+  caseId       String
+  case_        NjpCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  letter       String  // A through E
+  ucmjArticle  String
+  offenseType  String
+  summary      String
+  offenseDate  String
+  offensePlace String
+  finding      String? // G or NG
+
+  victims VictimDemographic[]
+}
+
+model VictimDemographic {
+  id          String  @id @default(uuid())
+  offenseId   String
+  offense     Offense @relation(fields: [offenseId], references: [id], onDelete: Cascade)
+  status      String
+  sex         String
+  race        String
+  ethnicity   String
+}
+
+model Punishment {
+  id               String  @id @default(uuid())
+  caseId           String
+  case_            NjpCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  type             String  // PunishmentType
+  duration         Int?
+  amount           Int?    // whole dollars only
+  reducedToGrade   String?
+  suspended        Boolean @default(false)
+  suspensionMonths Int?
+}
+
+model Remark {
+  id            String   @id @default(uuid())
+  caseId        String
+  case_         NjpCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  date          String
+  itemReference String
+  text          String
+  confirmed     Boolean  @default(false)
+  confirmedBy   String?
+  confirmedAt   DateTime?
+}
+
+model Suspension {
+  id               String  @id @default(uuid())
+  caseId           String
+  case_            NjpCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  punishment       String
+  suspensionMonths Int
+  startDate        String
+  endDate          String
+  status           String  // ACTIVE, VACATED, REMITTED
+  vacationDate     String?
+}
+
+model VacationRecord {
+  id                           String  @id @default(uuid())
+  parentCaseId                 String
+  parentCase                   NjpCase @relation(fields: [parentCaseId], references: [id], onDelete: Cascade)
+  marineName                   String
+  edipi                        String
+  rankGrade                    String
+  originalNjpDate              String
+  originalSuspendedPunishment  String
+  vacationDate                 String
+  commanderName                String
+  commanderTitle               String
+  vacatedInFull                Boolean
+  partialDetails               String?
+  triggeringArticle            String
+  triggeringSummary             String
+  triggeringDate               String
+  accusedInformedOfHearing     Boolean
+  accusedInformedDate          String?
+  accusedPermittedToAppear     Boolean
+  notPermittedReason           String?
+  additionalPunishment         Boolean
+  newCaseId                    String?
+  summaryTranscript            String?
+  commanderSignature           String?
+  commanderSignatureDate       String?
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  caseId        String
+  case_         NjpCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  action        String
+  fieldChanged  String?
+  previousValue String?
+  newValue      String?
+  timestamp     DateTime @default(now())
+}

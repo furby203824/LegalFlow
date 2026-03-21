@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  --color-navy: #003366;
+  --color-navy-light: #004488;
+  --color-scarlet: #CC0000;
+  --color-gold: #FFD700;
+  --color-bg: #f5f5f0;
+  --color-surface: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #666666;
+  --color-border: #d4d4d4;
+  --color-success: #166534;
+  --color-warning: #854d0e;
+  --color-error: #991b1b;
+}
+
+/* Utility classes for buttons and inputs */
+.btn-primary {
+  @apply px-4 py-2 bg-[var(--color-navy)] text-white rounded text-sm font-medium;
+}
+.btn-primary:hover {
+  @apply bg-[var(--color-navy-light)];
+}
+.btn-primary:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply px-4 py-2 border border-[var(--color-border)] rounded text-sm font-medium;
+}
+.btn-secondary:hover {
+  @apply bg-gray-50;
+}
+
+.btn-danger {
+  @apply px-4 py-2 bg-red-700 text-white rounded text-sm font-medium;
+}
+.btn-danger:hover {
+  @apply bg-red-800;
+}
+.btn-danger:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.btn-warning {
+  @apply px-4 py-2 bg-amber-600 text-white rounded text-sm font-medium;
+}
+.btn-warning:hover {
+  @apply bg-amber-700;
+}
+.btn-warning:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.input-field {
+  @apply w-full px-3 py-2 border border-[var(--color-border)] rounded text-sm;
+}
+.input-field:focus {
+  @apply outline-none ring-2 ring-[var(--color-navy)] border-transparent;
+}
