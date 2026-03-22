@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    const valid = await verifyPassword(password, user.password);
+    const valid = await verifyPassword(password, user.passwordHash);
     if (!valid) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
@@ -30,7 +30,13 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       username: user.username,
       role: user.role as UserRole,
-      unitId: user.unitId,
+      unitId: user.unitId || "",
+    });
+
+    // Update last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() },
     });
 
     const response = NextResponse.json({
@@ -48,7 +54,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 8 * 60 * 60, // 8 hours
+      maxAge: 8 * 60 * 60,
       path: "/",
     });
 

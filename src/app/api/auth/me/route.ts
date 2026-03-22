@@ -21,6 +21,7 @@ export async function GET() {
         edipi: true,
         rank: true,
         grade: true,
+        email: true,
       },
     });
 

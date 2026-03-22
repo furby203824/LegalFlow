@@ -5,10 +5,11 @@ import {
   validateItem3Date,
   validateItem11Date,
   validatePunishment,
-  checkJaReviewRequired,
+  checkJaReviewThresholds,
   getLockedItems,
+  calculateSuspensionEndDate,
 } from "@/lib/validation";
-import type { Grade, CommanderGradeCategory, PunishmentEntry } from "@/types";
+import type { Grade, CommanderGradeLevel } from "@/types";
 
 // POST /api/cases/[id]/phase - Advance case through phases
 export async function POST(
@@ -21,12 +22,14 @@ export async function POST(
     const body = await req.json();
     const { action, data } = body;
 
-    const njpCase = await prisma.njpCase.findUnique({
+    const njpCase = await prisma.case.findUnique({
       where: { id },
       include: {
+        accused: true,
         offenses: true,
-        punishments: true,
-        suspensions: true,
+        punishmentRecord: true,
+        appealRecord: true,
+        signatures: true,
       },
     });
 
@@ -34,129 +37,134 @@ export async function POST(
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
 
-    // Check locked items
-    const lockedItems: number[] = JSON.parse(njpCase.lockedItems);
+    if (njpCase.formLocked) {
+      return NextResponse.json({ error: "Case form is locked" }, { status: 400 });
+    }
+
+    // Helper to get signed item numbers
+    const signedItems = njpCase.signatures.map((s) => s.itemNumber);
+
+    // Helper to create audit log
+    async function audit(actionType: string, notes?: string, field?: string, oldVal?: string, newVal?: string) {
+      await prisma.auditLog.create({
+        data: {
+          caseId: id,
+          tableName: "cases",
+          recordId: id,
+          action: actionType,
+          userId: user.userId,
+          userRole: user.role,
+          userName: user.username,
+          fieldName: field,
+          oldValue: oldVal,
+          newValue: newVal,
+          notes,
+        },
+      });
+    }
+
+    // Helper to create signature
+    async function createSignature(itemNumber: string, signerName: string, opts?: {
+      refusalNoted?: boolean;
+      coSignedInstead?: boolean;
+      method?: string;
+    }) {
+      const itemsLocked = getLockedItems([...signedItems, itemNumber]);
+      await prisma.signature.create({
+        data: {
+          caseId: id,
+          itemNumber,
+          signerRole: user.role,
+          signerUserId: user.userId,
+          signerName,
+          signedDate: new Date().toISOString().split("T")[0],
+          signatureMethod: opts?.method || "ELECTRONIC",
+          refusalNoted: opts?.refusalNoted || false,
+          coSignedInstead: opts?.coSignedInstead || false,
+          itemsLocked: JSON.stringify(itemsLocked),
+        },
+      });
+    }
 
     switch (action) {
+      // ============================================================
       // Phase 2 - Rights Advisement
+      // ============================================================
       case "SIGN_ITEM_2": {
-        if (njpCase.currentPhase !== "INITIATION" && njpCase.currentPhase !== "RIGHTS_ADVISEMENT") {
-          return NextResponse.json({ error: "Invalid phase for Item 2" }, { status: 400 });
-        }
-
-        const { acceptsNjp, counselProvided, refusedToSign } = data;
+        const { acceptsNjp, counselProvided, refusedToSign, signerName } = data;
 
         // If demands court-martial and no vessel exception
-        if (!acceptsNjp && !njpCase.vesselException) {
-          await prisma.njpCase.update({
+        if ((!acceptsNjp || refusedToSign) && !njpCase.vesselException) {
+          await createSignature("2", signerName || user.username, {
+            refusalNoted: refusedToSign,
+            coSignedInstead: refusedToSign,
+          });
+
+          await prisma.case.update({
             where: { id },
             data: {
               status: "REFERRED_COURT_MARTIAL",
-              item2AcceptsNjp: false,
-              item2CounselProvided: counselProvided,
-              item2AccusedRefusedToSign: refusedToSign || false,
-              item2SignedBy: user.userId,
-              item2SignedAt: new Date(),
-              lockedItems: JSON.stringify(
-                getLockedItems(["item2"])
-              ),
+              currentPhase: "RIGHTS_ADVISEMENT",
             },
           });
 
-          await prisma.auditLog.create({
-            data: {
-              caseId: id,
-              userId: user.userId,
-              action: "ITEM_2_SIGNED_COURT_MARTIAL_DEMANDED",
-            },
-          });
-
+          await audit("SIGN", "Item 2 signed - court-martial demanded or refused");
           return NextResponse.json({
             message: "Case referred to court-martial jurisdiction",
             status: "REFERRED_COURT_MARTIAL",
           });
         }
 
-        // If refused to sign and no vessel exception
-        if (refusedToSign && !njpCase.vesselException) {
-          await prisma.njpCase.update({
-            where: { id },
-            data: {
-              status: "REFERRED_COURT_MARTIAL",
-              item2AcceptsNjp: false,
-              item2CounselProvided: counselProvided,
-              item2AccusedRefusedToSign: true,
-              item2SignedBy: user.userId,
-              item2SignedAt: new Date(),
-              lockedItems: JSON.stringify(getLockedItems(["item2"])),
-            },
-          });
+        await createSignature("2", signerName || user.username);
 
-          return NextResponse.json({
-            message: "Accused refused to sign. Case routing required.",
-            status: "REFERRED_COURT_MARTIAL",
-          });
-        }
-
-        await prisma.njpCase.update({
+        await prisma.case.update({
           where: { id },
-          data: {
-            currentPhase: "RIGHTS_ADVISEMENT",
-            item2AcceptsNjp: acceptsNjp,
-            item2CounselProvided: counselProvided,
-            item2AccusedRefusedToSign: refusedToSign || false,
-            item2SignedBy: user.userId,
-            item2SignedAt: new Date(),
-            lockedItems: JSON.stringify(getLockedItems(["item2"])),
-          },
+          data: { currentPhase: "RIGHTS_ADVISEMENT" },
         });
 
-        await prisma.auditLog.create({
-          data: {
-            caseId: id,
-            userId: user.userId,
-            action: "ITEM_2_SIGNED",
-          },
+        // Lock offenses and victims
+        await prisma.offense.updateMany({
+          where: { caseId: id },
+          data: { locked: true },
+        });
+        await prisma.victim.updateMany({
+          where: { caseId: id },
+          data: { locked: true },
         });
 
+        await audit("SIGN", "Item 2 signed - NJP accepted");
         return NextResponse.json({ message: "Item 2 signed successfully" });
       }
 
       case "SIGN_ITEM_3": {
-        if (!njpCase.item2SignedAt) {
+        if (!signedItems.includes("2")) {
           return NextResponse.json({ error: "Item 2 must be signed first" }, { status: 400 });
         }
 
-        await prisma.njpCase.update({
+        const { signerName } = data;
+        await createSignature("3", signerName || user.username);
+
+        await prisma.case.update({
           where: { id },
           data: {
             status: "RIGHTS_ADVISED",
             currentPhase: "RIGHTS_ADVISEMENT",
-            item3SignedBy: user.userId,
-            item3SignedAt: new Date(),
-            lockedItems: JSON.stringify(getLockedItems(["item2", "item3"])),
           },
         });
 
-        await prisma.auditLog.create({
-          data: {
-            caseId: id,
-            userId: user.userId,
-            action: "ITEM_3_SIGNED",
-          },
-        });
-
+        await audit("SIGN", "Item 3 signed - rights advisement complete");
         return NextResponse.json({ message: "Item 3 signed. Rights advisement complete." });
       }
 
+      // ============================================================
       // Phase 3 - Hearing
+      // ============================================================
       case "ENTER_FINDINGS": {
         if (njpCase.status !== "RIGHTS_ADVISED") {
           return NextResponse.json({ error: "Rights advisement must be completed first" }, { status: 400 });
         }
 
         const { findings } = data; // Array of { offenseId, finding: "G" | "NG" }
-
         for (const f of findings) {
           await prisma.offense.update({
             where: { id: f.offenseId },
@@ -164,19 +172,12 @@ export async function POST(
           });
         }
 
-        await prisma.njpCase.update({
+        await prisma.case.update({
           where: { id },
           data: { currentPhase: "HEARING" },
         });
 
-        await prisma.auditLog.create({
-          data: {
-            caseId: id,
-            userId: user.userId,
-            action: "FINDINGS_ENTERED",
-          },
-        });
-
+        await audit("UPDATE", "Findings entered");
         return NextResponse.json({ message: "Findings entered" });
       }
 
@@ -185,250 +186,339 @@ export async function POST(
           return NextResponse.json({ error: "Must be in hearing phase" }, { status: 400 });
         }
 
-        const { punishments, item6Date, noPunishment } = data;
+        const { punishment, noPunishment } = data;
 
         // No punishment - destroy case
         if (noPunishment) {
-          await prisma.njpCase.update({
+          await prisma.case.update({
             where: { id },
-            data: {
-              status: "DESTROYED",
-              item6NoPunishment: true,
-              item6Date,
-            },
+            data: { status: "DESTROYED", njpDate: punishment?.punishmentDate },
           });
-
-          await prisma.auditLog.create({
-            data: {
-              caseId: id,
-              userId: user.userId,
-              action: "CASE_DESTROYED_NO_PUNISHMENT",
-            },
-          });
-
+          await audit("UPDATE", "Case destroyed - no punishment imposed");
           return NextResponse.json({ message: "Case destroyed - no punishment imposed" });
         }
 
         // Validate Item 3 date
-        const item3Date = njpCase.item3SignedAt?.toISOString().split("T")[0];
-        const item3Error = validateItem3Date(item3Date, item6Date);
+        const item3Sig = njpCase.signatures.find((s) => s.itemNumber === "3");
+        const item3Date = item3Sig?.signedDate;
+        const item3Error = validateItem3Date(item3Date || undefined, punishment.punishmentDate);
         if (item3Error) {
           return NextResponse.json({ error: item3Error.message }, { status: 400 });
         }
 
-        // Validate each punishment
-        const errors: string[] = [];
-        for (const p of punishments) {
-          const pErrors = validatePunishment(
-            p as PunishmentEntry,
-            njpCase.commanderGradeCategory as CommanderGradeCategory,
-            njpCase.accusedGrade as Grade
-          );
-          errors.push(...pErrors.map((e) => e.message));
+        // Validate punishment limits
+        const pErrors = validatePunishment(
+          punishment,
+          njpCase.commanderGradeLevel as CommanderGradeLevel,
+          njpCase.accused.grade as Grade
+        );
+        if (pErrors.length > 0) {
+          return NextResponse.json({ errors: pErrors.map((e) => e.message) }, { status: 400 });
         }
 
-        if (errors.length > 0) {
-          return NextResponse.json({ errors }, { status: 400 });
-        }
-
-        // Check JA review requirement
-        const jaRequired = checkJaReviewRequired(
-          punishments as PunishmentEntry[],
-          njpCase.accusedGrade as Grade
+        // Check JA review thresholds
+        const jaThresholds = checkJaReviewThresholds(
+          punishment,
+          njpCase.accused.grade as Grade
         );
 
-        // Delete existing punishments and create new
-        await prisma.punishment.deleteMany({ where: { caseId: id } });
-        for (const p of punishments) {
-          await prisma.punishment.create({
-            data: {
-              caseId: id,
-              type: p.type,
-              duration: p.duration || null,
-              amount: p.amount || null,
-              reducedToGrade: p.reducedToGrade || null,
-              suspended: p.suspended || false,
-              suspensionMonths: p.suspensionMonths || null,
-            },
-          });
+        // Build punishment text
+        const parts: string[] = [];
+        if (punishment.corrCustodyDays) parts.push(`Correctional custody for ${punishment.corrCustodyDays} days`);
+        if (punishment.forfeitureAmount) {
+          const months = punishment.forfeitureMonths || 1;
+          parts.push(`Forfeiture of $${punishment.forfeitureAmount}/mo for ${months} month(s)`);
+        }
+        if (punishment.reductionImposed) parts.push(`Reduction to ${punishment.reductionToGrade}`);
+        if (punishment.extraDutiesDays) parts.push(`Extra duties for ${punishment.extraDutiesDays} days`);
+        if (punishment.restrictionDays) parts.push(`Restriction for ${punishment.restrictionDays} days`);
+        if (punishment.arrestQuartersDays) parts.push(`Arrest in quarters for ${punishment.arrestQuartersDays} days`);
+        if (punishment.detentionDays) parts.push(`Detention of pay for ${punishment.detentionDays} days`);
+        if (punishment.admonitionReprimand) parts.push(punishment.admonitionType || "Admonition/Reprimand");
+        const punishmentText = parts.join("; ") + `. ${punishment.punishmentDate}.`;
 
-          // Create suspension records
-          if (p.suspended && p.suspensionMonths && item6Date) {
-            const endDate = new Date(item6Date);
-            endDate.setMonth(endDate.getMonth() + p.suspensionMonths);
-            await prisma.suspension.create({
-              data: {
+        // Suspension
+        let suspensionText = "NONE";
+        let suspensionEndDate: string | null = null;
+        if (punishment.suspensionImposed && punishment.suspensionMonths) {
+          suspensionEndDate = calculateSuspensionEndDate(
+            punishment.punishmentDate,
+            punishment.suspensionMonths
+          );
+          suspensionText = `${punishment.suspensionPunishment} suspended for ${punishment.suspensionMonths} months.`;
+        }
+
+        // Upsert punishment record
+        await prisma.punishmentRecord.upsert({
+          where: { caseId: id },
+          update: {
+            corrCustodyDays: punishment.corrCustodyDays || null,
+            forfeitureAmount: punishment.forfeitureAmount || null,
+            forfeitureMonths: punishment.forfeitureMonths || null,
+            forfeitureTotal: punishment.forfeitureAmount && punishment.forfeitureMonths
+              ? punishment.forfeitureAmount * punishment.forfeitureMonths : null,
+            smcrDrillPay: punishment.smcrDrillPay || null,
+            smcrDrills60Days: punishment.smcrDrills60Days || null,
+            smcrAdBasicPay: punishment.smcrAdBasicPay || null,
+            smcrAdDays60: punishment.smcrAdDays60 || null,
+            smcr60DayStart: punishment.smcr60DayStart || null,
+            smcrMaxForfeiture: punishment.smcrMaxForfeiture || null,
+            reductionImposed: punishment.reductionImposed || false,
+            reductionFromRank: punishment.reductionImposed ? njpCase.accused.rank : null,
+            reductionFromGrade: punishment.reductionImposed ? njpCase.accused.grade : null,
+            reductionToRank: punishment.reductionToRank || null,
+            reductionToGrade: punishment.reductionToGrade || null,
+            extraDutiesDays: punishment.extraDutiesDays || null,
+            restrictionDays: punishment.restrictionDays || null,
+            restrictionLocation: punishment.restrictionLocation || null,
+            arrestQuartersDays: punishment.arrestQuartersDays || null,
+            detentionDays: punishment.detentionDays || null,
+            detentionAmount: punishment.detentionAmount || null,
+            admonitionReprimand: punishment.admonitionReprimand || false,
+            admonitionType: punishment.admonitionType || null,
+            punishmentText,
+            punishmentDate: punishment.punishmentDate,
+            suspensionImposed: punishment.suspensionImposed || false,
+            suspensionPunishment: punishment.suspensionPunishment || null,
+            suspensionMonths: punishment.suspensionMonths || null,
+            suspensionStartDate: punishment.suspensionImposed ? punishment.punishmentDate : null,
+            suspensionEndDate,
+            suspensionRemissionTerms: punishment.suspensionImposed
+              ? "unless sooner vacated, will be remitted without further action."
+              : null,
+            suspensionText,
+            suspensionStatus: punishment.suspensionImposed ? "ACTIVE" : "NONE",
+            jaThresholdArrestQuarters: jaThresholds.arrestQuarters,
+            jaThresholdCorrCustody: jaThresholds.corrCustody,
+            jaThresholdForfeiture: jaThresholds.forfeiture,
+            jaThresholdReduction: jaThresholds.reduction,
+            jaThresholdExtraDuties: jaThresholds.extraDuties,
+            jaThresholdRestriction: jaThresholds.restriction,
+            jaThresholdDetention: jaThresholds.detention,
+            anyJaThresholdMet: jaThresholds.anyMet,
+          },
+          create: {
+            caseId: id,
+            corrCustodyDays: punishment.corrCustodyDays || null,
+            forfeitureAmount: punishment.forfeitureAmount || null,
+            forfeitureMonths: punishment.forfeitureMonths || null,
+            forfeitureTotal: punishment.forfeitureAmount && punishment.forfeitureMonths
+              ? punishment.forfeitureAmount * punishment.forfeitureMonths : null,
+            smcrDrillPay: punishment.smcrDrillPay || null,
+            smcrDrills60Days: punishment.smcrDrills60Days || null,
+            smcrAdBasicPay: punishment.smcrAdBasicPay || null,
+            smcrAdDays60: punishment.smcrAdDays60 || null,
+            smcr60DayStart: punishment.smcr60DayStart || null,
+            smcrMaxForfeiture: punishment.smcrMaxForfeiture || null,
+            reductionImposed: punishment.reductionImposed || false,
+            reductionFromRank: punishment.reductionImposed ? njpCase.accused.rank : null,
+            reductionFromGrade: punishment.reductionImposed ? njpCase.accused.grade : null,
+            reductionToRank: punishment.reductionToRank || null,
+            reductionToGrade: punishment.reductionToGrade || null,
+            extraDutiesDays: punishment.extraDutiesDays || null,
+            restrictionDays: punishment.restrictionDays || null,
+            restrictionLocation: punishment.restrictionLocation || null,
+            arrestQuartersDays: punishment.arrestQuartersDays || null,
+            detentionDays: punishment.detentionDays || null,
+            detentionAmount: punishment.detentionAmount || null,
+            admonitionReprimand: punishment.admonitionReprimand || false,
+            admonitionType: punishment.admonitionType || null,
+            punishmentText,
+            punishmentDate: punishment.punishmentDate,
+            suspensionImposed: punishment.suspensionImposed || false,
+            suspensionPunishment: punishment.suspensionPunishment || null,
+            suspensionMonths: punishment.suspensionMonths || null,
+            suspensionStartDate: punishment.suspensionImposed ? punishment.punishmentDate : null,
+            suspensionEndDate,
+            suspensionRemissionTerms: punishment.suspensionImposed
+              ? "unless sooner vacated, will be remitted without further action."
+              : null,
+            suspensionText,
+            suspensionStatus: punishment.suspensionImposed ? "ACTIVE" : "NONE",
+            jaThresholdArrestQuarters: jaThresholds.arrestQuarters,
+            jaThresholdCorrCustody: jaThresholds.corrCustody,
+            jaThresholdForfeiture: jaThresholds.forfeiture,
+            jaThresholdReduction: jaThresholds.reduction,
+            jaThresholdExtraDuties: jaThresholds.extraDuties,
+            jaThresholdRestriction: jaThresholds.restriction,
+            jaThresholdDetention: jaThresholds.detention,
+            anyJaThresholdMet: jaThresholds.anyMet,
+          },
+        });
+
+        // Update case
+        await prisma.case.update({
+          where: { id },
+          data: {
+            njpDate: punishment.punishmentDate,
+            jaReviewRequired: jaThresholds.anyMet,
+          },
+        });
+
+        // Create suspension monitor if applicable
+        if (punishment.suspensionImposed && suspensionEndDate) {
+          const pRecord = await prisma.punishmentRecord.findUnique({ where: { caseId: id } });
+          if (pRecord) {
+            await prisma.activeSuspensionMonitor.upsert({
+              where: { caseId: id },
+              update: {
+                suspensionStart: punishment.punishmentDate,
+                suspensionEnd: suspensionEndDate,
+                suspendedPunishment: punishment.suspensionPunishment || punishmentText,
+                monitorStatus: "ACTIVE",
+              },
+              create: {
                 caseId: id,
-                punishment: p.type,
-                suspensionMonths: p.suspensionMonths,
-                startDate: item6Date,
-                endDate: endDate.toISOString().split("T")[0],
-                status: "ACTIVE",
+                punishmentRecordId: pRecord.id,
+                suspensionStart: punishment.punishmentDate,
+                suspensionEnd: suspensionEndDate,
+                suspendedPunishment: punishment.suspensionPunishment || punishmentText,
               },
             });
           }
         }
 
-        await prisma.njpCase.update({
-          where: { id },
-          data: {
-            item6Date,
-            jaReviewRequired: jaRequired,
-          },
-        });
-
-        await prisma.auditLog.create({
-          data: {
-            caseId: id,
-            userId: user.userId,
-            action: "PUNISHMENT_ENTERED",
-            newValue: JSON.stringify(punishments),
-          },
-        });
-
+        await audit("UPDATE", "Punishment entered", "punishment", undefined, punishmentText);
         return NextResponse.json({
           message: "Punishment entered",
-          jaReviewRequired: jaRequired,
+          jaReviewRequired: jaThresholds.anyMet,
         });
       }
 
       case "SIGN_ITEM_9": {
-        if (!njpCase.item6Date) {
+        if (!njpCase.njpDate && !njpCase.punishmentRecord) {
           return NextResponse.json({ error: "Punishment must be entered first" }, { status: 400 });
         }
 
         const { authorityName, authorityTitle, authorityUnit, authorityRank, authorityGrade, authorityEdipi } = data;
 
-        await prisma.njpCase.update({
+        await createSignature("9", authorityName || user.username);
+
+        // Lock punishment record
+        if (njpCase.punishmentRecord) {
+          await prisma.punishmentRecord.update({
+            where: { caseId: id },
+            data: { locked: true },
+          });
+        }
+
+        await prisma.case.update({
           where: { id },
           data: {
             status: "PUNISHMENT_IMPOSED",
-            currentPhase: "HEARING",
-            item8AuthorityName: authorityName,
-            item8AuthorityTitle: authorityTitle,
-            item8AuthorityUnit: authorityUnit,
-            item8AuthorityRank: authorityRank,
-            item8AuthorityGrade: authorityGrade,
-            item8AuthorityEdipi: authorityEdipi,
-            item9SignedBy: user.userId,
-            item9SignedAt: new Date(),
-            lockedItems: JSON.stringify(
-              getLockedItems(["item2", "item3", "item9"])
-            ),
+            njpAuthorityName: authorityName,
+            njpAuthorityTitle: authorityTitle,
+            njpAuthorityUnit: authorityUnit,
+            njpAuthorityRank: authorityRank,
+            njpAuthorityGrade: authorityGrade,
+            njpAuthorityEdipi: authorityEdipi,
           },
         });
 
-        await prisma.auditLog.create({
-          data: {
-            caseId: id,
-            userId: user.userId,
-            action: "ITEM_9_SIGNED",
-          },
-        });
-
+        await audit("SIGN", "Item 9 signed - punishment imposed");
         return NextResponse.json({ message: "Item 9 signed. Punishment imposed." });
       }
 
+      // ============================================================
       // Phase 4 - Notification
+      // ============================================================
       case "SIGN_ITEM_11": {
         if (njpCase.status !== "PUNISHMENT_IMPOSED") {
           return NextResponse.json({ error: "Punishment must be imposed first" }, { status: 400 });
         }
 
-        const { item10Date } = data;
+        const { item10Date, signerName } = data;
         const item11Date = new Date().toISOString().split("T")[0];
 
-        const item11Error = validateItem11Date(item11Date, njpCase.item6Date || undefined);
+        const item11Error = validateItem11Date(item11Date, njpCase.njpDate || undefined);
         if (item11Error) {
           return NextResponse.json({ error: item11Error.message }, { status: 400 });
         }
 
-        await prisma.njpCase.update({
+        await createSignature("11", signerName || user.username);
+
+        await prisma.case.update({
           where: { id },
           data: {
             currentPhase: "NOTIFICATION",
-            item10Date,
-            item11SignedBy: user.userId,
-            item11SignedAt: new Date(),
-            lockedItems: JSON.stringify(
-              getLockedItems(["item2", "item3", "item9", "item11"])
-            ),
+            dateNoticeToAccused: item10Date,
           },
         });
 
-        await prisma.auditLog.create({
-          data: {
-            caseId: id,
-            userId: user.userId,
-            action: "ITEM_11_SIGNED",
-          },
-        });
-
+        await audit("SIGN", "Item 11 signed");
         return NextResponse.json({ message: "Item 11 signed" });
       }
 
       case "SIGN_ITEM_12": {
-        if (!njpCase.item11SignedAt) {
+        if (!signedItems.includes("11")) {
           return NextResponse.json({ error: "Item 11 must be signed first" }, { status: 400 });
         }
 
-        const { intendsToAppeal, refusedToSign } = data;
+        const { appealIntent, signerName, refusedToSign } = data;
 
+        await createSignature("12", signerName || user.username, {
+          refusalNoted: refusedToSign,
+          coSignedInstead: refusedToSign,
+        });
+
+        const intendsToAppeal = appealIntent === "INTENDS_TO_APPEAL";
         const newStatus = intendsToAppeal ? "APPEAL_PENDING" : "NOTIFICATION_COMPLETE";
-        const newPhase = intendsToAppeal ? "APPEAL" : "NOTIFICATION";
 
-        await prisma.njpCase.update({
+        // Create appeal record
+        await prisma.appealRecord.upsert({
+          where: { caseId: id },
+          update: {
+            appealIntent,
+            item12SignedDate: new Date().toISOString().split("T")[0],
+            item12SignedById: user.userId,
+          },
+          create: {
+            caseId: id,
+            appealIntent,
+            item12SignedDate: new Date().toISOString().split("T")[0],
+            item12SignedById: user.userId,
+            jaReviewRequired: njpCase.jaReviewRequired,
+          },
+        });
+
+        await prisma.case.update({
           where: { id },
           data: {
             status: newStatus,
-            currentPhase: newPhase,
-            item12IntendsToAppeal: intendsToAppeal,
-            item12AccusedRefusedToSign: refusedToSign || false,
-            item12SignedBy: user.userId,
-            item12SignedAt: new Date(),
-            lockedItems: JSON.stringify(
-              getLockedItems(["item2", "item3", "item9", "item11", "item12"])
-            ),
+            currentPhase: intendsToAppeal ? "APPEAL" : "NOTIFICATION",
           },
         });
 
-        await prisma.auditLog.create({
-          data: {
-            caseId: id,
-            userId: user.userId,
-            action: intendsToAppeal ? "APPEAL_INITIATED" : "NO_APPEAL",
-          },
-        });
-
+        await audit("SIGN", intendsToAppeal ? "Item 12 - appeal initiated" : "Item 12 - no appeal");
         return NextResponse.json({
           message: intendsToAppeal ? "Appeal initiated" : "No appeal. Proceeding to admin completion.",
           status: newStatus,
         });
       }
 
+      // ============================================================
       // Phase 5 - Appeal
+      // ============================================================
       case "ENTER_APPEAL_DATE": {
         if (njpCase.status !== "APPEAL_PENDING") {
           return NextResponse.json({ error: "Case must be in appeal status" }, { status: 400 });
         }
 
-        await prisma.njpCase.update({
+        await prisma.appealRecord.update({
+          where: { caseId: id },
+          data: {
+            appealFiled: true,
+            appealFiledDate: data.appealDate,
+            fiveDayClockStart: data.appealDate,
+          },
+        });
+
+        await prisma.case.update({
           where: { id },
-          data: {
-            currentPhase: "APPEAL",
-            item13AppealDate: data.appealDate,
-          },
+          data: { appealFiledDate: data.appealDate, appealDate: data.appealDate },
         });
 
-        await prisma.auditLog.create({
-          data: {
-            caseId: id,
-            userId: user.userId,
-            action: "APPEAL_DATE_ENTERED",
-            newValue: data.appealDate,
-          },
-        });
-
+        await audit("UPDATE", "Appeal date entered", "appealFiledDate", undefined, data.appealDate);
         return NextResponse.json({ message: "Appeal date entered" });
       }
 
@@ -437,130 +527,136 @@ export async function POST(
           return NextResponse.json({ error: "JA review not required for this case" }, { status: 400 });
         }
 
-        await prisma.njpCase.update({
+        await prisma.case.update({
           where: { id },
           data: {
-            jaReviewCompleted: true,
+            jaReviewComplete: true,
             jaReviewerName: data.reviewerName,
             jaReviewDate: data.reviewDate,
-            jaReviewSummary: data.summary,
+            jaReviewNotes: data.summary,
           },
         });
 
-        await prisma.auditLog.create({
-          data: {
-            caseId: id,
-            userId: user.userId,
-            action: "JA_REVIEW_COMPLETED",
-          },
-        });
+        if (njpCase.appealRecord) {
+          await prisma.appealRecord.update({
+            where: { caseId: id },
+            data: {
+              jaReviewComplete: true,
+              jaReviewerName: data.reviewerName,
+              jaReviewDate: data.reviewDate,
+              jaReviewSummary: data.summary,
+            },
+          });
+        }
 
+        await audit("UPDATE", "JA review completed");
         return NextResponse.json({ message: "JA review logged" });
       }
 
       case "SIGN_ITEM_14": {
-        if (njpCase.jaReviewRequired && !njpCase.jaReviewCompleted) {
+        const appeal = njpCase.appealRecord;
+        if (njpCase.jaReviewRequired && !njpCase.jaReviewComplete) {
           return NextResponse.json(
             { error: "JA review must be completed before appeal authority action" },
             { status: 400 }
           );
         }
 
-        const { outcome, partialReliefDetails } = data;
+        const { outcome, outcomeDetail, authorityName: appealAuthName, authorityRank: appealAuthRank, item15Date } = data;
 
-        await prisma.njpCase.update({
+        await createSignature("14", appealAuthName || user.username);
+
+        await prisma.appealRecord.update({
+          where: { caseId: id },
+          data: {
+            appealAuthorityName: appealAuthName,
+            appealAuthorityRank: appealAuthRank,
+            appealAuthoritySignedDate: new Date().toISOString().split("T")[0],
+            appealOutcome: outcome,
+            appealOutcomeDetail: outcomeDetail || null,
+            appealDecisionNoticeDate: item15Date,
+            items1314Locked: true,
+          },
+        });
+
+        await prisma.case.update({
           where: { id },
           data: {
             status: "APPEAL_COMPLETE",
-            item14Outcome: outcome,
-            item14PartialReliefDetails: partialReliefDetails || null,
-            item14SignedBy: user.userId,
-            item14SignedAt: new Date(),
-            item15Date: data.item15Date,
-            lockedItems: JSON.stringify(
-              getLockedItems(["item2", "item3", "item9", "item11", "item12", "item14"])
-            ),
+            dateNoticeAppealDecision: item15Date,
           },
         });
 
-        await prisma.auditLog.create({
-          data: {
-            caseId: id,
-            userId: user.userId,
-            action: "ITEM_14_SIGNED",
-            newValue: outcome,
-          },
-        });
-
+        await audit("SIGN", `Item 14 signed - appeal ${outcome}`);
         return NextResponse.json({ message: "Appeal decision entered" });
       }
 
+      // ============================================================
       // Phase 7 - Admin Completion
+      // ============================================================
       case "CONFIRM_OMPF": {
-        await prisma.njpCase.update({
+        await prisma.case.update({
           where: { id },
           data: {
-            ompfConfirmed: true,
-            ompfConfirmedBy: user.userId,
-            ompfConfirmedAt: new Date(),
+            ompfScanConfirmed: true,
+            ompfConfirmedById: user.userId,
+            ompfConfirmedDate: new Date(),
           },
         });
 
-        await prisma.auditLog.create({
-          data: {
-            caseId: id,
-            userId: user.userId,
-            action: "OMPF_CONFIRMED",
-          },
-        });
-
+        await audit("UPDATE", "OMPF/ESR confirmation logged");
         return NextResponse.json({ message: "OMPF/ESR confirmation logged" });
       }
 
       case "SIGN_ITEM_16": {
-        // Check all prior phases complete
-        if (!njpCase.item9SignedAt) {
+        if (!signedItems.includes("9")) {
           return NextResponse.json({ error: "Prior phases must be complete" }, { status: 400 });
         }
-        if (njpCase.item12IntendsToAppeal && !njpCase.item14SignedAt) {
+
+        const appeal = njpCase.appealRecord;
+        if (appeal?.appealIntent === "INTENDS_TO_APPEAL" && !appeal?.items1314Locked) {
           return NextResponse.json({ error: "Appeal must be resolved before closing" }, { status: 400 });
         }
 
-        const { udNumber, udDate } = data;
+        const { udNumber, udDate, signerName } = data;
 
-        const hasSuspension = await prisma.suspension.findFirst({
-          where: { caseId: id, status: "ACTIVE" },
-        });
+        await createSignature("16", signerName || user.username);
 
+        const hasSuspension = njpCase.punishmentRecord?.suspensionStatus === "ACTIVE";
         const finalStatus = hasSuspension ? "CLOSED_SUSPENSION_ACTIVE" : "CLOSED";
 
-        await prisma.njpCase.update({
+        await prisma.case.update({
           where: { id },
           data: {
             status: finalStatus,
-            currentPhase: "ADMIN_COMPLETION",
-            item16SignedBy: user.userId,
-            item16SignedAt: new Date(),
+            currentPhase: "CLOSED",
+            item16InitiatedById: user.userId,
+            item16SignedDate: new Date().toISOString().split("T")[0],
             item16UdNumber: udNumber,
-            item16UdDate: udDate,
-            lockedItems: JSON.stringify(
-              getLockedItems(["item2", "item3", "item9", "item11", "item12", "item14", "item16"])
-            ),
+            item16Dtd: udDate,
+            formLocked: true,
+            caseFinalDate: new Date().toISOString().split("T")[0],
           },
         });
 
-        await prisma.auditLog.create({
+        // Lock all item 21 entries
+        await prisma.item21Entry.updateMany({
+          where: { caseId: id },
+          data: { locked: true },
+        });
+
+        // Create document record for completed UPB
+        await prisma.document.create({
           data: {
             caseId: id,
-            userId: user.userId,
-            action: "ITEM_16_SIGNED_CASE_CLOSED",
+            documentType: "NAVMC_10132",
+            generatedById: user.userId,
+            generatedAt: new Date(),
           },
         });
 
-        return NextResponse.json({
-          message: "Case closed",
-          status: finalStatus,
-        });
+        await audit("SIGN", "Item 16 signed - case closed");
+        return NextResponse.json({ message: "Case closed", status: finalStatus });
       }
 
       default:

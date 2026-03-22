@@ -9,90 +9,8 @@ import CaseInfo from "@/components/cases/CaseInfo";
 import DocumentPanel from "@/components/documents/DocumentPanel";
 import RemarksPanel from "@/components/cases/RemarksPanel";
 
-interface CaseDetail {
-  id: string;
-  caseNumber: string;
-  status: string;
-  currentPhase: string;
-  accusedLastName: string;
-  accusedFirstName: string;
-  accusedMiddleName: string;
-  accusedRank: string;
-  accusedGrade: string;
-  accusedEdipi: string;
-  accusedUnit: string;
-  accusedUnitGcmca: string;
-  commanderGrade: string;
-  commanderGradeCategory: string;
-  component: string;
-  vesselException: boolean;
-  item2AcceptsNjp: boolean | null;
-  item2CounselProvided: boolean | null;
-  item2SignedAt: string | null;
-  item3SignedAt: string | null;
-  item4Applicable: boolean;
-  item6Date: string | null;
-  item6NoPunishment: boolean;
-  item7SuspensionDetails: string | null;
-  item8AuthorityName: string | null;
-  item9SignedAt: string | null;
-  item10Date: string | null;
-  item11SignedAt: string | null;
-  item12IntendsToAppeal: boolean | null;
-  item12SignedAt: string | null;
-  item13AppealDate: string | null;
-  item14Outcome: string | null;
-  item14SignedAt: string | null;
-  item15Date: string | null;
-  item16SignedAt: string | null;
-  item16UdNumber: string | null;
-  item16UdDate: string | null;
-  jaReviewRequired: boolean;
-  jaReviewCompleted: boolean;
-  ompfConfirmed: boolean;
-  statuteOfLimitationsWarning: boolean;
-  doublePunishmentFlag: boolean;
-  offenses: {
-    id: string;
-    letter: string;
-    ucmjArticle: string;
-    offenseType: string;
-    summary: string;
-    offenseDate: string;
-    offensePlace: string;
-    finding: string | null;
-    victims: {
-      id: string;
-      status: string;
-      sex: string;
-      race: string;
-      ethnicity: string;
-    }[];
-  }[];
-  punishments: {
-    id: string;
-    type: string;
-    duration: number | null;
-    amount: number | null;
-    reducedToGrade: string | null;
-    suspended: boolean;
-    suspensionMonths: number | null;
-  }[];
-  remarks: {
-    id: string;
-    date: string;
-    itemReference: string;
-    text: string;
-    confirmed: boolean;
-  }[];
-  suspensions: {
-    id: string;
-    punishment: string;
-    status: string;
-    startDate: string;
-    endDate: string;
-  }[];
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CaseDetail = any;
 
 export default function CaseDetailPage({
   params,
@@ -133,6 +51,8 @@ export default function CaseDetailPage({
     );
   }
 
+  const accused = caseData.accused;
+
   return (
     <AppShell>
       <div className="space-y-6">
@@ -143,9 +63,9 @@ export default function CaseDetailPage({
               {caseData.caseNumber}
             </h1>
             <p className="text-[var(--color-text-muted)]">
-              {caseData.accusedRank} {caseData.accusedLastName},{" "}
-              {caseData.accusedFirstName} {caseData.accusedMiddleName} (
-              {caseData.accusedGrade}) &middot; EDIPI: {caseData.accusedEdipi}
+              {accused.rank} {accused.lastName},{" "}
+              {accused.firstName} {accused.middleName || ""} (
+              {accused.grade}) &middot; EDIPI: {accused.edipi}
             </p>
           </div>
           <span
@@ -162,13 +82,13 @@ export default function CaseDetailPage({
         </div>
 
         {/* Warnings */}
-        {caseData.statuteOfLimitationsWarning && (
+        {caseData.statuteWarningAcknowledged && (
           <div className="bg-yellow-50 border border-yellow-300 rounded-lg px-4 py-3 text-sm text-yellow-800">
             Offense may be outside NJP statute of limitations per MCO 5800.16
             para 010702.
           </div>
         )}
-        {caseData.doublePunishmentFlag && (
+        {caseData.doublePunishmentChecked && (
           <div className="bg-red-50 border border-red-300 rounded-lg px-4 py-3 text-sm text-red-800">
             Prior NJP action detected for this offense. Double punishment is
             prohibited under Article 15, UCMJ.
@@ -213,10 +133,20 @@ export default function CaseDetailPage({
             <PhaseActions caseData={caseData} onUpdate={loadCase} />
           )}
           {activeTab === "documents" && (
-            <DocumentPanel caseId={caseData.id} component={caseData.component} commanderGradeCategory={caseData.commanderGradeCategory} />
+            <DocumentPanel caseId={caseData.id} component={caseData.component} commanderGradeCategory={caseData.commanderGradeLevel} />
           )}
           {activeTab === "remarks" && (
-            <RemarksPanel caseId={caseData.id} remarks={caseData.remarks} onUpdate={loadCase} />
+            <RemarksPanel
+              caseId={caseData.id}
+              remarks={(caseData.item21Entries || []).map((e: { id: string; entryDate: string; entryType: string; entryText: string; confirmedAt: string | null }) => ({
+                id: e.id,
+                date: e.entryDate,
+                itemReference: e.entryType,
+                text: e.entryText,
+                confirmed: !!e.confirmedAt,
+              }))}
+              onUpdate={loadCase}
+            />
           )}
           {activeTab === "info" && <CaseInfo caseData={caseData} />}
         </div>

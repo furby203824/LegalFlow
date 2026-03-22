@@ -56,20 +56,35 @@ export async function requireAuth(
   return user;
 }
 
-// Seed default admin user if none exists
+// Seed default admin user and unit if none exists
 export async function seedDefaultUser() {
   const existing = await prisma.user.findFirst({
     where: { role: "SUITE_ADMIN" },
   });
   if (!existing) {
+    // Create a default unit first
+    let defaultUnit = await prisma.unit.findFirst({
+      where: { unitAbbreviation: "HQ" },
+    });
+    if (!defaultUnit) {
+      defaultUnit = await prisma.unit.create({
+        data: {
+          unitName: "Headquarters",
+          unitAbbreviation: "HQ",
+          unitFullString: "Headquarters, LegalFlow",
+        },
+      });
+    }
+
     await prisma.user.create({
       data: {
         username: "admin",
-        password: await hashPassword("admin"),
+        passwordHash: await hashPassword("admin"),
         firstName: "System",
         lastName: "Admin",
+        email: "admin@legalflow.local",
         role: "SUITE_ADMIN",
-        unitId: "HQ",
+        unitId: defaultUnit.id,
       },
     });
   }

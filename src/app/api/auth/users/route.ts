@@ -17,7 +17,12 @@ export async function GET() {
         edipi: true,
         rank: true,
         grade: true,
+        email: true,
+        isActive: true,
         createdAt: true,
+        unit: {
+          select: { unitName: true, unitAbbreviation: true },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -35,29 +40,32 @@ export async function POST(req: NextRequest) {
     await requireAuth("SUITE_ADMIN");
 
     const body = await req.json();
-    const { username, password, firstName, lastName, role, unitId, edipi, rank, grade } = body;
+    const { username, password, firstName, lastName, role, unitId, edipi, rank, grade, email } = body;
 
-    if (!username || !password || !firstName || !lastName || !role || !unitId) {
+    if (!username || !password || !firstName || !lastName || !role || !unitId || !email) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required fields: username, password, firstName, lastName, role, unitId, email" },
         { status: 400 }
       );
     }
 
     const existing = await prisma.user.findUnique({ where: { username } });
     if (existing) {
-      return NextResponse.json(
-        { error: "Username already exists" },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: "Username already exists" }, { status: 409 });
+    }
+
+    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    if (existingEmail) {
+      return NextResponse.json({ error: "Email already exists" }, { status: 409 });
     }
 
     const user = await prisma.user.create({
       data: {
         username,
-        password: await hashPassword(password),
+        passwordHash: await hashPassword(password),
         firstName,
         lastName,
+        email,
         role,
         unitId,
         edipi: edipi || null,
@@ -71,6 +79,7 @@ export async function POST(req: NextRequest) {
         lastName: true,
         role: true,
         unitId: true,
+        email: true,
       },
     });
 

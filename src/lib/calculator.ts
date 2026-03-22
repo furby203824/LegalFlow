@@ -1,5 +1,5 @@
 import { addDays, parseISO } from "date-fns";
-import type { CommanderGradeCategory, SmcrForfeitureInput, SmcrForfeitureResult } from "@/types";
+import type { CommanderGradeLevel, SmcrForfeitureInput, SmcrForfeitureResult } from "@/types";
 
 // ============================================================================
 // SMCR Forfeiture Calculator
@@ -14,7 +14,7 @@ export function calculateSmcrForfeiture(input: SmcrForfeitureInput): SmcrForfeit
   let maxForfeiture: number;
   let formula: string;
 
-  if (input.commanderGradeCategory === "COMPANY_GRADE") {
+  if (input.commanderGradeLevel === "COMPANY_GRADE") {
     // Company grade formula:
     // ([Drill Pay] x [Drills in 60 days] x 0.2333 + [AD Basic Pay]) /
     // (30 x [AD days in 60 days] / 2)
