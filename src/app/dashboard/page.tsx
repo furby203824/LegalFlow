@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/ui/AppShell";
+import {
+  FolderOpen, ClipboardCheck, Timer, AlertTriangle,
+  ChevronRight, Scale, Inbox, FileCheck,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface DashboardCase {
   id: string;
@@ -30,32 +35,40 @@ interface Stats {
   activeSuspensions: number;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  INITIATED: "bg-blue-100 text-blue-800",
-  REFERRED_COURT_MARTIAL: "bg-purple-100 text-purple-800",
-  RIGHTS_ADVISED: "bg-cyan-100 text-cyan-800",
-  PUNISHMENT_IMPOSED: "bg-orange-100 text-orange-800",
-  NOTIFICATION_COMPLETE: "bg-teal-100 text-teal-800",
-  APPEAL_PENDING: "bg-yellow-100 text-yellow-800",
-  APPEAL_COMPLETE: "bg-green-100 text-green-800",
-  REMEDIAL_ACTION_PENDING: "bg-red-100 text-red-800",
-  CLOSED: "bg-gray-100 text-gray-800",
-  CLOSED_SUSPENSION_ACTIVE: "bg-amber-100 text-amber-800",
-  CLOSED_SUSPENSION_VACATED: "bg-gray-100 text-gray-600",
-  CLOSED_SUSPENSION_REMITTED: "bg-gray-100 text-gray-600",
-  DESTROYED: "bg-red-50 text-red-600",
+const STATUS_BADGE: Record<string, string> = {
+  INITIATED: "bg-gray-100 text-gray-700",
+  REFERRED_COURT_MARTIAL: "bg-purple-100 text-purple-700",
+  RIGHTS_ADVISED: "bg-blue-100 text-blue-700",
+  PUNISHMENT_IMPOSED: "bg-orange-100 text-orange-700",
+  NOTIFICATION_COMPLETE: "bg-blue-100 text-blue-700",
+  APPEAL_PENDING: "bg-yellow-100 text-yellow-700",
+  APPEAL_COMPLETE: "bg-green-100 text-green-700",
+  REMEDIAL_ACTION_PENDING: "bg-red-100 text-red-700",
+  CLOSED: "bg-gray-200 text-gray-600",
+  CLOSED_SUSPENSION_ACTIVE: "bg-orange-100 text-orange-700",
+  CLOSED_SUSPENSION_VACATED: "bg-gray-200 text-gray-600",
+  CLOSED_SUSPENSION_REMITTED: "bg-gray-200 text-gray-600",
+  DESTROYED: "bg-red-100 text-red-600",
 };
 
-function statusLabel(status: string): string {
-  return status.replace(/_/g, " ");
+function FlagBadge({ type, label }: { type: string; label: string }) {
+  const colors: Record<string, string> = {
+    overdue: "bg-error/10 text-error",
+    ja: "bg-warning/10 text-warning",
+    "5d": "bg-info/10 text-info",
+    susp: "bg-orange-100 text-orange-700",
+  };
+  return (
+    <span className={cn("badge text-[10px]", colors[type] || "bg-gray-100 text-gray-600")}>
+      {label}
+    </span>
+  );
 }
 
 export default function DashboardPage() {
   const [cases, setCases] = useState<DashboardCase[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
 
   useEffect(() => {
     fetch("/api/dashboard")
@@ -68,176 +81,168 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filteredCases = cases.filter((c) => {
-    if (statusFilter && c.status !== statusFilter) return false;
-    if (filter) {
-      const q = filter.toLowerCase();
-      return (
-        c.caseNumber.toLowerCase().includes(q) ||
-        c.marineName.toLowerCase().includes(q) ||
-        c.ucmjArticles.some((a) => a.includes(q))
-      );
-    }
-    return true;
-  });
+  const pendingCases = cases
+    .filter((c) => !c.status.startsWith("CLOSED") && c.status !== "DESTROYED")
+    .sort((a, b) => {
+      if (a.overdue && !b.overdue) return -1;
+      if (!a.overdue && b.overdue) return 1;
+      return b.daysInCurrentPhase - a.daysInCurrentPhase;
+    })
+    .slice(0, 10);
+
+  const suspensionCases = cases
+    .filter((c) => c.suspensionActive)
+    .sort((a, b) => a.daysInCurrentPhase - b.daysInCurrentPhase);
 
   return (
     <AppShell>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-[var(--color-navy)]">
-            Case Dashboard
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-dark">
+            Dashboard
           </h1>
-          <Link
-            href="/cases/new"
-            className="bg-[var(--color-navy)] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[var(--color-navy-light)] transition-colors"
-          >
+          <Link href="/cases/new" className="btn-primary">
             + New Case
           </Link>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stat Cards */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-            {[
-              { label: "Total", value: stats.total, color: "bg-gray-50" },
-              { label: "Open", value: stats.open, color: "bg-blue-50" },
-              { label: "Closed", value: stats.closed, color: "bg-green-50" },
-              { label: "Overdue", value: stats.overdue, color: "bg-red-50" },
-              { label: "Pending Appeal", value: stats.pendingAppeal, color: "bg-yellow-50" },
-              { label: "JA Review", value: stats.jaReviewPending, color: "bg-orange-50" },
-              { label: "Suspensions", value: stats.activeSuspensions, color: "bg-amber-50" },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className={`${s.color} border border-[var(--color-border)] rounded-lg p-3 text-center`}
-              >
-                <div className="text-2xl font-bold">{s.value}</div>
-                <div className="text-xs text-[var(--color-text-muted)]">{s.label}</div>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              icon={<FolderOpen size={20} />}
+              label="Open Cases"
+              value={stats.open}
+              href="/cases?status=open"
+              color="text-primary"
+            />
+            <StatCard
+              icon={<ClipboardCheck size={20} />}
+              label="Pending Signature"
+              value={stats.pendingAppeal + stats.jaReviewPending}
+              href="/dashboard?filter=signatures"
+              color="text-info"
+            />
+            <StatCard
+              icon={<Timer size={20} />}
+              label="Suspensions Active"
+              value={stats.activeSuspensions}
+              href="/cases?filter=suspensions"
+              color="text-warning"
+            />
+            <StatCard
+              icon={<AlertTriangle size={20} />}
+              label="Overdue Actions"
+              value={stats.overdue}
+              href="/cases?filter=overdue"
+              color="text-error"
+              urgent={stats.overdue > 0}
+            />
           </div>
         )}
 
-        {/* Filters */}
-        <div className="flex gap-3 flex-wrap">
-          <input
-            type="text"
-            placeholder="Search by case #, name, or article..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="flex-1 min-w-[200px] px-3 py-2 border border-[var(--color-border)] rounded text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]"
-          />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-[var(--color-border)] rounded text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)]"
-          >
-            <option value="">All Statuses</option>
-            {Object.keys(STATUS_COLORS).map((s) => (
-              <option key={s} value={s}>
-                {statusLabel(s)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Case Table */}
-        {loading ? (
-          <div className="text-center py-8 text-[var(--color-text-muted)]">
-            Loading cases...
-          </div>
-        ) : filteredCases.length === 0 ? (
-          <div className="text-center py-8 text-[var(--color-text-muted)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg">
-            No cases found.{" "}
-            <Link href="/cases/new" className="text-[var(--color-navy)] underline">
-              Create a new case
+        {/* Pending Actions Table */}
+        <div className="card">
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+            <h2 className="text-base font-semibold text-neutral-dark">Actions Required</h2>
+            <Link href="/cases" className="text-sm text-primary hover:underline flex items-center gap-1">
+              View All Cases <ChevronRight size={14} />
             </Link>
           </div>
-        ) : (
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg overflow-hidden">
+
+          {loading ? (
+            <div className="px-5 py-8 text-center text-neutral-mid text-sm">Loading...</div>
+          ) : pendingCases.length === 0 ? (
+            <div className="px-5 py-12 text-center">
+              <div className="text-success text-3xl mb-2">&#10003;</div>
+              <p className="text-sm text-neutral-mid">No pending actions. All cases are current.</p>
+            </div>
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-[var(--color-border)]">
-                    <th className="text-left px-4 py-3 font-medium">Case #</th>
-                    <th className="text-left px-4 py-3 font-medium">Marine</th>
-                    <th className="text-left px-4 py-3 font-medium">Articles</th>
-                    <th className="text-left px-4 py-3 font-medium">Status</th>
-                    <th className="text-left px-4 py-3 font-medium">Phase</th>
-                    <th className="text-left px-4 py-3 font-medium">Days</th>
-                    <th className="text-left px-4 py-3 font-medium">Next Action</th>
-                    <th className="text-left px-4 py-3 font-medium">Flags</th>
+                  <tr className="border-b border-border bg-surface">
+                    <th className="text-left px-5 py-3 font-medium text-neutral-mid">Case #</th>
+                    <th className="text-left px-5 py-3 font-medium text-neutral-mid">Marine</th>
+                    <th className="text-left px-5 py-3 font-medium text-neutral-mid">Action Needed</th>
+                    <th className="text-left px-5 py-3 font-medium text-neutral-mid">Days</th>
+                    <th className="text-left px-5 py-3 font-medium text-neutral-mid">Flags</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredCases.map((c) => (
+                  {pendingCases.map((c) => (
                     <tr
                       key={c.id}
-                      className="border-b border-[var(--color-border)] hover:bg-gray-50 cursor-pointer"
+                      className="border-b border-border hover:bg-surface/50 transition-colors"
                     >
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3">
                         <Link
                           href={`/cases/${c.id}`}
-                          className="text-[var(--color-navy)] font-medium hover:underline"
+                          className="font-mono text-primary font-medium hover:underline"
                         >
                           {c.caseNumber}
                         </Link>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3">
                         <span className="font-medium">{c.marineName}</span>
-                        <span className="text-[var(--color-text-muted)] ml-1">
-                          ({c.marineGrade})
+                        <span className="text-neutral-mid ml-1">({c.marineGrade})</span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="text-neutral-dark">{c.nextActionRequired}</div>
+                        <div className="text-xs text-neutral-mid">{c.nextActionOwner}</div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={cn(c.overdue ? "text-error font-semibold" : "text-neutral-mid")}>
+                          {c.daysInCurrentPhase}d
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        {c.ucmjArticles.map((a) => `Art. ${a}`).join(", ")}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            STATUS_COLORS[c.status] || "bg-gray-100"
-                          }`}
-                        >
-                          {statusLabel(c.status)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-[var(--color-text-muted)]">
-                        {c.currentPhase.replace(/_/g, " ")}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={
-                            c.overdue ? "text-[var(--color-error)] font-bold" : ""
-                          }
-                        >
-                          {c.daysInCurrentPhase}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        <div>{c.nextActionRequired}</div>
-                        <div className="text-[var(--color-text-muted)]">
-                          Owner: {c.nextActionOwner}
+                      <td className="px-5 py-3">
+                        <div className="flex gap-1 flex-wrap">
+                          {c.overdue && <FlagBadge type="overdue" label="!" />}
+                          {c.jaReviewRequired && <FlagBadge type="ja" label="JA" />}
+                          {c.suspensionActive && <FlagBadge type="susp" label="SUSP" />}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1">
-                          {c.overdue && (
-                            <span className="bg-red-100 text-red-800 px-1.5 py-0.5 rounded text-xs">
-                              OVERDUE
-                            </span>
-                          )}
-                          {c.suspensionActive && (
-                            <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded text-xs">
-                              SUSP
-                            </span>
-                          )}
-                          {c.jaReviewRequired && (
-                            <span className="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-xs">
-                              JA
-                            </span>
-                          )}
-                        </div>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Active Suspensions */}
+        {suspensionCases.length > 0 && (
+          <div className="card">
+            <div className="px-5 py-4 border-b border-border">
+              <h2 className="text-base font-semibold text-neutral-dark">Active Suspensions</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-surface">
+                    <th className="text-left px-5 py-3 font-medium text-neutral-mid">Case #</th>
+                    <th className="text-left px-5 py-3 font-medium text-neutral-mid">Marine</th>
+                    <th className="text-left px-5 py-3 font-medium text-neutral-mid">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {suspensionCases.map((c) => (
+                    <tr key={c.id} className="border-b border-border hover:bg-surface/50">
+                      <td className="px-5 py-3">
+                        <Link
+                          href={`/cases/${c.id}`}
+                          className="font-mono text-primary font-medium hover:underline"
+                        >
+                          {c.caseNumber}
+                        </Link>
+                      </td>
+                      <td className="px-5 py-3">{c.marineName}</td>
+                      <td className="px-5 py-3">
+                        <span className={cn("badge", STATUS_BADGE[c.status] || "bg-gray-100")}>
+                          {c.status.replace(/_/g, " ")}
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -248,5 +253,36 @@ export default function DashboardPage() {
         )}
       </div>
     </AppShell>
+  );
+}
+
+function StatCard({
+  icon,
+  label,
+  value,
+  href,
+  color,
+  urgent,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  href: string;
+  color: string;
+  urgent?: boolean;
+}) {
+  return (
+    <Link href={href} className="card p-5 hover:shadow-md transition-shadow group">
+      <div className="flex items-start justify-between">
+        <div className={cn("p-2 rounded-lg bg-neutral-light", color)}>{icon}</div>
+        {urgent && (
+          <span className="badge bg-error text-white animate-pulse">!</span>
+        )}
+      </div>
+      <div className="mt-3">
+        <div className={cn("text-3xl font-semibold tracking-tight", color)}>{value}</div>
+        <div className="text-sm text-neutral-mid mt-0.5">{label}</div>
+      </div>
+    </Link>
   );
 }

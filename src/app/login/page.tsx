@@ -2,10 +2,12 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { Scale } from "lucide-react";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -26,41 +28,42 @@ export default function LoginPage() {
         router.push("/dashboard");
       } else {
         const data = await res.json();
-        setError(data.error || "Login failed");
+        setError(data.error || "Invalid credentials.");
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError("Unable to connect. Please try again.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="w-full max-w-md">
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg overflow-hidden">
-          {/* Header */}
-          <div className="bg-[var(--color-navy)] text-white px-8 py-6 text-center">
-            <h1 className="text-2xl font-bold tracking-wide">LEGALFLOW</h1>
-            <p className="text-sm text-blue-200 mt-1">Semper Admin Suite</p>
-            <p className="text-xs text-blue-300 mt-2">
-              CUI - Privacy Sensitive When Populated
-            </p>
+    <div className="flex items-center justify-center min-h-screen bg-neutral-light">
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-primary text-white mb-4">
+            <Scale size={32} />
           </div>
+          <div className="text-xs text-neutral-mid tracking-widest uppercase mb-1">
+            Semper Admin Suite
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-dark">
+            LegalFlow
+          </h1>
+        </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 py-6 space-y-4">
+        {/* Login Card */}
+        <div className="card p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded text-sm">
+              <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-error">
                 {error}
               </div>
             )}
 
             <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-[var(--color-text)] mb-1"
-              >
+              <label htmlFor="username" className="block text-sm font-medium text-neutral-dark mb-1.5">
                 Username
               </label>
               <input
@@ -69,16 +72,14 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)] focus:border-transparent"
                 autoComplete="username"
+                className="input-field"
+                placeholder="Enter username"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-[var(--color-text)] mb-1"
-              >
+              <label htmlFor="password" className="block text-sm font-medium text-neutral-dark mb-1.5">
                 Password
               </label>
               <input
@@ -87,23 +88,46 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded focus:outline-none focus:ring-2 focus:ring-[var(--color-navy)] focus:border-transparent"
                 autoComplete="current-password"
+                className="input-field"
+                placeholder="Enter password"
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[var(--color-navy)] text-white py-2 px-4 rounded font-medium hover:bg-[var(--color-navy-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <div>
+              <label htmlFor="mfa" className="block text-sm font-medium text-neutral-dark mb-1.5">
+                MFA Code <span className="text-neutral-mid font-normal">(if enabled)</span>
+              </label>
+              <input
+                id="mfa"
+                type="text"
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                autoComplete="one-time-code"
+                className="input-field font-mono tracking-widest"
+                placeholder="000000"
+                maxLength={6}
+              />
+            </div>
+
+            <button type="submit" disabled={loading} className="btn-primary w-full">
               {loading ? "Signing in..." : "Sign In"}
             </button>
-
-            <p className="text-xs text-center text-[var(--color-text-muted)] mt-4">
-              Default credentials: admin / admin
-            </p>
           </form>
+
+          <p className="text-xs text-center text-neutral-mid mt-4">
+            Default: admin / admin
+          </p>
+        </div>
+
+        {/* CUI Notice */}
+        <div className="mt-6 text-center space-y-1">
+          <p className="text-xs text-cui-text font-medium">
+            CUI - Privacy Sensitive When Populated
+          </p>
+          <p className="text-[10px] text-neutral-mid">
+            Unauthorized access is prohibited. All activity is monitored.
+          </p>
         </div>
       </div>
     </div>
