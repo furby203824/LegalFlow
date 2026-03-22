@@ -5,6 +5,7 @@ import AppShell from "@/components/ui/AppShell";
 import { RANKS, GRADES } from "@/types";
 import { cn } from "@/lib/utils";
 import { Plus, X, Search, UserCircle } from "lucide-react";
+import { getUsers, createUser } from "@/services/api";
 
 interface UserInfo {
   id: string;
@@ -31,8 +32,7 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
 
   function loadUsers() {
-    fetch("/api/auth/users")
-      .then((res) => res.json())
+    getUsers()
       .then((data) => setUsers(data.users || []))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -46,20 +46,18 @@ export default function UsersPage() {
     const form = e.currentTarget;
     const fd = new FormData(form);
 
-    const res = await fetch("/api/auth/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      await createUser({
         username: fd.get("username"), password: fd.get("password"),
         firstName: fd.get("firstName"), lastName: fd.get("lastName"),
         role: fd.get("role"), unitId: fd.get("unitId"),
         email: fd.get("email"),
         edipi: fd.get("edipi") || null, rank: fd.get("rank") || null, grade: fd.get("grade") || null,
-      }),
-    });
-
-    if (res.ok) { setShowForm(false); form.reset(); loadUsers(); }
-    else { const data = await res.json(); setError(data.error); }
+      });
+      setShowForm(false); form.reset(); loadUsers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error creating user");
+    }
   }
 
   const filteredUsers = users.filter((u) => {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import AppShell from "@/components/ui/AppShell";
 import PhaseTracker from "@/components/cases/PhaseTracker";
 import UPBItemsPanel from "@/components/cases/UPBItemsPanel";
@@ -11,27 +11,30 @@ import DocumentPanel from "@/components/documents/DocumentPanel";
 import AuditLogPanel from "@/components/cases/AuditLogPanel";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, AlertOctagon, Info } from "lucide-react";
+import { getCase } from "@/services/api";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CaseDetail = any;
 
-export default function CaseDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function CaseViewPage() {
+  return (
+    <Suspense fallback={<AppShell><div className="flex items-center justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div></AppShell>}>
+      <CaseViewContent />
+    </Suspense>
+  );
+}
+
+function CaseViewContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id") || "";
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"remarks" | "documents" | "audit">("remarks");
   const router = useRouter();
 
   function loadCase() {
-    fetch(`/api/cases/${id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load case");
-        return res.json();
-      })
+    if (!id) { router.push("/cases"); return; }
+    getCase(id)
       .then((data) => setCaseData(data.case))
       .catch((err) => {
         console.error(err);
@@ -55,7 +58,6 @@ export default function CaseDetailPage({
   }
 
   const accused = caseData.accused;
-  const isClosed = caseData.status.startsWith("CLOSED") || caseData.status === "DESTROYED";
 
   const STATUS_COLORS: Record<string, string> = {
     INITIATED: "bg-gray-100 text-gray-700",
@@ -73,7 +75,6 @@ export default function CaseDetailPage({
   return (
     <AppShell>
       <div className="space-y-4">
-        {/* Case Header */}
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-neutral-dark">
@@ -82,56 +83,39 @@ export default function CaseDetailPage({
             <p className="text-sm text-neutral-mid mt-0.5">
               {accused.rank} {accused.lastName}, {accused.firstName} {accused.middleName || ""} ({accused.grade}) &middot; EDIPI: <span className="font-mono">{accused.edipi}</span>
             </p>
-            <p className="text-xs text-neutral-mid mt-0.5">
-              {accused.unitFullString}
-            </p>
+            <p className="text-xs text-neutral-mid mt-0.5">{accused.unitFullString}</p>
           </div>
           <span className={cn("badge text-xs px-3 py-1", STATUS_COLORS[caseData.status] || "bg-gray-100")}>
             {caseData.status.replace(/_/g, " ")}
           </span>
         </div>
 
-        {/* Flag Badges */}
         <div className="flex flex-wrap gap-2">
           {caseData.jaReviewRequired && !caseData.jaReviewComplete && (
-            <span className="badge bg-warning/10 text-warning gap-1">
-              <AlertTriangle size={12} /> JA REVIEW REQUIRED
-            </span>
+            <span className="badge bg-warning/10 text-warning gap-1"><AlertTriangle size={12} /> JA REVIEW REQUIRED</span>
           )}
           {caseData.punishmentRecord?.suspensionStatus === "ACTIVE" && (
-            <span className="badge bg-orange-100 text-orange-700 gap-1">
-              <Info size={12} /> SUSPENSION ACTIVE
-            </span>
+            <span className="badge bg-orange-100 text-orange-700 gap-1"><Info size={12} /> SUSPENSION ACTIVE</span>
           )}
           {caseData.statuteWarningAcknowledged && (
-            <span className="badge bg-warning/10 text-warning gap-1">
-              <AlertTriangle size={12} /> STATUTE WARNING
-            </span>
+            <span className="badge bg-warning/10 text-warning gap-1"><AlertTriangle size={12} /> STATUTE WARNING</span>
           )}
           {caseData.doublePunishmentChecked && (
-            <span className="badge bg-error/10 text-error gap-1">
-              <AlertOctagon size={12} /> DOUBLE PUNISHMENT FLAG
-            </span>
+            <span className="badge bg-error/10 text-error gap-1"><AlertOctagon size={12} /> DOUBLE PUNISHMENT FLAG</span>
           )}
         </div>
 
-        {/* Phase Progress */}
         <PhaseTracker currentPhase={caseData.currentPhase} status={caseData.status} />
 
-        {/* Two-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Left: UPB Form Items */}
           <div className="lg:col-span-2">
             <UPBItemsPanel caseData={caseData} onUpdate={loadCase} />
           </div>
-
-          {/* Right: Actions Panel */}
           <div>
             <ActionsPanel caseData={caseData} onUpdate={loadCase} />
           </div>
         </div>
 
-        {/* Bottom Tabs */}
         <div className="card overflow-hidden">
           <div className="border-b border-border">
             <nav className="flex">
@@ -160,12 +144,8 @@ export default function CaseDetailPage({
               <RemarksPanel
                 caseId={caseData.id}
                 remarks={(caseData.item21Entries || []).map((e: { id: string; entryDate: string; entryType: string; entryText: string; confirmedAt: string | null; systemGenerated: boolean }) => ({
-                  id: e.id,
-                  date: e.entryDate,
-                  itemReference: e.entryType,
-                  text: e.entryText,
-                  confirmed: !!e.confirmedAt,
-                  systemGenerated: e.systemGenerated,
+                  id: e.id, date: e.entryDate, itemReference: e.entryType,
+                  text: e.entryText, confirmed: !!e.confirmedAt, systemGenerated: e.systemGenerated,
                 }))}
                 onUpdate={loadCase}
                 locked={caseData.formLocked}

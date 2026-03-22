@@ -2,21 +2,17 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { isAuthenticated } from "@/lib/auth";
 
 export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check auth and redirect
-    fetch("/api/auth/me")
-      .then((res) => {
-        if (res.ok) {
-          router.push("/dashboard");
-        } else {
-          router.push("/login");
-        }
-      })
-      .catch(() => router.push("/login"));
+    if (isAuthenticated()) {
+      router.push("/dashboard");
+    } else {
+      router.push("/login");
+    }
   }, [router]);
 
   return (

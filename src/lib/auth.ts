@@ -1,52 +1,98 @@
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
+"use client";
+
+// =============================================================================
+// Client-Side Authentication
+// Uses GitHub PAT for data access, users.json for identity/roles
+// =============================================================================
+
 import { usersStore } from "./db";
+import { isGitHubConfigured, clearGitHubConfig } from "./github";
 import type { UserRole } from "@/types";
 
-const JWT_SECRET = process.env.JWT_SECRET || "legalflow-dev-secret";
-
-export interface JwtPayload {
+export interface SessionUser {
   userId: string;
   username: string;
+  firstName: string;
+  lastName: string;
   role: UserRole;
   unitId: string;
+  rank?: string;
+  grade?: string;
+  edipi?: string;
+  email?: string;
 }
 
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12);
+let currentSession: SessionUser | null = null;
+
+export function getSession(): SessionUser | null {
+  if (currentSession) return currentSession;
+  if (typeof window === "undefined") return null;
+  const stored = sessionStorage.getItem("legalflow_session");
+  if (!stored) return null;
+  currentSession = JSON.parse(stored);
+  return currentSession;
 }
 
-export async function verifyPassword(
-  password: string,
-  hash: string
-): Promise<boolean> {
-  return bcrypt.compare(password, hash);
+function setSession(user: SessionUser) {
+  currentSession = user;
+  sessionStorage.setItem("legalflow_session", JSON.stringify(user));
 }
 
-export function signToken(payload: JwtPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "8h" });
+export function clearSession() {
+  currentSession = null;
+  sessionStorage.removeItem("legalflow_session");
+  clearGitHubConfig();
 }
 
-export function verifyToken(token: string): JwtPayload | null {
-  try {
-    return jwt.verify(token, JWT_SECRET) as JwtPayload;
-  } catch {
-    return null;
+export function isAuthenticated(): boolean {
+  return !!getSession() && isGitHubConfigured();
+}
+
+// Simple password comparison (plaintext for demo - users.json stores plain passwords)
+// In production, use bcrypt in a Web Worker or server-side verification
+function verifyPassword(input: string, stored: string): boolean {
+  // Support both plaintext and bcrypt-hashed passwords
+  // For client-side demo, compare plaintext directly
+  return input === stored;
+}
+
+export async function login(username: string, password: string): Promise<SessionUser> {
+  const user = await usersStore.findByUsername(username);
+  if (!user) {
+    throw new Error("Invalid credentials");
   }
+
+  // Check password (stored as passwordHash field, but for client-side demo it's plaintext)
+  if (!verifyPassword(password, user.passwordHash || user.password || "")) {
+    throw new Error("Invalid credentials");
+  }
+
+  // Update last login
+  await usersStore.update(user.id, { lastLogin: new Date().toISOString() });
+
+  const session: SessionUser = {
+    userId: user.id,
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role as UserRole,
+    unitId: user.unitId || "",
+    rank: user.rank,
+    grade: user.grade,
+    edipi: user.edipi,
+    email: user.email,
+  };
+
+  setSession(session);
+  return session;
 }
 
-export async function getCurrentUser(): Promise<JwtPayload | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("legalflow_token")?.value;
-  if (!token) return null;
-  return verifyToken(token);
+export function logout() {
+  clearSession();
 }
 
-export async function requireAuth(
-  ...allowedRoles: UserRole[]
-): Promise<JwtPayload> {
-  const user = await getCurrentUser();
+export function requireAuth(...allowedRoles: UserRole[]): SessionUser {
+  const user = getSession();
   if (!user) {
     throw new Error("Authentication required");
   }
@@ -56,13 +102,13 @@ export async function requireAuth(
   return user;
 }
 
-// Seed default admin user if none exists
-export async function seedDefaultUser() {
-  const existing = usersStore.findFirst((u) => u.role === "SUITE_ADMIN");
-  if (!existing) {
-    usersStore.create({
+// Seed default admin if users.json is empty
+export async function seedDefaultUser(): Promise<void> {
+  const users = await usersStore.findAll();
+  if (users.length === 0) {
+    await usersStore.create({
       username: "admin",
-      passwordHash: await hashPassword("admin"),
+      passwordHash: "admin",
       firstName: "System",
       lastName: "Admin",
       email: "admin@legalflow.local",

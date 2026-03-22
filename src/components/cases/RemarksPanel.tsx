@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Check, Clock, Plus } from "lucide-react";
+import { addRemark as addRemarkService, confirmRemark as confirmRemarkService } from "@/services/api";
 
 interface Remark {
   id: string;
@@ -43,11 +44,7 @@ export default function RemarksPanel({
     if (!date || !text) return;
     setLoading(true);
     try {
-      await fetch(`/api/cases/${caseId}/remarks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, entryType, text }),
-      });
+      await addRemarkService(caseId, date, entryType, text);
       setDate(""); setText(""); setShowAdd(false);
       onUpdate();
     } finally {
@@ -56,11 +53,7 @@ export default function RemarksPanel({
   }
 
   async function confirmRemark(remarkId: string) {
-    await fetch(`/api/cases/${caseId}/remarks`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ remarkId }),
-    });
+    await confirmRemarkService(caseId, remarkId);
     onUpdate();
   }
 

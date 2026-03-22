@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { FileText, Download, RefreshCw } from "lucide-react";
+import { generateDocumentContent } from "@/services/documents";
 
 type Navmc10132Version = "PARTIAL" | "HEARING" | "FINAL";
 
@@ -58,21 +59,11 @@ export default function DocumentPanel({
     setDocVersion(version || null);
     setShowVersionSelector(false);
     try {
-      let url = `/api/cases/${caseId}/documents?type=${type}`;
-      if (version) {
-        url += `&version=${version}`;
-      }
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        setDocument(data.document);
-        if (data.caseNumber) setCaseNumber(data.caseNumber);
-      } else {
-        const err = await res.json().catch(() => ({ error: "Unknown error" }));
-        setDocument(`Error: ${err.error}`);
-      }
-    } catch {
-      setDocument("Error generating document");
+      const data = await generateDocumentContent(caseId, type, version);
+      setDocument(data.document);
+      if (data.caseNumber) setCaseNumber(data.caseNumber);
+    } catch (err) {
+      setDocument(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setLoading(false);
     }
