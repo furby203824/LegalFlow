@@ -31,7 +31,20 @@
     "punishment": null,
     "appeal": null,
     "item21Entries": [],
-    "signatures": [],
+    "signatures": [
+      {
+        "id": "sig-1774220831321-1847m",
+        "createdAt": "2026-03-22T23:07:11.321Z",
+        "itemNumber": "2",
+        "signerRole": "SUITE_ADMIN",
+        "signerUserId": "user-1774218618690-02z7m",
+        "signerName": "Test, Test",
+        "signedDate": "2026-03-22",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
+      }
+    ],
     "documents": [
       {
         "id": "doc-1774220794460-f6344",
