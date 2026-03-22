@@ -28,7 +28,19 @@
         "locked": true
       }
     ],
-    "punishment": null,
+    "punishment": {
+      "id": "pun-1774221954737-wbgki",
+      "punishmentDate": "2026-03-22",
+      "forfeitureAmount": 1196,
+      "forfeitureMonths": 1,
+      "reductionImposed": true,
+      "reductionToGrade": "E4",
+      "extraDutiesDays": 45,
+      "restrictionDays": 45,
+      "suspensionImposed": true,
+      "suspensionPunishment": "forfeiture, reduction, extra, restriction",
+      "suspensionMonths": 6
+    },
     "appeal": null,
     "item21Entries": [],
     "signatures": [
