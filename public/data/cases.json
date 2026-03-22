@@ -1,1 +1,69 @@
-[]
+[
+  {
+    "id": "case-1774220758799-tm18d",
+    "createdAt": "2026-03-22",
+    "updatedAt": "2026-03-22",
+    "offenses": [
+      {
+        "id": "off-1774220758795-A",
+        "offenseLetter": "A",
+        "ucmjArticle": "125",
+        "offenseType": "Test",
+        "offenseSummary": "Test of the summary",
+        "offenseDate": "2026-03-05",
+        "offensePlace": "Test",
+        "finding": null,
+        "locked": false
+      }
+    ],
+    "victims": [
+      {
+        "id": "v-1774220758795-A",
+        "offenseId": "off-1774220758795-A",
+        "victimLetter": "A",
+        "victimStatus": "Unknown",
+        "victimSex": "Unknown",
+        "victimRace": "Unknown",
+        "victimEthnicity": "Unknown",
+        "locked": false
+      }
+    ],
+    "punishment": null,
+    "appeal": null,
+    "item21Entries": [],
+    "signatures": [],
+    "documents": [],
+    "remedialActions": [],
+    "vacationRecordsAsParent": [],
+    "flags": [],
+    "daysOpen": 0,
+    "nextAction": "Complete Item 2 - Rights advisement",
+    "nextActionOwner": "ACCUSED",
+    "isOverdue": false,
+    "caseNumber": "CASE-2026-0001",
+    "status": "INITIATED",
+    "currentPhase": "INITIATION",
+    "unitId": "unit-hq",
+    "unitFullString": "Test, test",
+    "accusedName": "Test, Test T",
+    "accusedLastName": "Test",
+    "accusedFirstName": "Test",
+    "accusedMiddleName": "T",
+    "accusedRank": "Sgt",
+    "accusedGrade": "E5",
+    "accusedEdipi": "1234567890",
+    "component": "ACTIVE",
+    "vesselException": false,
+    "commanderGradeLevel": "FIELD_GRADE_AND_ABOVE",
+    "jurisdictionConfirmed": true,
+    "uaApplicable": false,
+    "offenseDateEarliest": "2026-03-05",
+    "formLocked": false,
+    "jaReviewRequired": false,
+    "jaReviewComplete": false,
+    "njpDate": null,
+    "appealNotFiled": false,
+    "accusedTransferred": false,
+    "initiatedById": "user-1774218618690-02z7m"
+  }
+]
