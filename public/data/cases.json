@@ -39,7 +39,8 @@
       "restrictionDays": 45,
       "suspensionImposed": true,
       "suspensionPunishment": "forfeiture, reduction, extra, restriction",
-      "suspensionMonths": 6
+      "suspensionMonths": 6,
+      "locked": true
     },
     "appeal": null,
     "item21Entries": [],
