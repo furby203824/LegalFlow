@@ -6,7 +6,7 @@ import AppShell from "@/components/ui/AppShell";
 import { UCMJ_ARTICLES, RANK_GRADE_OPTIONS, RANK_TO_GRADE, GRADES } from "@/types";
 import type { Rank } from "@/types";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, AlertOctagon, Info, Plus, Trash2, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, AlertOctagon, Info, Plus, Trash2, HelpCircle, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { casesStore, caseWithIncludes, auditStore } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getCommanderGradeLevel } from "@/types";
@@ -51,6 +51,19 @@ export default function NewCasePage() {
   const [statuteAck, setStatuteAck] = useState(false);
 
   const [detailsOpen, setDetailsOpen] = useState<Record<number, boolean>>({});
+
+  const [evidenceItems, setEvidenceItems] = useState<{ type: string; description: string; dateReceived: string; source: string }[]>([]);
+  function addEvidenceItem() {
+    setEvidenceItems([...evidenceItems, { type: "", description: "", dateReceived: "", source: "" }]);
+  }
+  function updateEvidenceItem(idx: number, field: string, value: string) {
+    const updated = [...evidenceItems];
+    updated[idx] = { ...updated[idx], [field]: value };
+    setEvidenceItems(updated);
+  }
+  function removeEvidenceItem(idx: number) {
+    setEvidenceItems(evidenceItems.filter((_, i) => i !== idx));
+  }
 
   const [offenses, setOffenses] = useState<OffenseInput[]>([{
     ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offensePlace: "",
@@ -130,6 +143,18 @@ export default function NewCasePage() {
         offenses: offenseRecords,
         victims: victimRecords,
       });
+      // Add pre-initiation evidence items
+      for (const ev of evidenceItems.filter((e) => e.type || e.description)) {
+        await casesStore.addEvidence(njpCase.id, {
+          evidenceType: ev.type,
+          description: ev.description,
+          dateReceived: ev.dateReceived,
+          source: ev.source,
+          preInitiation: true,
+          addedBy: session.userId,
+          addedByName: session.username,
+        });
+      }
       await auditStore.append({
         caseId: njpCase.id, caseNumber, userId: session.userId,
         userRole: session.role, userName: session.username,
@@ -341,6 +366,57 @@ export default function NewCasePage() {
                       </select>
                     </div>
                   ))}
+                </div>
+              </div>
+            ))}
+          </Section>
+
+          {/* Evidence Checklist */}
+          <Section title="Pre-Initiation Evidence" action={
+            <button type="button" onClick={addEvidenceItem} className="btn-ghost text-xs gap-1">
+              <Plus size={14} /> Add Evidence
+            </button>
+          }>
+            <p className="text-xs text-neutral-mid mb-3 flex items-center gap-1">
+              <FileText size={12} /> Document evidence collected before initiating NJP. Items can be updated after case creation.
+            </p>
+            {evidenceItems.length === 0 && (
+              <p className="text-sm text-neutral-mid py-4 text-center">No evidence items added yet.</p>
+            )}
+            {evidenceItems.map((ev, ei) => (
+              <div key={ei} className="border border-border rounded-lg p-4 mb-3">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium flex items-center gap-1">
+                    <FileText size={14} className="text-primary" /> Evidence {ei + 1}
+                  </h4>
+                  <button type="button" onClick={() => removeEvidenceItem(ei)} className="text-error text-xs hover:underline flex items-center gap-1">
+                    <Trash2 size={12} /> Remove
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="Type">
+                    <select className="input-field" value={ev.type} onChange={(e) => updateEvidenceItem(ei, "type", e.target.value)}>
+                      <option value="">Select type</option>
+                      <option value="WITNESS_STATEMENT">Witness Statement</option>
+                      <option value="PHYSICAL_EVIDENCE">Physical Evidence</option>
+                      <option value="DOCUMENTARY">Documentary Evidence</option>
+                      <option value="DIGITAL_EVIDENCE">Digital Evidence</option>
+                      <option value="PHOTOGRAPHS">Photographs/Video</option>
+                      <option value="MEDICAL_RECORDS">Medical Records</option>
+                      <option value="SERVICE_RECORDS">Service Records</option>
+                      <option value="LAW_ENFORCEMENT">Law Enforcement Report</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </Field>
+                  <Field label="Date Received">
+                    <input type="date" className="input-field" value={ev.dateReceived} onChange={(e) => updateEvidenceItem(ei, "dateReceived", e.target.value)} />
+                  </Field>
+                  <Field label="Source">
+                    <input className="input-field" value={ev.source} onChange={(e) => updateEvidenceItem(ei, "source", e.target.value)} placeholder="e.g., SSgt Smith, PMO, medical" />
+                  </Field>
+                  <Field label="Description">
+                    <input className="input-field" value={ev.description} onChange={(e) => updateEvidenceItem(ei, "description", e.target.value)} placeholder="Brief description of evidence" />
+                  </Field>
                 </div>
               </div>
             ))}
