@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { usersStore } from "@/lib/db";
 import { verifyPassword, signToken, seedDefaultUser } from "@/lib/auth";
 import type { UserRole } from "@/types";
 
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({ where: { username } });
+    const user = usersStore.findByUsername(username);
     if (!user) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
@@ -34,10 +34,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Update last login
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLogin: new Date() },
-    });
+    usersStore.update(user.id, { lastLogin: new Date().toISOString() });
 
     const response = NextResponse.json({
       user: {

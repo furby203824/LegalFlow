@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { casesStore, auditStore, caseWithIncludes } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import {
   generateChargeSheet,
@@ -23,27 +23,16 @@ export async function GET(
     const type = searchParams.get("type");
     const version = searchParams.get("version") as Navmc10132Version | null;
 
-    const njpCase = await prisma.case.findUnique({
-      where: { id },
-      include: {
-        accused: true,
-        offenses: { include: { victims: true }, orderBy: { offenseLetter: "asc" } },
-        punishmentRecord: true,
-        signatures: true,
-        appealRecord: true,
-        item21Entries: { orderBy: { entrySequence: "asc" } },
-        vacationRecordsAsParent: { orderBy: { createdAt: "desc" } },
-        remedialActions: { orderBy: { createdAt: "desc" } },
-      },
-    });
-
-    if (!njpCase) {
+    const rawCase = casesStore.findById(id);
+    if (!rawCase) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
 
+    const njpCase = caseWithIncludes(rawCase);
+
     // Helper to find signatures by item number
     const sig = (item: string) =>
-      njpCase.signatures.find((s) => s.itemNumber === item);
+      (njpCase.signatures || []).find((s: { itemNumber: string }) => s.itemNumber === item);
 
     const sig2 = sig("2");
     const sig3 = sig("3");
@@ -53,10 +42,13 @@ export async function GET(
     const sig16 = sig("16");
 
     const appeal = njpCase.appealRecord;
-    const vacation = njpCase.vacationRecordsAsParent[0];
-    const remedial = njpCase.remedialActions.find(
-      (ra) => ra.mmrpNotificationRequired && !ra.mmrpNotificationSent
-    ) || njpCase.remedialActions[0];
+    const vacation = (njpCase.vacationRecordsAsParent || [])[0];
+    const remedial = (njpCase.remedialActions || []).find(
+      (ra: { mmrpNotificationRequired: boolean; mmrpNotificationSent: boolean }) =>
+        ra.mmrpNotificationRequired && !ra.mmrpNotificationSent
+    ) || (njpCase.remedialActions || [])[0];
+
+    const pr = njpCase.punishmentRecord;
 
     const caseData: CaseData = {
       caseNumber: njpCase.caseNumber,
@@ -71,33 +63,33 @@ export async function GET(
       accusedEdipi: njpCase.accused.edipi,
       accusedUnit: njpCase.accused.unitFullString,
       accusedUnitGcmca: njpCase.accused.unitFullString,
-      component: njpCase.component,
+      component: rawCase.component,
 
       // NJP Authority
-      njpAuthorityName: njpCase.njpAuthorityName || undefined,
-      njpAuthorityTitle: njpCase.njpAuthorityTitle || undefined,
-      njpAuthorityUnit: njpCase.njpAuthorityUnit || undefined,
-      njpAuthorityRank: njpCase.njpAuthorityRank || undefined,
-      njpAuthorityGrade: njpCase.njpAuthorityGrade || undefined,
-      commanderGradeLevel: njpCase.commanderGradeLevel as CommanderGradeLevel,
+      njpAuthorityName: rawCase.njpAuthorityName || undefined,
+      njpAuthorityTitle: rawCase.njpAuthorityTitle || undefined,
+      njpAuthorityUnit: rawCase.njpAuthorityUnit || undefined,
+      njpAuthorityRank: rawCase.njpAuthorityRank || undefined,
+      njpAuthorityGrade: rawCase.njpAuthorityGrade || undefined,
+      commanderGradeLevel: rawCase.commanderGradeLevel as CommanderGradeLevel,
 
-      vesselException: njpCase.vesselException,
+      vesselException: rawCase.vesselException,
 
       // Offenses
-      offenses: njpCase.offenses.map((o) => ({
-        letter: o.offenseLetter,
-        ucmjArticle: o.ucmjArticle,
-        offenseType: o.offenseType,
-        summary: o.offenseSummary,
-        offenseDate: o.offenseDate,
-        offensePlace: o.offensePlace,
-        finding: o.finding || undefined,
-        victims: o.victims.map((v) => ({
-          letter: v.victimLetter,
-          status: v.victimStatus || "Unknown",
-          sex: v.victimSex || "Unknown",
-          race: v.victimRace || "Unknown",
-          ethnicity: v.victimEthnicity || "Unknown",
+      offenses: (njpCase.offenses || []).map((o: Record<string, unknown>) => ({
+        letter: o.offenseLetter as string,
+        ucmjArticle: o.ucmjArticle as string,
+        offenseType: o.offenseType as string,
+        summary: o.offenseSummary as string,
+        offenseDate: o.offenseDate as string,
+        offensePlace: o.offensePlace as string,
+        finding: (o.finding as string) || undefined,
+        victims: ((o.victims || []) as Record<string, unknown>[]).map((v) => ({
+          letter: (v.victimLetter as string) || "",
+          status: (v.victimStatus as string) || "Unknown",
+          sex: (v.victimSex as string) || "Unknown",
+          race: (v.victimRace as string) || "Unknown",
+          ethnicity: (v.victimEthnicity as string) || "Unknown",
         })),
       })),
 
@@ -114,31 +106,29 @@ export async function GET(
       item3SignerName: sig3?.signerName || undefined,
 
       // Item 4
-      uaApplicable: njpCase.uaApplicable,
-      uaPeriodStart: njpCase.uaPeriodStart || undefined,
-      uaPeriodEnd: njpCase.uaPeriodEnd || undefined,
-      desertionMarks: njpCase.desertionMarks || undefined,
+      uaApplicable: rawCase.uaApplicable || false,
+      uaPeriodStart: rawCase.uaPeriodStart || undefined,
+      uaPeriodEnd: rawCase.uaPeriodEnd || undefined,
+      desertionMarks: rawCase.desertionMarks || undefined,
 
       // Item 6
-      item6Punishments: njpCase.punishmentRecord
-        ? buildPunishmentList(njpCase.punishmentRecord)
-        : [],
-      item6Date: njpCase.njpDate || undefined,
-      punishmentText: njpCase.punishmentRecord?.punishmentText || undefined,
+      item6Punishments: pr ? buildPunishmentList(pr) : [],
+      item6Date: rawCase.njpDate || undefined,
+      punishmentText: pr?.punishmentText || undefined,
 
       // Item 7
-      item7SuspensionDetails: njpCase.punishmentRecord?.suspensionText || undefined,
-      item7SuspensionMonths: njpCase.punishmentRecord?.suspensionMonths || undefined,
-      item7SuspensionStartDate: njpCase.punishmentRecord?.suspensionStartDate || undefined,
-      item7SuspensionEndDate: njpCase.punishmentRecord?.suspensionEndDate || undefined,
-      item7RemissionTerms: njpCase.punishmentRecord?.suspensionRemissionTerms || undefined,
+      item7SuspensionDetails: pr?.suspensionText || undefined,
+      item7SuspensionMonths: pr?.suspensionMonths || undefined,
+      item7SuspensionStartDate: pr?.suspensionStartDate || undefined,
+      item7SuspensionEndDate: pr?.suspensionEndDate || undefined,
+      item7RemissionTerms: pr?.suspensionRemissionTerms || undefined,
 
       // Item 9
       item9SignedDate: sig9?.signedDate || undefined,
       item9SignerName: sig9?.signerName || undefined,
 
       // Item 10
-      dateNoticeToAccused: njpCase.dateNoticeToAccused || undefined,
+      dateNoticeToAccused: rawCase.dateNoticeToAccused || undefined,
 
       // Item 11
       item11SignedDate: sig11?.signedDate || undefined,
@@ -150,8 +140,8 @@ export async function GET(
       item12SignerName: sig12?.signerName || undefined,
 
       // Item 13
-      appealNotFiled: njpCase.appealNotFiled,
-      appealFiledDate: appeal?.appealFiledDate || njpCase.appealFiledDate || undefined,
+      appealNotFiled: rawCase.appealNotFiled || false,
+      appealFiledDate: appeal?.appealFiledDate || rawCase.appealFiledDate || undefined,
 
       // Item 14
       appealAuthorityName: appeal?.appealAuthorityName || undefined,
@@ -161,23 +151,23 @@ export async function GET(
       appealOutcomeDetail: appeal?.appealOutcomeDetail || undefined,
 
       // Item 15
-      dateNoticeAppealDecision: njpCase.dateNoticeAppealDecision || undefined,
-      accusedTransferred: njpCase.accusedTransferred,
+      dateNoticeAppealDecision: rawCase.dateNoticeAppealDecision || undefined,
+      accusedTransferred: rawCase.accusedTransferred || false,
 
       // Item 16
-      item16SignedDate: njpCase.item16SignedDate || sig16?.signedDate || undefined,
-      item16UdNumber: njpCase.item16UdNumber || undefined,
-      item16Dtd: njpCase.item16Dtd || undefined,
+      item16SignedDate: rawCase.item16SignedDate || sig16?.signedDate || undefined,
+      item16UdNumber: rawCase.item16UdNumber || undefined,
+      item16Dtd: rawCase.item16Dtd || undefined,
       item16SignerName: sig16?.signerName || undefined,
 
       // Item 21
-      item21Entries: njpCase.item21Entries.map((e) => ({
-        entryDate: e.entryDate,
-        entryText: e.entryText,
+      item21Entries: (njpCase.item21Entries || []).map((e: Record<string, unknown>) => ({
+        entryDate: e.entryDate as string,
+        entryText: e.entryText as string,
       })),
 
       // NJP date
-      njpDate: njpCase.njpDate || undefined,
+      njpDate: rawCase.njpDate || undefined,
 
       // Vacation record
       vacationRecord: vacation
@@ -246,7 +236,6 @@ export async function GET(
     };
 
     if (type === "navmc_10132" && version === "FINAL") {
-      // Generate 4 distribution copies
       const distributions = [
         { suffix: "E-SRB", flags: { esrb: true } },
         { suffix: "OMPF", flags: { ompf: true } },
@@ -269,24 +258,21 @@ export async function GET(
       );
     }
 
-    await prisma.auditLog.create({
-      data: {
-        caseId: id,
-        tableName: "documents",
-        recordId: id,
-        action: "GENERATE",
-        userId: user.userId,
-        userRole: user.role,
-        userName: user.username,
-        notes: `Generated ${type}${version ? ` (${version})` : ""}`,
-      },
+    auditStore.append({
+      caseId: id,
+      caseNumber: rawCase.caseNumber,
+      userId: user.userId,
+      userRole: user.role,
+      userName: user.username,
+      action: "GENERATE",
+      notes: `Generated ${type}${version ? ` (${version})` : ""}`,
     });
 
     return NextResponse.json({
       document,
       type,
       version: version || undefined,
-      caseNumber: njpCase.caseNumber,
+      caseNumber: rawCase.caseNumber,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
@@ -296,65 +282,51 @@ export async function GET(
 }
 
 // Convert flat punishment record to array for document generation
-function buildPunishmentList(pr: {
-  corrCustodyDays: number | null;
-  forfeitureAmount: number | null;
-  forfeitureMonths: number | null;
-  reductionImposed: boolean;
-  reductionToGrade: string | null;
-  reductionToRank: string | null;
-  reductionFromGrade: string | null;
-  extraDutiesDays: number | null;
-  restrictionDays: number | null;
-  arrestQuartersDays: number | null;
-  detentionDays: number | null;
-  suspensionImposed: boolean;
-  suspensionMonths: number | null;
-  suspensionPunishment: string | null;
-}): CaseData["item6Punishments"] {
+function buildPunishmentList(pr: Record<string, unknown>): CaseData["item6Punishments"] {
   const list: CaseData["item6Punishments"] = [];
 
   if (pr.corrCustodyDays) {
-    list.push({ type: "CORRECTIONAL_CUSTODY", duration: pr.corrCustodyDays, suspended: false });
+    list.push({ type: "CORRECTIONAL_CUSTODY", duration: pr.corrCustodyDays as number, suspended: false });
   }
   if (pr.forfeitureAmount) {
     list.push({
       type: "FORFEITURE",
-      amount: pr.forfeitureAmount,
-      months: pr.forfeitureMonths || undefined,
+      amount: pr.forfeitureAmount as number,
+      months: (pr.forfeitureMonths as number) || undefined,
       suspended: false,
     });
   }
   if (pr.reductionImposed) {
     list.push({
       type: "REDUCTION",
-      reducedToGrade: pr.reductionToGrade || undefined,
-      reducedToRank: pr.reductionToRank || undefined,
-      reducedFromGrade: pr.reductionFromGrade || undefined,
+      reducedToGrade: (pr.reductionToGrade as string) || undefined,
+      reducedToRank: (pr.reductionToRank as string) || undefined,
+      reducedFromGrade: (pr.reductionFromGrade as string) || undefined,
       suspended: false,
     });
   }
   if (pr.extraDutiesDays) {
-    list.push({ type: "EXTRA_DUTIES", duration: pr.extraDutiesDays, suspended: false });
+    list.push({ type: "EXTRA_DUTIES", duration: pr.extraDutiesDays as number, suspended: false });
   }
   if (pr.restrictionDays) {
-    list.push({ type: "RESTRICTION", duration: pr.restrictionDays, suspended: false });
+    list.push({ type: "RESTRICTION", duration: pr.restrictionDays as number, suspended: false });
   }
   if (pr.arrestQuartersDays) {
-    list.push({ type: "ARREST_IN_QUARTERS", duration: pr.arrestQuartersDays, suspended: false });
+    list.push({ type: "ARREST_IN_QUARTERS", duration: pr.arrestQuartersDays as number, suspended: false });
   }
   if (pr.detentionDays) {
-    list.push({ type: "DETENTION_OF_PAY", duration: pr.detentionDays, suspended: false });
+    list.push({ type: "DETENTION_OF_PAY", duration: pr.detentionDays as number, suspended: false });
   }
 
   // Mark suspended punishment
   if (pr.suspensionImposed && pr.suspensionPunishment) {
+    const suspPunishment = (pr.suspensionPunishment as string).toLowerCase();
     const idx = list.findIndex((p) =>
-      pr.suspensionPunishment!.toLowerCase().includes(p.type.toLowerCase().replace(/_/g, " "))
+      suspPunishment.includes(p.type.toLowerCase().replace(/_/g, " "))
     );
     if (idx >= 0) {
       list[idx].suspended = true;
-      list[idx].suspensionMonths = pr.suspensionMonths || undefined;
+      list[idx].suspensionMonths = (pr.suspensionMonths as number) || undefined;
     }
   }
 

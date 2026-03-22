@@ -1,31 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { usersStore } from "@/lib/db";
 import { requireAuth, hashPassword } from "@/lib/auth";
 
 export async function GET() {
   try {
     await requireAuth("SUITE_ADMIN");
 
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        unitId: true,
-        edipi: true,
-        rank: true,
-        grade: true,
-        email: true,
-        isActive: true,
-        createdAt: true,
-        unit: {
-          select: { unitName: true, unitAbbreviation: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const users = usersStore.findAll().map((u) => ({
+      id: u.id,
+      username: u.username,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      role: u.role,
+      unitId: u.unitId,
+      edipi: u.edipi || null,
+      rank: u.rank || null,
+      grade: u.grade || null,
+      email: u.email || null,
+      isActive: u.isActive ?? true,
+      createdAt: u.createdAt,
+      unit: u.unitName
+        ? { unitName: u.unitName, unitAbbreviation: u.unitAbbreviation || null }
+        : null,
+    }));
 
     return NextResponse.json({ users });
   } catch (error) {
@@ -49,41 +46,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existing = await prisma.user.findUnique({ where: { username } });
+    const existing = usersStore.findByUsername(username);
     if (existing) {
       return NextResponse.json({ error: "Username already exists" }, { status: 409 });
     }
 
-    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    const existingEmail = usersStore.findByEmail(email);
     if (existingEmail) {
       return NextResponse.json({ error: "Email already exists" }, { status: 409 });
     }
 
-    const user = await prisma.user.create({
-      data: {
-        username,
-        passwordHash: await hashPassword(password),
-        firstName,
-        lastName,
-        email,
-        role,
-        unitId,
-        edipi: edipi || null,
-        rank: rank || null,
-        grade: grade || null,
-      },
-      select: {
-        id: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        unitId: true,
-        email: true,
-      },
+    const user = usersStore.create({
+      username,
+      passwordHash: await hashPassword(password),
+      firstName,
+      lastName,
+      email,
+      role,
+      unitId,
+      edipi: edipi || null,
+      rank: rank || null,
+      grade: grade || null,
     });
 
-    return NextResponse.json({ user }, { status: 201 });
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        unitId: user.unitId,
+        email: user.email,
+      },
+    }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     const status = message.includes("permission") || message.includes("Authentication") ? 403 : 500;

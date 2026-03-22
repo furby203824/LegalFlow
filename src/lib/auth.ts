@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
-import { prisma } from "./db";
+import { usersStore } from "./db";
 import type { UserRole } from "@/types";
 
 const JWT_SECRET = process.env.JWT_SECRET || "legalflow-dev-secret";
@@ -56,36 +56,19 @@ export async function requireAuth(
   return user;
 }
 
-// Seed default admin user and unit if none exists
+// Seed default admin user if none exists
 export async function seedDefaultUser() {
-  const existing = await prisma.user.findFirst({
-    where: { role: "SUITE_ADMIN" },
-  });
+  const existing = usersStore.findFirst((u) => u.role === "SUITE_ADMIN");
   if (!existing) {
-    // Create a default unit first
-    let defaultUnit = await prisma.unit.findFirst({
-      where: { unitAbbreviation: "HQ" },
-    });
-    if (!defaultUnit) {
-      defaultUnit = await prisma.unit.create({
-        data: {
-          unitName: "Headquarters",
-          unitAbbreviation: "HQ",
-          unitFullString: "Headquarters, LegalFlow",
-        },
-      });
-    }
-
-    await prisma.user.create({
-      data: {
-        username: "admin",
-        passwordHash: await hashPassword("admin"),
-        firstName: "System",
-        lastName: "Admin",
-        email: "admin@legalflow.local",
-        role: "SUITE_ADMIN",
-        unitId: defaultUnit.id,
-      },
+    usersStore.create({
+      username: "admin",
+      passwordHash: await hashPassword("admin"),
+      firstName: "System",
+      lastName: "Admin",
+      email: "admin@legalflow.local",
+      role: "SUITE_ADMIN",
+      unitId: "unit-hq",
+      unitName: "Headquarters, LegalFlow",
     });
   }
 }

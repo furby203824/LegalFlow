@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { casesStore, auditStore } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import {
   vrR2005,
@@ -17,7 +17,6 @@ import {
   applyAbbreviations,
 } from "@/lib/validation";
 import type { Grade, CommanderGradeLevel } from "@/types";
-import { createVersionedDocument } from "@/lib/documents";
 
 // POST /api/cases/[id]/phase - Advance case through phases
 export async function POST(
@@ -30,67 +29,52 @@ export async function POST(
     const body = await req.json();
     const { action, data } = body;
 
-    const njpCase = await prisma.case.findUnique({
-      where: { id },
-      include: {
-        accused: true,
-        offenses: true,
-        punishmentRecord: true,
-        appealRecord: true,
-        signatures: true,
-      },
-    });
-
-    if (!njpCase) {
+    const njpCaseOrNull = casesStore.findById(id);
+    if (!njpCaseOrNull) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
+    const njpCase = njpCaseOrNull;
 
     if (njpCase.formLocked) {
       return NextResponse.json({ error: "Case form is locked" }, { status: 400 });
     }
 
     // Helper to get signed item numbers
-    const signedItems = njpCase.signatures.map((s) => s.itemNumber);
+    const signedItems = (njpCase.signatures || []).map((s: { itemNumber: string }) => s.itemNumber);
 
     // Helper to create audit log
-    async function audit(actionType: string, notes?: string, field?: string, oldVal?: string, newVal?: string) {
-      await prisma.auditLog.create({
-        data: {
-          caseId: id,
-          tableName: "cases",
-          recordId: id,
-          action: actionType,
-          userId: user.userId,
-          userRole: user.role,
-          userName: user.username,
-          fieldName: field,
-          oldValue: oldVal,
-          newValue: newVal,
-          notes,
-        },
+    function audit(actionType: string, notes?: string, field?: string, oldVal?: string, newVal?: string) {
+      auditStore.append({
+        caseId: id,
+        caseNumber: njpCase.caseNumber,
+        userId: user.userId,
+        userRole: user.role,
+        userName: user.username,
+        action: actionType,
+        field,
+        oldValue: oldVal,
+        newValue: newVal,
+        notes,
       });
     }
 
     // Helper to create signature
-    async function createSignature(itemNumber: string, signerName: string, opts?: {
+    function createSignature(itemNumber: string, signerName: string, opts?: {
       refusalNoted?: boolean;
       coSignedInstead?: boolean;
       method?: string;
     }) {
       const itemsLocked = getLockedItems([...signedItems, itemNumber]);
-      await prisma.signature.create({
-        data: {
-          caseId: id,
-          itemNumber,
-          signerRole: user.role,
-          signerUserId: user.userId,
-          signerName,
-          signedDate: new Date().toISOString().split("T")[0],
-          signatureMethod: opts?.method || "ELECTRONIC",
-          refusalNoted: opts?.refusalNoted || false,
-          coSignedInstead: opts?.coSignedInstead || false,
-          itemsLocked: JSON.stringify(itemsLocked),
-        },
+      casesStore.addSignature(id, {
+        itemNumber,
+        signerRole: user.role,
+        signerUserId: user.userId,
+        signerName,
+        signedDate: new Date().toISOString().split("T")[0],
+        signatureMethod: opts?.method || "ELECTRONIC",
+        refusalNoted: opts?.refusalNoted || false,
+        coSignedInstead: opts?.coSignedInstead || false,
+        itemsLocked: JSON.stringify(itemsLocked),
       });
     }
 
@@ -103,44 +87,34 @@ export async function POST(
 
         // If demands court-martial and no vessel exception
         if ((!acceptsNjp || refusedToSign) && !njpCase.vesselException) {
-          await createSignature("2", signerName || user.username, {
+          createSignature("2", signerName || user.username, {
             refusalNoted: refusedToSign,
             coSignedInstead: refusedToSign,
           });
 
-          await prisma.case.update({
-            where: { id },
-            data: {
-              status: "REFERRED_COURT_MARTIAL",
-              currentPhase: "RIGHTS_ADVISEMENT",
-            },
+          casesStore.update(id, {
+            status: "REFERRED_COURT_MARTIAL",
+            currentPhase: "RIGHTS_ADVISEMENT",
           });
 
-          await audit("SIGN", "Item 2 signed - court-martial demanded or refused");
+          audit("SIGN", "Item 2 signed - court-martial demanded or refused");
           return NextResponse.json({
             message: "Case referred to court-martial jurisdiction",
             status: "REFERRED_COURT_MARTIAL",
           });
         }
 
-        await createSignature("2", signerName || user.username);
+        createSignature("2", signerName || user.username);
 
-        await prisma.case.update({
-          where: { id },
-          data: { currentPhase: "RIGHTS_ADVISEMENT" },
-        });
+        casesStore.update(id, { currentPhase: "RIGHTS_ADVISEMENT" });
 
         // Lock offenses and victims
-        await prisma.offense.updateMany({
-          where: { caseId: id },
-          data: { locked: true },
-        });
-        await prisma.victim.updateMany({
-          where: { caseId: id },
-          data: { locked: true },
-        });
+        const updatedCase = casesStore.findById(id)!;
+        const lockedOffenses = (updatedCase.offenses || []).map((o: Record<string, unknown>) => ({ ...o, locked: true }));
+        const lockedVictims = (updatedCase.victims || []).map((v: Record<string, unknown>) => ({ ...v, locked: true }));
+        casesStore.update(id, { offenses: lockedOffenses, victims: lockedVictims });
 
-        await audit("SIGN", "Item 2 signed - NJP accepted");
+        audit("SIGN", "Item 2 signed - NJP accepted");
         return NextResponse.json({ message: "Item 2 signed successfully" });
       }
 
@@ -150,17 +124,14 @@ export async function POST(
         }
 
         const { signerName } = data;
-        await createSignature("3", signerName || user.username);
+        createSignature("3", signerName || user.username);
 
-        await prisma.case.update({
-          where: { id },
-          data: {
-            status: "RIGHTS_ADVISED",
-            currentPhase: "RIGHTS_ADVISEMENT",
-          },
+        casesStore.update(id, {
+          status: "RIGHTS_ADVISED",
+          currentPhase: "RIGHTS_ADVISEMENT",
         });
 
-        await audit("SIGN", "Item 3 signed - rights advisement complete");
+        audit("SIGN", "Item 3 signed - rights advisement complete");
         return NextResponse.json({ message: "Item 3 signed. Rights advisement complete." });
       }
 
@@ -172,20 +143,17 @@ export async function POST(
           return NextResponse.json({ error: "Rights advisement must be completed first" }, { status: 400 });
         }
 
-        const { findings } = data; // Array of { offenseId, finding: "G" | "NG" }
+        const { findings } = data;
+        const updatedOffenses = [...(njpCase.offenses || [])];
         for (const f of findings) {
-          await prisma.offense.update({
-            where: { id: f.offenseId },
-            data: { finding: f.finding },
-          });
+          const oIdx = updatedOffenses.findIndex((o: { id: string }) => o.id === f.offenseId);
+          if (oIdx >= 0) {
+            updatedOffenses[oIdx] = { ...updatedOffenses[oIdx], finding: f.finding };
+          }
         }
+        casesStore.update(id, { offenses: updatedOffenses, currentPhase: "HEARING" });
 
-        await prisma.case.update({
-          where: { id },
-          data: { currentPhase: "HEARING" },
-        });
-
-        await audit("UPDATE", "Findings entered");
+        audit("UPDATE", "Findings entered");
         return NextResponse.json({ message: "Findings entered" });
       }
 
@@ -198,16 +166,13 @@ export async function POST(
 
         // No punishment - destroy case
         if (noPunishment) {
-          await prisma.case.update({
-            where: { id },
-            data: { status: "DESTROYED", njpDate: punishment?.punishmentDate },
-          });
-          await audit("UPDATE", "Case destroyed - no punishment imposed");
+          casesStore.update(id, { status: "DESTROYED", njpDate: punishment?.punishmentDate });
+          audit("UPDATE", "Case destroyed - no punishment imposed");
           return NextResponse.json({ message: "Case destroyed - no punishment imposed" });
         }
 
         // Validate Item 3 date
-        const item3Sig = njpCase.signatures.find((s) => s.itemNumber === "3");
+        const item3Sig = (njpCase.signatures || []).find((s: { itemNumber: string }) => s.itemNumber === "3");
         const item3Date = item3Sig?.signedDate;
         const item3Error = vrR2005(item3Date || undefined, punishment.punishmentDate);
         if (item3Error) {
@@ -218,16 +183,16 @@ export async function POST(
         const pErrors = validatePunishment(
           punishment,
           njpCase.commanderGradeLevel as CommanderGradeLevel,
-          njpCase.accused.grade as Grade
+          njpCase.accusedGrade as Grade
         );
         if (pErrors.length > 0) {
-          return NextResponse.json({ errors: pErrors.map((e) => e.message) }, { status: 400 });
+          return NextResponse.json({ errors: pErrors.map((e: { message: string }) => e.message) }, { status: 400 });
         }
 
         // Check JA review thresholds
         const jaThresholds = vrR3010(
           punishment,
-          njpCase.accused.grade as Grade
+          njpCase.accusedGrade as Grade
         );
 
         // Build punishment text
@@ -243,7 +208,6 @@ export async function POST(
         if (punishment.arrestQuartersDays) parts.push(`Arrest in quarters for ${punishment.arrestQuartersDays} days`);
         if (punishment.detentionDays) parts.push(`Detention of pay for ${punishment.detentionDays} days`);
         if (punishment.admonitionReprimand) parts.push(punishment.admonitionType || "Admonition/Reprimand");
-        // VR-CV-003: Apply approved abbreviations
         const punishmentText = applyAbbreviations(parts.join("; ") + `. ${punishment.punishmentDate}.`);
 
         // Suspension
@@ -257,137 +221,64 @@ export async function POST(
           suspensionText = `${punishment.suspensionPunishment} suspended for ${punishment.suspensionMonths} months.`;
         }
 
-        // Upsert punishment record
-        await prisma.punishmentRecord.upsert({
-          where: { caseId: id },
-          update: {
-            corrCustodyDays: punishment.corrCustodyDays || null,
-            forfeitureAmount: punishment.forfeitureAmount || null,
-            forfeitureMonths: punishment.forfeitureMonths || null,
-            forfeitureTotal: punishment.forfeitureAmount && punishment.forfeitureMonths
-              ? punishment.forfeitureAmount * punishment.forfeitureMonths : null,
-            smcrDrillPay: punishment.smcrDrillPay || null,
-            smcrDrills60Days: punishment.smcrDrills60Days || null,
-            smcrAdBasicPay: punishment.smcrAdBasicPay || null,
-            smcrAdDays60: punishment.smcrAdDays60 || null,
-            smcr60DayStart: punishment.smcr60DayStart || null,
-            smcrMaxForfeiture: punishment.smcrMaxForfeiture || null,
-            reductionImposed: punishment.reductionImposed || false,
-            reductionFromRank: punishment.reductionImposed ? njpCase.accused.rank : null,
-            reductionFromGrade: punishment.reductionImposed ? njpCase.accused.grade : null,
-            reductionToRank: punishment.reductionToRank || null,
-            reductionToGrade: punishment.reductionToGrade || null,
-            extraDutiesDays: punishment.extraDutiesDays || null,
-            restrictionDays: punishment.restrictionDays || null,
-            restrictionLocation: punishment.restrictionLocation || null,
-            arrestQuartersDays: punishment.arrestQuartersDays || null,
-            detentionDays: punishment.detentionDays || null,
-            detentionAmount: punishment.detentionAmount || null,
-            admonitionReprimand: punishment.admonitionReprimand || false,
-            admonitionType: punishment.admonitionType || null,
-            punishmentText,
-            punishmentDate: punishment.punishmentDate,
-            suspensionImposed: punishment.suspensionImposed || false,
-            suspensionPunishment: punishment.suspensionPunishment || null,
-            suspensionMonths: punishment.suspensionMonths || null,
-            suspensionStartDate: punishment.suspensionImposed ? punishment.punishmentDate : null,
-            suspensionEndDate,
-            suspensionRemissionTerms: punishment.suspensionImposed
-              ? "unless sooner vacated, will be remitted without further action."
-              : null,
-            suspensionText,
-            suspensionStatus: punishment.suspensionImposed ? "ACTIVE" : "NONE",
-            jaThresholdArrestQuarters: jaThresholds.thresholds.arrestQuarters,
-            jaThresholdCorrCustody: jaThresholds.thresholds.corrCustody,
-            jaThresholdForfeiture: jaThresholds.thresholds.forfeiture,
-            jaThresholdReduction: jaThresholds.thresholds.reduction,
-            jaThresholdExtraDuties: jaThresholds.thresholds.extraDuties,
-            jaThresholdRestriction: jaThresholds.thresholds.restriction,
-            jaThresholdDetention: jaThresholds.thresholds.detention,
-            anyJaThresholdMet: jaThresholds.anyMet,
-          },
-          create: {
-            caseId: id,
-            corrCustodyDays: punishment.corrCustodyDays || null,
-            forfeitureAmount: punishment.forfeitureAmount || null,
-            forfeitureMonths: punishment.forfeitureMonths || null,
-            forfeitureTotal: punishment.forfeitureAmount && punishment.forfeitureMonths
-              ? punishment.forfeitureAmount * punishment.forfeitureMonths : null,
-            smcrDrillPay: punishment.smcrDrillPay || null,
-            smcrDrills60Days: punishment.smcrDrills60Days || null,
-            smcrAdBasicPay: punishment.smcrAdBasicPay || null,
-            smcrAdDays60: punishment.smcrAdDays60 || null,
-            smcr60DayStart: punishment.smcr60DayStart || null,
-            smcrMaxForfeiture: punishment.smcrMaxForfeiture || null,
-            reductionImposed: punishment.reductionImposed || false,
-            reductionFromRank: punishment.reductionImposed ? njpCase.accused.rank : null,
-            reductionFromGrade: punishment.reductionImposed ? njpCase.accused.grade : null,
-            reductionToRank: punishment.reductionToRank || null,
-            reductionToGrade: punishment.reductionToGrade || null,
-            extraDutiesDays: punishment.extraDutiesDays || null,
-            restrictionDays: punishment.restrictionDays || null,
-            restrictionLocation: punishment.restrictionLocation || null,
-            arrestQuartersDays: punishment.arrestQuartersDays || null,
-            detentionDays: punishment.detentionDays || null,
-            detentionAmount: punishment.detentionAmount || null,
-            admonitionReprimand: punishment.admonitionReprimand || false,
-            admonitionType: punishment.admonitionType || null,
-            punishmentText,
-            punishmentDate: punishment.punishmentDate,
-            suspensionImposed: punishment.suspensionImposed || false,
-            suspensionPunishment: punishment.suspensionPunishment || null,
-            suspensionMonths: punishment.suspensionMonths || null,
-            suspensionStartDate: punishment.suspensionImposed ? punishment.punishmentDate : null,
-            suspensionEndDate,
-            suspensionRemissionTerms: punishment.suspensionImposed
-              ? "unless sooner vacated, will be remitted without further action."
-              : null,
-            suspensionText,
-            suspensionStatus: punishment.suspensionImposed ? "ACTIVE" : "NONE",
-            jaThresholdArrestQuarters: jaThresholds.thresholds.arrestQuarters,
-            jaThresholdCorrCustody: jaThresholds.thresholds.corrCustody,
-            jaThresholdForfeiture: jaThresholds.thresholds.forfeiture,
-            jaThresholdReduction: jaThresholds.thresholds.reduction,
-            jaThresholdExtraDuties: jaThresholds.thresholds.extraDuties,
-            jaThresholdRestriction: jaThresholds.thresholds.restriction,
-            jaThresholdDetention: jaThresholds.thresholds.detention,
-            anyJaThresholdMet: jaThresholds.anyMet,
-          },
+        // Upsert punishment
+        casesStore.upsertPunishment(id, {
+          corrCustodyDays: punishment.corrCustodyDays || null,
+          forfeitureAmount: punishment.forfeitureAmount || null,
+          forfeitureMonths: punishment.forfeitureMonths || null,
+          forfeitureTotal: punishment.forfeitureAmount && punishment.forfeitureMonths
+            ? punishment.forfeitureAmount * punishment.forfeitureMonths : null,
+          smcrDrillPay: punishment.smcrDrillPay || null,
+          smcrDrills60Days: punishment.smcrDrills60Days || null,
+          smcrAdBasicPay: punishment.smcrAdBasicPay || null,
+          smcrAdDays60: punishment.smcrAdDays60 || null,
+          smcr60DayStart: punishment.smcr60DayStart || null,
+          smcrMaxForfeiture: punishment.smcrMaxForfeiture || null,
+          reductionImposed: punishment.reductionImposed || false,
+          reductionFromRank: punishment.reductionImposed ? njpCase.accusedRank : null,
+          reductionFromGrade: punishment.reductionImposed ? njpCase.accusedGrade : null,
+          reductionToRank: punishment.reductionToRank || null,
+          reductionToGrade: punishment.reductionToGrade || null,
+          reductionSuspendedOnly: punishment.reductionSuspendedOnly || false,
+          extraDutiesDays: punishment.extraDutiesDays || null,
+          restrictionDays: punishment.restrictionDays || null,
+          restrictionLocation: punishment.restrictionLocation || null,
+          restrictionWithSuspDuty: punishment.restrictionWithSuspDuty || false,
+          arrestQuartersDays: punishment.arrestQuartersDays || null,
+          detentionDays: punishment.detentionDays || null,
+          detentionAmount: punishment.detentionAmount || null,
+          admonitionReprimand: punishment.admonitionReprimand || false,
+          admonitionType: punishment.admonitionType || null,
+          punishmentText,
+          punishmentDate: punishment.punishmentDate,
+          suspensionImposed: punishment.suspensionImposed || false,
+          suspensionPunishment: punishment.suspensionPunishment || null,
+          suspensionMonths: punishment.suspensionMonths || null,
+          suspensionStartDate: punishment.suspensionImposed ? punishment.punishmentDate : null,
+          suspensionEndDate,
+          suspensionRemissionTerms: punishment.suspensionImposed
+            ? "unless sooner vacated, will be remitted without further action."
+            : null,
+          suspensionText,
+          suspensionStatus: punishment.suspensionImposed ? "ACTIVE" : "NONE",
+          jaThresholdArrestQuarters: jaThresholds.thresholds.arrestQuarters,
+          jaThresholdCorrCustody: jaThresholds.thresholds.corrCustody,
+          jaThresholdForfeiture: jaThresholds.thresholds.forfeiture,
+          jaThresholdReduction: jaThresholds.thresholds.reduction,
+          jaThresholdExtraDuties: jaThresholds.thresholds.extraDuties,
+          jaThresholdRestriction: jaThresholds.thresholds.restriction,
+          jaThresholdDetention: jaThresholds.thresholds.detention,
+          anyJaThresholdMet: jaThresholds.anyMet,
+          locked: false,
         });
 
         // Update case
-        await prisma.case.update({
-          where: { id },
-          data: {
-            njpDate: punishment.punishmentDate,
-            jaReviewRequired: jaThresholds.anyMet,
-          },
+        casesStore.update(id, {
+          njpDate: punishment.punishmentDate,
+          jaReviewRequired: jaThresholds.anyMet,
         });
 
-        // Create suspension monitor if applicable
-        if (punishment.suspensionImposed && suspensionEndDate) {
-          const pRecord = await prisma.punishmentRecord.findUnique({ where: { caseId: id } });
-          if (pRecord) {
-            await prisma.activeSuspensionMonitor.upsert({
-              where: { caseId: id },
-              update: {
-                suspensionStart: punishment.punishmentDate,
-                suspensionEnd: suspensionEndDate,
-                suspendedPunishment: punishment.suspensionPunishment || punishmentText,
-                monitorStatus: "ACTIVE",
-              },
-              create: {
-                caseId: id,
-                punishmentRecordId: pRecord.id,
-                suspensionStart: punishment.punishmentDate,
-                suspensionEnd: suspensionEndDate,
-                suspendedPunishment: punishment.suspensionPunishment || punishmentText,
-              },
-            });
-          }
-        }
-
-        await audit("UPDATE", "Punishment entered", "punishment", undefined, punishmentText);
+        audit("UPDATE", "Punishment entered", "punishment", undefined, punishmentText);
         return NextResponse.json({
           message: "Punishment entered",
           jaReviewRequired: jaThresholds.anyMet,
@@ -398,8 +289,8 @@ export async function POST(
         // VR-R3-013: Item 9 prerequisites
         const item9prereqs = vrR3013({
           item3Signed: signedItems.includes("3"),
-          allFindingsEntered: njpCase.offenses.every((o) => o.finding),
-          punishmentEntered: !!njpCase.punishmentRecord,
+          allFindingsEntered: (njpCase.offenses || []).every((o: { finding: string | null }) => o.finding),
+          punishmentEntered: !!njpCase.punishment,
         });
         if (item9prereqs) {
           return NextResponse.json({ error: item9prereqs.message, ruleId: item9prereqs.ruleId }, { status: 400 });
@@ -407,7 +298,6 @@ export async function POST(
 
         const { authorityName, authorityTitle, authorityUnit, authorityRank, authorityGrade, authorityEdipi } = data;
 
-        // VR-CV-001: Validate rank/grade if provided
         if (authorityRank || authorityGrade) {
           const cvCheck = vrCv001(authorityRank, authorityGrade);
           if (cvCheck) {
@@ -415,30 +305,24 @@ export async function POST(
           }
         }
 
-        await createSignature("9", authorityName || user.username);
+        createSignature("9", authorityName || user.username);
 
         // Lock punishment record
-        if (njpCase.punishmentRecord) {
-          await prisma.punishmentRecord.update({
-            where: { caseId: id },
-            data: { locked: true },
-          });
+        if (njpCase.punishment) {
+          casesStore.upsertPunishment(id, { locked: true });
         }
 
-        await prisma.case.update({
-          where: { id },
-          data: {
-            status: "PUNISHMENT_IMPOSED",
-            njpAuthorityName: authorityName,
-            njpAuthorityTitle: authorityTitle,
-            njpAuthorityUnit: authorityUnit,
-            njpAuthorityRank: authorityRank,
-            njpAuthorityGrade: authorityGrade,
-            njpAuthorityEdipi: authorityEdipi,
-          },
+        casesStore.update(id, {
+          status: "PUNISHMENT_IMPOSED",
+          njpAuthorityName: authorityName,
+          njpAuthorityTitle: authorityTitle,
+          njpAuthorityUnit: authorityUnit,
+          njpAuthorityRank: authorityRank,
+          njpAuthorityGrade: authorityGrade,
+          njpAuthorityEdipi: authorityEdipi,
         });
 
-        await audit("SIGN", "Item 9 signed - punishment imposed");
+        audit("SIGN", "Item 9 signed - punishment imposed");
         return NextResponse.json({ message: "Item 9 signed. Punishment imposed." });
       }
 
@@ -458,17 +342,14 @@ export async function POST(
           return NextResponse.json({ error: item11Error.message }, { status: 400 });
         }
 
-        await createSignature("11", signerName || user.username);
+        createSignature("11", signerName || user.username);
 
-        await prisma.case.update({
-          where: { id },
-          data: {
-            currentPhase: "NOTIFICATION",
-            dateNoticeToAccused: item10Date,
-          },
+        casesStore.update(id, {
+          currentPhase: "NOTIFICATION",
+          dateNoticeToAccused: item10Date,
         });
 
-        await audit("SIGN", "Item 11 signed");
+        audit("SIGN", "Item 11 signed");
         return NextResponse.json({ message: "Item 11 signed" });
       }
 
@@ -479,7 +360,7 @@ export async function POST(
 
         const { appealIntent, signerName, refusedToSign } = data;
 
-        await createSignature("12", signerName || user.username, {
+        createSignature("12", signerName || user.username, {
           refusalNoted: refusedToSign,
           coSignedInstead: refusedToSign,
         });
@@ -487,32 +368,27 @@ export async function POST(
         const intendsToAppeal = appealIntent === "INTENDS_TO_APPEAL";
         const newStatus = intendsToAppeal ? "APPEAL_PENDING" : "NOTIFICATION_COMPLETE";
 
-        // Create appeal record
-        await prisma.appealRecord.upsert({
-          where: { caseId: id },
-          update: {
-            appealIntent,
-            item12SignedDate: new Date().toISOString().split("T")[0],
-            item12SignedById: user.userId,
-          },
-          create: {
-            caseId: id,
-            appealIntent,
-            item12SignedDate: new Date().toISOString().split("T")[0],
-            item12SignedById: user.userId,
-            jaReviewRequired: njpCase.jaReviewRequired,
-          },
+        // Create/update appeal record
+        casesStore.upsertAppeal(id, {
+          appealIntent,
+          item12SignedDate: new Date().toISOString().split("T")[0],
+          item12SignedById: user.userId,
+          appealFiled: false,
+          appealNotFiled: false,
+          fiveDayAlertSent: false,
+          restrictionStayed: false,
+          extraDutiesStayed: false,
+          jaReviewRequired: njpCase.jaReviewRequired || false,
+          jaReviewComplete: false,
+          items1314Locked: false,
         });
 
-        await prisma.case.update({
-          where: { id },
-          data: {
-            status: newStatus,
-            currentPhase: intendsToAppeal ? "APPEAL" : "NOTIFICATION",
-          },
+        casesStore.update(id, {
+          status: newStatus,
+          currentPhase: intendsToAppeal ? "APPEAL" : "NOTIFICATION",
         });
 
-        await audit("SIGN", intendsToAppeal ? "Item 12 - appeal initiated" : "Item 12 - no appeal");
+        audit("SIGN", intendsToAppeal ? "Item 12 - appeal initiated" : "Item 12 - no appeal");
         return NextResponse.json({
           message: intendsToAppeal ? "Appeal initiated" : "No appeal. Proceeding to admin completion.",
           status: newStatus,
@@ -527,21 +403,18 @@ export async function POST(
           return NextResponse.json({ error: "Case must be in appeal status" }, { status: 400 });
         }
 
-        await prisma.appealRecord.update({
-          where: { caseId: id },
-          data: {
-            appealFiled: true,
-            appealFiledDate: data.appealDate,
-            fiveDayClockStart: data.appealDate,
-          },
+        casesStore.upsertAppeal(id, {
+          appealFiled: true,
+          appealFiledDate: data.appealDate,
+          fiveDayClockStart: data.appealDate,
         });
 
-        await prisma.case.update({
-          where: { id },
-          data: { appealFiledDate: data.appealDate, appealDate: data.appealDate },
+        casesStore.update(id, {
+          appealFiledDate: data.appealDate,
+          appealDate: data.appealDate,
         });
 
-        await audit("UPDATE", "Appeal date entered", "appealFiledDate", undefined, data.appealDate);
+        audit("UPDATE", "Appeal date entered", "appealFiledDate", undefined, data.appealDate);
         return NextResponse.json({ message: "Appeal date entered" });
       }
 
@@ -550,40 +423,32 @@ export async function POST(
           return NextResponse.json({ error: "JA review not required for this case" }, { status: 400 });
         }
 
-        // VR-R5-002: JA review log requirements
         const jaLogCheck = vrR5002(data.reviewerName, data.reviewDate);
         if (jaLogCheck) {
           return NextResponse.json({ error: jaLogCheck.message, ruleId: jaLogCheck.ruleId }, { status: 400 });
         }
 
-        await prisma.case.update({
-          where: { id },
-          data: {
+        casesStore.update(id, {
+          jaReviewComplete: true,
+          jaReviewerName: data.reviewerName,
+          jaReviewDate: data.reviewDate,
+          jaReviewNotes: data.summary,
+        });
+
+        if (njpCase.appeal) {
+          casesStore.upsertAppeal(id, {
             jaReviewComplete: true,
             jaReviewerName: data.reviewerName,
             jaReviewDate: data.reviewDate,
-            jaReviewNotes: data.summary,
-          },
-        });
-
-        if (njpCase.appealRecord) {
-          await prisma.appealRecord.update({
-            where: { caseId: id },
-            data: {
-              jaReviewComplete: true,
-              jaReviewerName: data.reviewerName,
-              jaReviewDate: data.reviewDate,
-              jaReviewSummary: data.summary,
-            },
+            jaReviewSummary: data.summary,
           });
         }
 
-        await audit("UPDATE", "JA review completed");
+        audit("UPDATE", "JA review completed");
         return NextResponse.json({ message: "JA review logged" });
       }
 
       case "SIGN_ITEM_14": {
-        const appeal = njpCase.appealRecord;
         if (njpCase.jaReviewRequired && !njpCase.jaReviewComplete) {
           return NextResponse.json(
             { error: "JA review must be completed before appeal authority action" },
@@ -593,36 +458,29 @@ export async function POST(
 
         const { outcome, outcomeDetail, authorityName: appealAuthName, authorityRank: appealAuthRank, item15Date } = data;
 
-        // VR-R5-005: Appeal outcome required
         const outcomeCheck = vrR5005(outcome, outcomeDetail);
         if (outcomeCheck) {
           return NextResponse.json({ error: outcomeCheck.message, ruleId: outcomeCheck.ruleId }, { status: 400 });
         }
 
-        await createSignature("14", appealAuthName || user.username);
+        createSignature("14", appealAuthName || user.username);
 
-        await prisma.appealRecord.update({
-          where: { caseId: id },
-          data: {
-            appealAuthorityName: appealAuthName,
-            appealAuthorityRank: appealAuthRank,
-            appealAuthoritySignedDate: new Date().toISOString().split("T")[0],
-            appealOutcome: outcome,
-            appealOutcomeDetail: outcomeDetail || null,
-            appealDecisionNoticeDate: item15Date,
-            items1314Locked: true,
-          },
+        casesStore.upsertAppeal(id, {
+          appealAuthorityName: appealAuthName,
+          appealAuthorityRank: appealAuthRank,
+          appealAuthoritySignedDate: new Date().toISOString().split("T")[0],
+          appealOutcome: outcome,
+          appealOutcomeDetail: outcomeDetail || null,
+          appealDecisionNoticeDate: item15Date,
+          items1314Locked: true,
         });
 
-        await prisma.case.update({
-          where: { id },
-          data: {
-            status: "APPEAL_COMPLETE",
-            dateNoticeAppealDecision: item15Date,
-          },
+        casesStore.update(id, {
+          status: "APPEAL_COMPLETE",
+          dateNoticeAppealDecision: item15Date,
         });
 
-        await audit("SIGN", `Item 14 signed - appeal ${outcome}`);
+        audit("SIGN", `Item 14 signed - appeal ${outcome}`);
         return NextResponse.json({ message: "Appeal decision entered" });
       }
 
@@ -630,22 +488,19 @@ export async function POST(
       // Phase 7 - Admin Completion
       // ============================================================
       case "CONFIRM_OMPF": {
-        await prisma.case.update({
-          where: { id },
-          data: {
-            ompfScanConfirmed: true,
-            ompfConfirmedById: user.userId,
-            ompfConfirmedDate: new Date(),
-          },
+        casesStore.update(id, {
+          ompfScanConfirmed: true,
+          ompfConfirmedBy: user.userId,
+          ompfConfirmedDate: new Date().toISOString(),
         });
 
-        await audit("UPDATE", "OMPF/ESR confirmation logged");
+        audit("UPDATE", "OMPF/ESR confirmation logged");
         return NextResponse.json({ message: "OMPF/ESR confirmation logged" });
       }
 
       case "SIGN_ITEM_16": {
         const { udNumber, udDate, signerName } = data;
-        const appeal16 = njpCase.appealRecord;
+        const appeal16 = njpCase.appeal;
 
         // VR-R7-001: Item 16 prerequisites
         const prereqCheck = vrR7001({
@@ -661,48 +516,45 @@ export async function POST(
           return NextResponse.json({ error: prereqCheck.message, ruleId: prereqCheck.ruleId }, { status: 400 });
         }
 
-        await createSignature("16", signerName || user.username);
+        createSignature("16", signerName || user.username);
 
-        const hasSuspension = njpCase.punishmentRecord?.suspensionStatus === "ACTIVE";
+        const hasSuspension = njpCase.punishment?.suspensionStatus === "ACTIVE";
         const finalStatus = hasSuspension ? "CLOSED_SUSPENSION_ACTIVE" : "CLOSED";
 
-        await prisma.case.update({
-          where: { id },
-          data: {
-            status: finalStatus,
-            currentPhase: "CLOSED",
-            item16InitiatedById: user.userId,
-            item16SignedDate: new Date().toISOString().split("T")[0],
-            item16UdNumber: udNumber,
-            item16Dtd: udDate,
-            formLocked: true,
-            caseFinalDate: new Date().toISOString().split("T")[0],
-          },
+        casesStore.update(id, {
+          status: finalStatus,
+          currentPhase: "CLOSED",
+          item16SignedDate: new Date().toISOString().split("T")[0],
+          item16UdNumber: udNumber,
+          item16Dtd: udDate,
+          formLocked: true,
+          caseFinalDate: new Date().toISOString().split("T")[0],
         });
 
         // Lock all item 21 entries
-        await prisma.item21Entry.updateMany({
-          where: { caseId: id },
-          data: { locked: true },
-        });
+        const currentCase = casesStore.findById(id)!;
+        const lockedEntries = (currentCase.item21Entries || []).map(
+          (e: Record<string, unknown>) => ({ ...e, locked: true })
+        );
+        casesStore.update(id, { item21Entries: lockedEntries });
 
-        // Create 4 distribution copy document records for completed UPB
+        // Create 4 distribution copy document records
         const distributions = [
-          { suffix: "E-SRB", flags: { esrb: true } },
-          { suffix: "OMPF", flags: { ompf: true } },
-          { suffix: "FILES", flags: { files: true } },
-          { suffix: "MEMBER", flags: { member: true } },
-        ] as const;
+          { suffix: "E-SRB", flags: { distributionEsrb: true } },
+          { suffix: "OMPF", flags: { distributionOmpf: true } },
+          { suffix: "FILES", flags: { distributionFiles: true } },
+          { suffix: "MEMBER", flags: { distributionMember: true } },
+        ];
         for (const dist of distributions) {
-          await createVersionedDocument(
-            id,
-            `NAVMC_10132_${dist.suffix}`,
-            user.userId,
-            dist.flags
-          );
+          casesStore.addDocument(id, {
+            documentType: `NAVMC_10132_${dist.suffix}`,
+            generatedById: user.userId,
+            generatedAt: new Date().toISOString(),
+            ...dist.flags,
+          });
         }
 
-        await audit("SIGN", "Item 16 signed - case closed");
+        audit("SIGN", "Item 16 signed - case closed");
         return NextResponse.json({ message: "Case closed", status: finalStatus });
       }
 

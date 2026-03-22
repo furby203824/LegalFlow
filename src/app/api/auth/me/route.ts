@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { usersStore } from "@/lib/db";
 
 export async function GET() {
   try {
@@ -9,27 +9,25 @@ export async function GET() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: {
-        id: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        unitId: true,
-        edipi: true,
-        rank: true,
-        grade: true,
-        email: true,
-      },
-    });
-
+    const user = usersStore.findById(payload.userId);
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ user });
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        unitId: user.unitId,
+        edipi: user.edipi || null,
+        rank: user.rank || null,
+        grade: user.grade || null,
+        email: user.email || null,
+      },
+    });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

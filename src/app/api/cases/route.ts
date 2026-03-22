@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { casesStore, usersStore, auditStore, caseWithIncludes } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import {
   vrInit001,
@@ -20,57 +20,52 @@ export async function GET(req: NextRequest) {
   try {
     const user = await requireAuth();
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get("status");
-    const unit = searchParams.get("unit");
-    const edipi = searchParams.get("edipi");
-    const name = searchParams.get("name");
+    const statusFilter = searchParams.get("status");
+    const unitFilter = searchParams.get("unit");
+    const edipiFilter = searchParams.get("edipi");
+    const nameFilter = searchParams.get("name");
 
-    // Build where clause based on role
-    const where: Record<string, unknown> = {};
+    let cases = casesStore.findAll();
 
+    // Role-based filtering
     if (user.role === "ACCUSED") {
-      const userRecord = await prisma.user.findUnique({ where: { id: user.userId } });
+      const userRecord = usersStore.findById(user.userId);
       if (userRecord?.edipi) {
-        where.accused = { edipi: userRecord.edipi };
+        cases = cases.filter((c) => c.accusedEdipi === userRecord.edipi);
       } else {
         return NextResponse.json({ cases: [] });
       }
     } else if (user.role === "IPAC_ADMIN") {
-      where.OR = [
-        { status: "CLOSED" },
-        { status: "CLOSED_SUSPENSION_ACTIVE" },
-        { status: "CLOSED_SUSPENSION_VACATED" },
-        { status: "CLOSED_SUSPENSION_REMITTED" },
-        { item16SignedDate: { not: null } },
-      ];
+      cases = cases.filter(
+        (c) =>
+          c.status === "CLOSED" ||
+          c.status === "CLOSED_SUSPENSION_ACTIVE" ||
+          c.status === "CLOSED_SUSPENSION_VACATED" ||
+          c.status === "CLOSED_SUSPENSION_REMITTED" ||
+          c.item16SignedDate
+      );
     } else if (user.role !== "SUITE_ADMIN") {
-      where.unitId = user.unitId;
+      cases = cases.filter((c) => c.unitId === user.unitId);
     }
 
-    if (status) where.status = status;
-    if (unit && user.role === "SUITE_ADMIN") where.unitId = unit;
-    if (edipi) where.accused = { edipi };
-    if (name) {
-      where.accused = {
-        OR: [
-          { lastName: { contains: name } },
-          { firstName: { contains: name } },
-        ],
-      };
+    // Query filters
+    if (statusFilter) cases = cases.filter((c) => c.status === statusFilter);
+    if (unitFilter && user.role === "SUITE_ADMIN") cases = cases.filter((c) => c.unitId === unitFilter);
+    if (edipiFilter) cases = cases.filter((c) => c.accusedEdipi === edipiFilter);
+    if (nameFilter) {
+      const q = nameFilter.toLowerCase();
+      cases = cases.filter(
+        (c) =>
+          (c.accusedLastName || "").toLowerCase().includes(q) ||
+          (c.accusedFirstName || "").toLowerCase().includes(q)
+      );
     }
 
-    const cases = await prisma.case.findMany({
-      where,
-      include: {
-        accused: true,
-        offenses: true,
-        punishmentRecord: true,
-        unit: { select: { unitName: true, unitAbbreviation: true } },
-      },
-      orderBy: { updatedAt: "desc" },
-    });
+    // Sort by updatedAt desc
+    cases.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
 
-    return NextResponse.json({ cases });
+    // Return with Prisma-compatible includes
+    return NextResponse.json({ cases: cases.map(caseWithIncludes) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     const status = message.includes("Authentication") ? 401 : 500;
@@ -111,25 +106,24 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate EDIPI
-    // VR-INIT-005: EDIPI format
     const edipiError = vrInit005(accusedEdipi);
     if (edipiError) {
       return NextResponse.json({ error: edipiError.message, ruleId: edipiError.ruleId }, { status: 400 });
     }
 
-    // VR-INIT-004: Jurisdiction confirmed
+    // Jurisdiction confirmed
     const jurisdError = vrInit004(jurisdictionConfirmed);
     if (jurisdError) {
       return NextResponse.json({ error: jurisdError.message, ruleId: jurisdError.ruleId }, { status: 400 });
     }
 
-    // VR-CV-001: Validate rank and grade
+    // Validate rank and grade
     const rankGradeCheck = vrCv001(accusedRank, accusedGrade);
     if (rankGradeCheck) {
       return NextResponse.json({ error: rankGradeCheck.message, ruleId: rankGradeCheck.ruleId }, { status: 400 });
     }
 
-    // VR-CV-002: Validate victim demographics
+    // Validate victim demographics
     for (const offense of offenses) {
       for (const v of (offense.victims || [])) {
         const victimCheck = vrCv002(v.status, v.sex, v.race, v.ethnicity);
@@ -142,7 +136,6 @@ export async function POST(req: NextRequest) {
     // Warnings
     const warnings: string[] = [];
 
-    // VR-INIT-001/002: Statute of limitations
     for (const offense of offenses) {
       const sol001 = vrInit001(offense.offenseDate);
       if (sol001) warnings.push(sol001.message);
@@ -150,18 +143,14 @@ export async function POST(req: NextRequest) {
       if (sol002) warnings.push(sol002.message);
     }
 
-    // VR-INIT-006: Rank/grade mismatch
     const rankCheck = vrInit006(accusedRank, accusedGrade);
     if (rankCheck) warnings.push(rankCheck.message);
 
     // Double punishment check
-    const existingCases = await prisma.case.findMany({
-      where: { accused: { edipi: accusedEdipi } },
-      include: { offenses: true, accused: true },
-    });
+    const existingCases = casesStore.findMany((c) => c.accusedEdipi === accusedEdipi);
     for (const offense of offenses) {
       for (const ec of existingCases) {
-        for (const eo of ec.offenses) {
+        for (const eo of (ec.offenses || [])) {
           if (eo.ucmjArticle === offense.ucmjArticle && eo.offenseDate === offense.offenseDate) {
             warnings.push(
               "Prior NJP action detected for this offense. Double punishment is prohibited under Article 15, UCMJ."
@@ -172,15 +161,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Active suspension warning
-    const activeSuspensions = await prisma.punishmentRecord.findMany({
-      where: {
-        case_: { accused: { edipi: accusedEdipi } },
-        suspensionStatus: "ACTIVE",
-      },
-      include: { case_: true },
-    });
+    const activeSuspensions = existingCases.filter(
+      (c) => c.punishment?.suspensionStatus === "ACTIVE"
+    );
     if (activeSuspensions.length > 0) {
-      const caseNums = activeSuspensions.map((s) => s.case_.caseNumber).join(", ");
+      const caseNums = activeSuspensions.map((s) => s.caseNumber).join(", ");
       warnings.push(
         `Active suspension detected on prior NJP case ${caseNums}. Per MCO 5800.16 para 011201, the previously suspended sentence should be vacated before imposing subsequent NJP.`
       );
@@ -194,127 +179,126 @@ export async function POST(req: NextRequest) {
       (o: { ucmjArticle: string }) => o.ucmjArticle === "85" || o.ucmjArticle === "86"
     );
 
-    // Resolve or create unit
     const unitId = accusedUnitId || user.unitId;
-
-    // Create or find accused profile
-    let accusedProfile = await prisma.accusedProfile.findFirst({
-      where: { edipi: accusedEdipi },
-    });
-    if (!accusedProfile) {
-      accusedProfile = await prisma.accusedProfile.create({
-        data: {
-          lastName: accusedLastName,
-          firstName: accusedFirstName,
-          middleName: accusedMiddleName || null,
-          rank: accusedRank,
-          grade: accusedGrade,
-          edipi: accusedEdipi,
-          unitId,
-          unitFullString: accusedUnitFullString,
-          component: component || "ACTIVE",
-        },
-      });
-    }
 
     // Generate case number
     const year = new Date().getFullYear();
-    const unit = await prisma.unit.findUnique({ where: { id: unitId } });
-    const unitAbbrev = unit?.unitAbbreviation || "CASE";
-    const caseCount = await prisma.case.count({
-      where: {
-        caseNumber: { startsWith: `${unitAbbrev}-${year}` },
-      },
-    });
+    const unitAbbrev = body.unitAbbreviation || "CASE";
+    const caseCount = casesStore.count(
+      (c) => c.caseNumber && c.caseNumber.startsWith(`${unitAbbrev}-${year}`)
+    );
     const caseNumber = generateCaseNumber(unitAbbrev, year, caseCount + 1);
 
     // Earliest offense date
     const offenseDates = offenses.map((o: { offenseDate: string }) => o.offenseDate).sort();
     const offenseDateEarliest = offenseDates[0] || null;
 
-    // Create case with offenses
-    const njpCase = await prisma.case.create({
-      data: {
-        caseNumber,
-        status: "INITIATED",
-        currentPhase: "INITIATION",
-        unitId,
-        accusedId: accusedProfile.id,
-        initiatedById: user.userId,
-        commanderGradeLevel,
-        component: component || "ACTIVE",
-        vesselException: vesselException || false,
-        jurisdictionConfirmed,
-        uaApplicable,
-        offenseDateEarliest,
-        doublePunishmentChecked: true,
-        statuteWarningAcknowledged: warnings.some((w) => w.includes("statute")),
-        offenses: {
-          create: offenses.map(
-            (o: {
-              letter: string;
-              ucmjArticle: string;
-              offenseType: string;
-              summary: string;
-              offenseDate: string;
-              offensePlace: string;
-            }) => ({
-              offenseLetter: o.letter,
-              ucmjArticle: o.ucmjArticle,
-              offenseType: o.offenseType,
-              offenseSummary: o.summary,
-              offenseDate: o.offenseDate,
-              offensePlace: o.offensePlace,
-            })
-          ),
-        },
-      },
-      include: {
-        accused: true,
-        offenses: true,
-      },
-    });
+    // Build offenses array with IDs
+    const offenseRecords = offenses.map(
+      (o: {
+        letter: string;
+        ucmjArticle: string;
+        offenseType: string;
+        summary: string;
+        offenseDate: string;
+        offensePlace: string;
+      }) => ({
+        id: `off-${Date.now()}-${o.letter}`,
+        offenseLetter: o.letter,
+        ucmjArticle: o.ucmjArticle,
+        offenseType: o.offenseType,
+        offenseSummary: o.summary,
+        offenseDate: o.offenseDate,
+        offensePlace: o.offensePlace,
+        finding: null,
+        locked: false,
+      })
+    );
 
-    // Create victims separately (they need both caseId and offenseId)
+    // Build victims array
+    const victimRecords: { id: string; offenseId: string; victimLetter: string; victimStatus: string; victimSex: string; victimRace: string; victimEthnicity: string; locked: boolean }[] = [];
     for (const o of offenses as { letter: string; victims?: { status: string; sex: string; race: string; ethnicity: string }[] }[]) {
-      const offense = njpCase.offenses.find((off) => off.offenseLetter === o.letter);
-      if (!offense || !o.victims?.length) continue;
+      const offenseRecord = offenseRecords.find((or: { offenseLetter: string }) => or.offenseLetter === o.letter);
+      if (!offenseRecord || !o.victims?.length) continue;
       for (const v of o.victims) {
-        await prisma.victim.create({
-          data: {
-            caseId: njpCase.id,
-            offenseId: offense.id,
-            victimLetter: o.letter,
-            victimStatus: v.status,
-            victimSex: v.sex,
-            victimRace: v.race,
-            victimEthnicity: v.ethnicity,
-          },
+        victimRecords.push({
+          id: `v-${Date.now()}-${o.letter}`,
+          offenseId: offenseRecord.id,
+          victimLetter: o.letter,
+          victimStatus: v.status,
+          victimSex: v.sex,
+          victimRace: v.race,
+          victimEthnicity: v.ethnicity,
+          locked: false,
         });
       }
     }
 
-    // Reload with victims
-    const fullCase = await prisma.case.findUnique({
-      where: { id: njpCase.id },
-      include: { accused: true, offenses: { include: { victims: true } } },
+    // Create the case
+    const njpCase = casesStore.create({
+      caseNumber,
+      status: "INITIATED",
+      currentPhase: "INITIATION",
+      unitId,
+      unitFullString: accusedUnitFullString,
+      unitAbbreviation: unitAbbrev,
+      accusedName: `${accusedLastName}, ${accusedFirstName}${accusedMiddleName ? " " + accusedMiddleName : ""}`,
+      accusedLastName,
+      accusedFirstName,
+      accusedMiddleName: accusedMiddleName || null,
+      accusedRank,
+      accusedGrade,
+      accusedEdipi,
+      component: component || "ACTIVE",
+      vesselException: vesselException || false,
+      commanderGradeLevel,
+      jurisdictionConfirmed,
+      uaApplicable,
+      offenseDateEarliest,
+      doublePunishmentChecked: true,
+      statuteWarningAcknowledged: warnings.some((w) => w.includes("statute")),
+      formLocked: false,
+      jaReviewRequired: false,
+      jaReviewComplete: false,
+      jaReviewerName: null,
+      jaReviewDate: null,
+      jaReviewNotes: null,
+      njpDate: null,
+      executionDate: null,
+      dateNoticeToAccused: null,
+      item16SignedDate: null,
+      item16UdNumber: null,
+      item16Dtd: null,
+      ompfScanConfirmed: false,
+      ompfConfirmedBy: null,
+      ompfConfirmedDate: null,
+      appealNotFiled: false,
+      accusedTransferred: false,
+      dateNoticeAppealDecision: null,
+      parentCaseId: null,
+      isVacationChild: false,
+      njpAuthorityName: null,
+      njpAuthorityRank: null,
+      njpAuthorityGrade: null,
+      njpAuthorityEdipi: null,
+      njpAuthorityTitle: null,
+      njpAuthorityUnit: null,
+      initiatedById: user.userId,
+      offenses: offenseRecords,
+      victims: victimRecords,
     });
 
-    // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        caseId: njpCase.id,
-        tableName: "cases",
-        recordId: njpCase.id,
-        action: "INSERT",
-        userId: user.userId,
-        userRole: user.role,
-        userName: user.username,
-        notes: `Case ${caseNumber} initiated`,
-      },
+    auditStore.append({
+      caseId: njpCase.id,
+      caseNumber: njpCase.caseNumber,
+      userId: user.userId,
+      userRole: user.role,
+      userName: user.username,
+      action: "INSERT",
+      notes: `Case ${caseNumber} initiated`,
     });
 
-    return NextResponse.json({ case: fullCase, warnings }, { status: 201 });
+    return NextResponse.json({ case: caseWithIncludes(njpCase), warnings }, { status: 201 });
   } catch (error) {
     console.error("Case creation error:", error);
     const message = error instanceof Error ? error.message : "Internal server error";
