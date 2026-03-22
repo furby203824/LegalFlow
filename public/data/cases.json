@@ -163,7 +163,7 @@
     "nextActionOwner": "ACCUSED",
     "isOverdue": false,
     "caseNumber": "CASE-2026-0001",
-    "status": "PUNISHMENT_IMPOSED",
+    "status": "NOTIFICATION_COMPLETE",
     "currentPhase": "NOTIFICATION",
     "unitId": "unit-hq",
     "unitFullString": "Test, test",
