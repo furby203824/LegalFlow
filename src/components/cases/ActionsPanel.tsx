@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { RANKS, GRADES } from "@/types";
+import { RANKS, GRADES, getMaxForfeiture } from "@/types";
+import type { CommanderGradeLevel } from "@/types";
 import {
   AlertTriangle, AlertOctagon, Info, Clock, FileText,
   ChevronDown, ChevronRight,
@@ -308,26 +309,55 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
   const isField = caseData.commanderGradeLevel === "FIELD_GRADE_AND_ABOVE";
   const hasPun = corrDays || forfAmt || reduction || extraDays || restrDays;
 
+  // Determine the accused's current grade number and the one-grade-down target
+  const accusedGrade: string = caseData.accusedGrade || "";
+  const gradeNum = accusedGrade.startsWith("E") ? parseInt(accusedGrade.replace("E", ""), 10) : 0;
+  const canReduce = gradeNum >= 2 && gradeNum <= 5; // E-6+ cannot be reduced at NJP
+  const reducedGrade = canReduce ? `E${gradeNum - 1}` : "";
+
+  // Auto-set the reduction grade when checkbox is toggled
+  const handleReductionToggle = (checked: boolean) => {
+    setReduction(checked);
+    if (checked && reducedGrade) setRedGrade(reducedGrade);
+    else setRedGrade("");
+  };
+
+  // Calculate max forfeiture — if reduction is imposed, use reduced grade pay
+  const effectiveGrade = reduction && redGrade ? redGrade : accusedGrade;
+  const maxForf = getMaxForfeiture(effectiveGrade, caseData.commanderGradeLevel as CommanderGradeLevel);
+
   return (
     <ActionSection title="Item 6 - Punishment">
       <div className="text-xs text-info bg-blue-50 rounded p-2 mb-3">
         Limits ({isField ? "Major+" : "Capt/Lt-"}): Custody {isField ? 30 : 7}d | Extra {isField ? 45 : 14}d | Restr {isField ? 60 : 14}d
+        {maxForf != null && (
+          <span className="block mt-1">Max forfeiture ({effectiveGrade} pay): <span className="font-semibold">${maxForf}</span>{isField ? "/mo for 2 mo" : ""}</span>
+        )}
       </div>
       <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-field mb-2" placeholder="Punishment date" />
       <div className="grid grid-cols-2 gap-2 mb-2">
         <input type="number" value={corrDays} onChange={(e) => setCorrDays(e.target.value)} className="input-field text-xs" placeholder="Custody days" />
-        <input type="number" value={forfAmt} onChange={(e) => setForfAmt(e.target.value)} className="input-field text-xs" placeholder="Forfeiture $" />
+        <input type="number" value={forfAmt} onChange={(e) => setForfAmt(e.target.value)} className="input-field text-xs" placeholder={maxForf != null ? `Forfeiture $ (max $${maxForf})` : "Forfeiture $"} max={maxForf ?? undefined} />
         <input type="number" value={extraDays} onChange={(e) => setExtraDays(e.target.value)} className="input-field text-xs" placeholder="Extra duties" />
         <input type="number" value={restrDays} onChange={(e) => setRestrDays(e.target.value)} className="input-field text-xs" placeholder="Restriction" />
       </div>
-      <label className="flex items-center gap-2 text-xs mb-2">
-        <input type="checkbox" checked={reduction} onChange={(e) => setReduction(e.target.checked)} /> Reduction
-      </label>
-      {reduction && (
-        <select value={redGrade} onChange={(e) => setRedGrade(e.target.value)} className="input-field text-xs mb-2">
-          <option value="">To grade...</option>
-          {GRADES.filter((g) => g.startsWith("E")).map((g) => <option key={g} value={g}>{g}</option>)}
-        </select>
+      {canReduce ? (
+        <>
+          <label className="flex items-center gap-2 text-xs mb-2">
+            <input type="checkbox" checked={reduction} onChange={(e) => handleReductionToggle(e.target.checked)} /> Reduction to {reducedGrade}
+          </label>
+          {reduction && (
+            <div className="text-xs text-neutral-mid mb-2 ml-6">
+              {accusedGrade} → {reducedGrade} (one grade reduction per MCO 5800.16)
+              {maxForf != null && <span className="block text-info mt-0.5">Forfeiture max recalculated on {reducedGrade} pay: ${maxForf}{isField ? "/mo" : ""}</span>}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="text-xs text-neutral-mid mb-2">
+          Reduction not available for grade {accusedGrade}.
+          {gradeNum >= 6 ? " Marines E-6 and above may not be reduced at NJP." : ""}
+        </div>
       )}
       <label className="flex items-center gap-2 text-xs mb-2">
         <input type="checkbox" checked={suspImposed} onChange={(e) => setSuspImposed(e.target.checked)} /> Suspend punishment
