@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import {
-  validateEdipi,
-  checkStatuteOfLimitations,
+  vrInit001,
+  vrInit002,
+  vrInit004,
+  vrInit005,
+  vrInit006,
   generateCaseNumber,
 } from "@/lib/validation";
 import { getCommanderGradeLevel } from "@/types";
@@ -105,26 +108,32 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate EDIPI
-    const edipiError = validateEdipi(accusedEdipi);
+    // VR-INIT-005: EDIPI format
+    const edipiError = vrInit005(accusedEdipi);
     if (edipiError) {
-      return NextResponse.json({ error: edipiError.message }, { status: 400 });
+      return NextResponse.json({ error: edipiError.message, ruleId: edipiError.ruleId }, { status: 400 });
     }
 
-    if (!jurisdictionConfirmed) {
-      return NextResponse.json(
-        { error: "Jurisdiction confirmation is required" },
-        { status: 400 }
-      );
+    // VR-INIT-004: Jurisdiction confirmed
+    const jurisdError = vrInit004(jurisdictionConfirmed);
+    if (jurisdError) {
+      return NextResponse.json({ error: jurisdError.message, ruleId: jurisdError.ruleId }, { status: 400 });
     }
 
     // Warnings
     const warnings: string[] = [];
 
-    // Statute of limitations
+    // VR-INIT-001/002: Statute of limitations
     for (const offense of offenses) {
-      const solWarning = checkStatuteOfLimitations(offense.offenseDate);
-      if (solWarning) warnings.push(solWarning.message);
+      const sol001 = vrInit001(offense.offenseDate);
+      if (sol001) warnings.push(sol001.message);
+      const sol002 = vrInit002(offense.offenseDate);
+      if (sol002) warnings.push(sol002.message);
     }
+
+    // VR-INIT-006: Rank/grade mismatch
+    const rankCheck = vrInit006(accusedRank, accusedGrade);
+    if (rankCheck) warnings.push(rankCheck.message);
 
     // Double punishment check
     const existingCases = await prisma.case.findMany({

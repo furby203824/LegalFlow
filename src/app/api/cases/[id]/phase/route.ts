@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import {
-  validateItem3Date,
-  validateItem11Date,
+  vrR2005,
+  vrR4001,
   validatePunishment,
-  checkJaReviewThresholds,
+  vrR3010,
+  vrR5001,
   getLockedItems,
   calculateSuspensionEndDate,
 } from "@/lib/validation";
@@ -201,7 +202,7 @@ export async function POST(
         // Validate Item 3 date
         const item3Sig = njpCase.signatures.find((s) => s.itemNumber === "3");
         const item3Date = item3Sig?.signedDate;
-        const item3Error = validateItem3Date(item3Date || undefined, punishment.punishmentDate);
+        const item3Error = vrR2005(item3Date || undefined, punishment.punishmentDate);
         if (item3Error) {
           return NextResponse.json({ error: item3Error.message }, { status: 400 });
         }
@@ -217,7 +218,7 @@ export async function POST(
         }
 
         // Check JA review thresholds
-        const jaThresholds = checkJaReviewThresholds(
+        const jaThresholds = vrR3010(
           punishment,
           njpCase.accused.grade as Grade
         );
@@ -288,13 +289,13 @@ export async function POST(
               : null,
             suspensionText,
             suspensionStatus: punishment.suspensionImposed ? "ACTIVE" : "NONE",
-            jaThresholdArrestQuarters: jaThresholds.arrestQuarters,
-            jaThresholdCorrCustody: jaThresholds.corrCustody,
-            jaThresholdForfeiture: jaThresholds.forfeiture,
-            jaThresholdReduction: jaThresholds.reduction,
-            jaThresholdExtraDuties: jaThresholds.extraDuties,
-            jaThresholdRestriction: jaThresholds.restriction,
-            jaThresholdDetention: jaThresholds.detention,
+            jaThresholdArrestQuarters: jaThresholds.thresholds.arrestQuarters,
+            jaThresholdCorrCustody: jaThresholds.thresholds.corrCustody,
+            jaThresholdForfeiture: jaThresholds.thresholds.forfeiture,
+            jaThresholdReduction: jaThresholds.thresholds.reduction,
+            jaThresholdExtraDuties: jaThresholds.thresholds.extraDuties,
+            jaThresholdRestriction: jaThresholds.thresholds.restriction,
+            jaThresholdDetention: jaThresholds.thresholds.detention,
             anyJaThresholdMet: jaThresholds.anyMet,
           },
           create: {
@@ -335,13 +336,13 @@ export async function POST(
               : null,
             suspensionText,
             suspensionStatus: punishment.suspensionImposed ? "ACTIVE" : "NONE",
-            jaThresholdArrestQuarters: jaThresholds.arrestQuarters,
-            jaThresholdCorrCustody: jaThresholds.corrCustody,
-            jaThresholdForfeiture: jaThresholds.forfeiture,
-            jaThresholdReduction: jaThresholds.reduction,
-            jaThresholdExtraDuties: jaThresholds.extraDuties,
-            jaThresholdRestriction: jaThresholds.restriction,
-            jaThresholdDetention: jaThresholds.detention,
+            jaThresholdArrestQuarters: jaThresholds.thresholds.arrestQuarters,
+            jaThresholdCorrCustody: jaThresholds.thresholds.corrCustody,
+            jaThresholdForfeiture: jaThresholds.thresholds.forfeiture,
+            jaThresholdReduction: jaThresholds.thresholds.reduction,
+            jaThresholdExtraDuties: jaThresholds.thresholds.extraDuties,
+            jaThresholdRestriction: jaThresholds.thresholds.restriction,
+            jaThresholdDetention: jaThresholds.thresholds.detention,
             anyJaThresholdMet: jaThresholds.anyMet,
           },
         });
@@ -430,7 +431,7 @@ export async function POST(
         const { item10Date, signerName } = data;
         const item11Date = new Date().toISOString().split("T")[0];
 
-        const item11Error = validateItem11Date(item11Date, njpCase.njpDate || undefined);
+        const item11Error = vrR4001(item11Date, njpCase.njpDate || undefined);
         if (item11Error) {
           return NextResponse.json({ error: item11Error.message }, { status: 400 });
         }
