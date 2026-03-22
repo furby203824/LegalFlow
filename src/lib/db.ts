@@ -82,6 +82,7 @@ export const casesStore = {
       appeal: null,
       item21Entries: [],
       signatures: [],
+      evidence: [],
       documents: [],
       remedialActions: [],
       vacationRecordsAsParent: [],
@@ -181,6 +182,49 @@ export const casesStore = {
     casesCache = cases;
     await this.save();
     return entries[eIdx];
+  },
+
+  async addEvidence(caseId: string, evidence: Rec): Promise<Rec> {
+    const cases = await this.load();
+    const idx = cases.findIndex((c) => c.id === caseId);
+    if (idx === -1) throw new Error("Case not found");
+    if (!cases[idx].evidence) cases[idx].evidence = [];
+    const newEvidence = { id: generateId("ev"), createdAt: new Date().toISOString(), ...evidence };
+    cases[idx].evidence.push(newEvidence);
+    cases[idx].updatedAt = new Date().toISOString().split("T")[0];
+    casesCache = cases;
+    await this.save();
+    return newEvidence;
+  },
+
+  async updateEvidence(caseId: string, evidenceId: string, data: Partial<Rec>): Promise<Rec | null> {
+    const cases = await this.load();
+    const idx = cases.findIndex((c) => c.id === caseId);
+    if (idx === -1) return null;
+    const evidence = cases[idx].evidence || [];
+    const eIdx = evidence.findIndex((e: Rec) => e.id === evidenceId);
+    if (eIdx === -1) return null;
+    evidence[eIdx] = { ...evidence[eIdx], ...data, updatedAt: new Date().toISOString() };
+    cases[idx].evidence = evidence;
+    cases[idx].updatedAt = new Date().toISOString().split("T")[0];
+    casesCache = cases;
+    await this.save();
+    return evidence[eIdx];
+  },
+
+  async deleteEvidence(caseId: string, evidenceId: string): Promise<boolean> {
+    const cases = await this.load();
+    const idx = cases.findIndex((c) => c.id === caseId);
+    if (idx === -1) return false;
+    const evidence = cases[idx].evidence || [];
+    const eIdx = evidence.findIndex((e: Rec) => e.id === evidenceId);
+    if (eIdx === -1) return false;
+    evidence.splice(eIdx, 1);
+    cases[idx].evidence = evidence;
+    cases[idx].updatedAt = new Date().toISOString().split("T")[0];
+    casesCache = cases;
+    await this.save();
+    return true;
   },
 
   async addDocument(caseId: string, doc: Rec): Promise<Rec> {
@@ -358,6 +402,7 @@ export function caseWithIncludes(c: Rec): Rec {
     item21Entries: (c.item21Entries || []).sort(
       (a: Rec, b: Rec) => (a.entrySequence || 0) - (b.entrySequence || 0)
     ),
+    evidence: (c.evidence || []).sort((a: Rec, b: Rec) => (a.createdAt || "").localeCompare(b.createdAt || "")),
     documents: (c.documents || []).filter((d: Rec) => d.isCurrent),
     vacationRecordsAsParent: c.vacationRecordsAsParent || [],
     remedialActions: c.remedialActions || [],

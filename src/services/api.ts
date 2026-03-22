@@ -387,6 +387,71 @@ export async function confirmRemark(caseId: string, remarkId: string) {
 }
 
 // =============================================================================
+// Evidence
+// =============================================================================
+
+export async function getEvidence(caseId: string) {
+  const c = await casesStore.findById(caseId);
+  if (!c) throw new Error("Case not found");
+  return { evidence: (c.evidence || []).sort((a: Rec, b: Rec) => (a.createdAt || "").localeCompare(b.createdAt || "")) };
+}
+
+export async function addEvidence(caseId: string, evidenceData: Rec) {
+  const u = user();
+  const c = await casesStore.findById(caseId);
+  if (!c) throw new Error("Case not found");
+  const evidence = await casesStore.addEvidence(caseId, {
+    ...evidenceData,
+    addedBy: u.userId,
+    addedByName: u.username,
+  });
+  await auditStore.append({
+    caseId,
+    caseNumber: c.caseNumber,
+    userId: u.userId,
+    userRole: u.role,
+    userName: u.username,
+    action: "INSERT",
+    notes: `Evidence added: ${evidenceData.evidenceType} - ${evidenceData.description}`,
+  });
+  return { evidence };
+}
+
+export async function updateEvidence(caseId: string, evidenceId: string, data: Rec) {
+  const u = user();
+  const c = await casesStore.findById(caseId);
+  if (!c) throw new Error("Case not found");
+  const evidence = await casesStore.updateEvidence(caseId, evidenceId, data);
+  await auditStore.append({
+    caseId,
+    caseNumber: c.caseNumber,
+    userId: u.userId,
+    userRole: u.role,
+    userName: u.username,
+    action: "UPDATE",
+    notes: `Evidence updated: ${evidenceId}`,
+  });
+  return { evidence };
+}
+
+export async function deleteEvidence(caseId: string, evidenceId: string) {
+  const u = user();
+  const c = await casesStore.findById(caseId);
+  if (!c) throw new Error("Case not found");
+  await casesStore.deleteEvidence(caseId, evidenceId);
+  await auditStore.append({
+    caseId,
+    caseNumber: c.caseNumber,
+    userId: u.userId,
+    userRole: u.role,
+    userName: u.username,
+    action: "DELETE",
+    notes: `Evidence removed: ${evidenceId}`,
+  });
+  return { success: true };
+}
+
+// =============================================================================
 // Users Management
 // =============================================================================
 
