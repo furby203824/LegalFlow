@@ -387,6 +387,33 @@ export async function confirmRemark(caseId: string, remarkId: string) {
 }
 
 // =============================================================================
+// Charge Sheet (DD Form 458)
+// =============================================================================
+
+export async function updateChargeSheet(caseId: string, data: Rec) {
+  const u = user();
+  const c = await casesStore.findById(caseId);
+  if (!c) throw new Error("Case not found");
+  await casesStore.upsertChargeSheet(caseId, {
+    ...data,
+    lastUpdatedBy: u.userId,
+    lastUpdatedByName: u.username,
+    lastUpdatedAt: new Date().toISOString(),
+  });
+  await auditStore.append({
+    caseId,
+    caseNumber: c.caseNumber,
+    userId: u.userId,
+    userRole: u.role,
+    userName: u.username,
+    action: "UPDATE",
+    notes: `DD 458 Charge Sheet updated: ${data._section || "general"}`,
+  });
+  const updated = await casesStore.findById(caseId);
+  return { chargeSheet: updated?.chargeSheet };
+}
+
+// =============================================================================
 // Evidence
 // =============================================================================
 
