@@ -209,6 +209,29 @@ export const PUNISHMENT_LIMITS = {
   },
 } as const;
 
+// --- Monthly Base Pay (2025 rates, < 2 years service) ---
+// Used to calculate max forfeiture at NJP
+export const BASE_PAY_TABLE: Record<string, number> = {
+  E1: 1849,
+  E2: 2073,
+  E3: 2259,
+  E4: 2393,
+  E5: 2610,
+};
+
+/** Calculate max forfeiture amount for a given grade and commander level */
+export function getMaxForfeiture(accusedGrade: string, commanderGradeLevel: CommanderGradeLevel): number | null {
+  const pay = BASE_PAY_TABLE[accusedGrade];
+  if (!pay) return null;
+  if (commanderGradeLevel === "COMPANY_GRADE") {
+    // 7 days' pay: monthly pay / 30 * 7, rounded down to whole dollar
+    return Math.floor((pay / 30) * 7);
+  }
+  // Field grade: 1/2 of 1 month's pay per month for 2 months = 1 month's pay total
+  // But per-month max is half of one month's pay
+  return Math.floor(pay / 2);
+}
+
 // --- JA Review Thresholds (Section 5.3) ---
 export const JA_REVIEW_THRESHOLDS = {
   arrestQuartersDays: 7,
