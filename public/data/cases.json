@@ -42,7 +42,15 @@
       "suspensionMonths": 6,
       "locked": true
     },
-    "appeal": null,
+    "appeal": {
+      "id": "app-1774222487686-rqp4n",
+      "appealIntent": "DOES_NOT_INTEND",
+      "item12SignedDate": "2026-03-22",
+      "item12SignedById": "user-1774218618690-02z7m",
+      "appealFiled": false,
+      "appealNotFiled": false,
+      "jaReviewRequired": false
+    },
     "item21Entries": [],
     "signatures": [
       {
