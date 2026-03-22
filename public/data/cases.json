@@ -106,7 +106,7 @@
     "nextActionOwner": "ACCUSED",
     "isOverdue": false,
     "caseNumber": "CASE-2026-0001",
-    "status": "INITIATED",
+    "status": "RIGHTS_ADVISED",
     "currentPhase": "RIGHTS_ADVISEMENT",
     "unitId": "unit-hq",
     "unitFullString": "Test, test",
