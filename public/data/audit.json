@@ -53,5 +53,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated navmc_10132 (PARTIAL)"
+  },
+  {
+    "id": "audit-1774220872507-1i1ie",
+    "timestamp": "2026-03-22T23:07:52.507Z",
+    "caseId": "case-1774220758799-tm18d",
+    "caseNumber": "CASE-2026-0001",
+    "userId": "user-1774218618690-02z7m",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "SIGN",
+    "notes": "Item 3 signed - rights advisement complete"
   }
 ]
