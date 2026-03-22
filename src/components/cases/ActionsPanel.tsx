@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { RANKS, GRADES, getMaxForfeiture } from "@/types";
+import { RANK_GRADE_OPTIONS, getMaxForfeiture } from "@/types";
 import type { CommanderGradeLevel } from "@/types";
 import {
   AlertTriangle, AlertOctagon, Info, Clock, FileText,
@@ -156,7 +156,7 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
 
           {/* Item 9 */}
           {pr && !hasSig("9") && (
-            <Item9Action loading={loading} onSubmit={(data) => performAction("SIGN_ITEM_9", data)} />
+            <Item9Action caseData={caseData} loading={loading} onSubmit={(data) => performAction("SIGN_ITEM_9", data)} />
           )}
 
           {/* Item 11 */}
@@ -438,22 +438,30 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
   );
 }
 
-function Item9Action({ loading, onSubmit }: { loading: boolean; onSubmit: (d: Record<string, unknown>) => void }) {
+function Item9Action({ caseData, loading, onSubmit }: { caseData: CaseData; loading: boolean; onSubmit: (d: Record<string, unknown>) => void }) {
+  const [name, setName] = useState("");
+  const [title, setTitle] = useState("");
+  const [unit, setUnit] = useState(caseData?.accused?.unitFullString || caseData?.unit?.unitFullString || "");
+  const [rankGrade, setRankGrade] = useState("");
+  const [edipi, setEdipi] = useState("");
+
+  const rank = rankGrade ? rankGrade.split("/")[1] : "";
+  const grade = rankGrade ? rankGrade.split("/")[0] : "";
+
   return (
     <ActionSection title="Items 8-9 - NJP Authority">
       <div className="space-y-2">
-        <input type="text" id="a9Name" placeholder="Full Name" className="input-field text-xs" />
-        <input type="text" id="a9Title" placeholder="Title" className="input-field text-xs" />
-        <input type="text" id="a9Unit" placeholder="Unit" className="input-field text-xs" />
-        <div className="grid grid-cols-2 gap-2">
-          <select id="a9Rank" className="input-field text-xs"><option value="">Rank</option>{RANKS.map((r) => <option key={r} value={r}>{r}</option>)}</select>
-          <select id="a9Grade" className="input-field text-xs"><option value="">Grade</option>{GRADES.map((g) => <option key={g} value={g}>{g}</option>)}</select>
-        </div>
-        <input type="text" id="a9Edipi" placeholder="EDIPI" className="input-field text-xs" maxLength={10} />
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full Name" className="input-field text-xs" />
+        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="input-field text-xs" />
+        <input type="text" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="Unit" className="input-field text-xs" />
+        <select value={rankGrade} onChange={(e) => setRankGrade(e.target.value)} className="input-field text-xs">
+          <option value="">Select rank/grade</option>
+          {RANK_GRADE_OPTIONS.map((o) => <option key={o.label} value={o.label}>{o.label}</option>)}
+        </select>
+        <input type="text" value={edipi} onChange={(e) => setEdipi(e.target.value)} placeholder="EDIPI" className="input-field text-xs" maxLength={10} />
       </div>
       <button onClick={() => {
-        const g = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLSelectElement).value;
-        onSubmit({ authorityName: g("a9Name"), authorityTitle: g("a9Title"), authorityUnit: g("a9Unit"), authorityRank: g("a9Rank"), authorityGrade: g("a9Grade"), authorityEdipi: g("a9Edipi") });
+        onSubmit({ authorityName: name, authorityTitle: title, authorityUnit: unit, authorityRank: rank, authorityGrade: grade, authorityEdipi: edipi });
       }} disabled={loading} className="btn-primary text-xs w-full mt-3">
         Sign Item 9
       </button>
