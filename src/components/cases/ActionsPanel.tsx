@@ -307,6 +307,7 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
   const [suspMo, setSuspMo] = useState("");
 
   const isField = caseData.commanderGradeLevel === "FIELD_GRADE_AND_ABOVE";
+  const isVessel = !!caseData.vesselException;
   const hasPun = corrDays || forfAmt || reduction || extraDays || restrDays;
 
   // Determine the accused's current grade number and the one-grade-down target
@@ -329,14 +330,16 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
   return (
     <ActionSection title="Item 6 - Punishment">
       <div className="text-xs text-info bg-blue-50 rounded p-2 mb-3">
-        Limits ({isField ? "Major+" : "Capt/Lt-"}): Custody {isField ? 30 : 7}d | Extra {isField ? 45 : 14}d | Restr {isField ? 60 : 14}d
+        Limits ({isField ? "Major+" : "Capt/Lt-"}):{isVessel ? ` Custody ${isField ? 30 : 7}d |` : ""} Extra {isField ? 45 : 14}d | Restr {isField ? 60 : 14}d
         {maxForf != null && (
           <span className="block mt-1">Max forfeiture ({effectiveGrade} pay): <span className="font-semibold">${maxForf}</span>{isField ? "/mo for 2 mo" : ""}</span>
         )}
       </div>
       <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-field mb-2" placeholder="Punishment date" />
       <div className="grid grid-cols-2 gap-2 mb-2">
-        <input type="number" value={corrDays} onChange={(e) => setCorrDays(e.target.value)} className="input-field text-xs" placeholder="Custody days" />
+        {isVessel && (
+          <input type="number" value={corrDays} onChange={(e) => setCorrDays(e.target.value)} className="input-field text-xs" placeholder="Custody days" />
+        )}
         <input type="number" value={forfAmt} onChange={(e) => setForfAmt(e.target.value)} className="input-field text-xs" placeholder={maxForf != null ? `Forfeiture $ (max $${maxForf})` : "Forfeiture $"} max={maxForf ?? undefined} />
         <input type="number" value={extraDays} onChange={(e) => setExtraDays(e.target.value)} className="input-field text-xs" placeholder="Extra duties" />
         <input type="number" value={restrDays} onChange={(e) => setRestrDays(e.target.value)} className="input-field text-xs" placeholder="Restriction" />
@@ -398,7 +401,13 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
                 </label>
               )}
               <div className="pt-1">
-                <input type="number" value={suspMo} onChange={(e) => setSuspMo(e.target.value)} className="input-field text-xs w-32" placeholder="Months" min={1} max={6} />
+                <select value={suspMo} onChange={(e) => setSuspMo(e.target.value)} className="input-field text-xs w-32">
+                  <option value="">Months</option>
+                  <option value="3">3 months</option>
+                  <option value="4">4 months</option>
+                  <option value="5">5 months</option>
+                  <option value="6">6 months</option>
+                </select>
                 <span className="text-xs text-neutral-mid ml-2">suspension period</span>
               </div>
             </div>
