@@ -57,6 +57,7 @@ export default function UsersPage() {
       lastName: formData.get("lastName"),
       role: formData.get("role"),
       unitId: formData.get("unitId"),
+      email: formData.get("email"),
       edipi: formData.get("edipi") || null,
       rank: formData.get("rank") || null,
       grade: formData.get("grade") || null,
@@ -130,6 +131,10 @@ export default function UsersPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">Unit ID *</label>
                 <input name="unitId" required className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email *</label>
+                <input name="email" type="email" required className="input-field" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">EDIPI</label>

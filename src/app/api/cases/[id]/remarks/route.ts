@@ -11,12 +11,15 @@ export async function GET(
     await requireAuth();
     const { id } = await params;
 
-    const remarks = await prisma.remark.findMany({
+    const entries = await prisma.item21Entry.findMany({
       where: { caseId: id },
-      orderBy: { date: "asc" },
+      orderBy: { entrySequence: "asc" },
+      include: {
+        confirmedBy: { select: { firstName: true, lastName: true } },
+      },
     });
 
-    return NextResponse.json({ remarks });
+    return NextResponse.json({ remarks: entries });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -32,26 +35,47 @@ export async function POST(
     const user = await requireAuth("ADMIN", "SUITE_ADMIN");
     const { id } = await params;
     const body = await req.json();
-    const { date, itemReference, text } = body;
+    const { date, entryType, text } = body;
 
-    if (!date || !itemReference || !text) {
+    if (!date || !entryType || !text) {
       return NextResponse.json(
-        { error: "Date, item reference, and text are required" },
+        { error: "Date, entry type, and text are required" },
         { status: 400 }
       );
     }
 
-    const remark = await prisma.remark.create({
+    // Get next sequence number
+    const lastEntry = await prisma.item21Entry.findFirst({
+      where: { caseId: id },
+      orderBy: { entrySequence: "desc" },
+    });
+    const nextSequence = (lastEntry?.entrySequence ?? 0) + 1;
+
+    const entry = await prisma.item21Entry.create({
       data: {
         caseId: id,
-        date,
-        itemReference,
-        text,
-        confirmed: false,
+        entryDate: date,
+        entrySequence: nextSequence,
+        entryType: entryType || "OTHER",
+        entryText: text,
+        systemGenerated: false,
       },
     });
 
-    return NextResponse.json({ remark }, { status: 201 });
+    await prisma.auditLog.create({
+      data: {
+        caseId: id,
+        tableName: "item_21_entries",
+        recordId: entry.id,
+        action: "INSERT",
+        userId: user.userId,
+        userRole: user.role,
+        userName: user.username,
+        notes: `Item 21 entry added: ${entryType}`,
+      },
+    });
+
+    return NextResponse.json({ remark: entry }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     const status = message.includes("permission") ? 403 : 500;
@@ -59,7 +83,7 @@ export async function POST(
   }
 }
 
-// PATCH /api/cases/[id]/remarks - Confirm a remark
+// PATCH /api/cases/[id]/remarks - Confirm an entry
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -69,16 +93,15 @@ export async function PATCH(
     const body = await req.json();
     const { remarkId } = body;
 
-    const remark = await prisma.remark.update({
+    const entry = await prisma.item21Entry.update({
       where: { id: remarkId },
       data: {
-        confirmed: true,
-        confirmedBy: user.userId,
+        confirmedById: user.userId,
         confirmedAt: new Date(),
       },
     });
 
-    return NextResponse.json({ remark });
+    return NextResponse.json({ remark: entry });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json({ error: message }, { status: 500 });

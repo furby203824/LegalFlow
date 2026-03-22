@@ -10,21 +10,23 @@ export async function GET(
     await requireAuth();
     const { id } = await params;
 
-    const njpCase = await prisma.njpCase.findUnique({
+    const njpCase = await prisma.case.findUnique({
       where: { id },
       include: {
-        offenses: { include: { victims: true } },
-        punishments: true,
-        remarks: { orderBy: { date: "asc" } },
-        suspensions: true,
-        vacationRecords: true,
-        auditLogs: {
-          orderBy: { timestamp: "desc" },
-          take: 50,
-        },
-        createdBy: {
-          select: { firstName: true, lastName: true, role: true },
-        },
+        accused: true,
+        unit: { select: { unitName: true, unitAbbreviation: true, unitFullString: true } },
+        initiatedBy: { select: { firstName: true, lastName: true, role: true } },
+        njpAuthority: { select: { firstName: true, lastName: true, role: true } },
+        offenses: { include: { victims: true }, orderBy: { offenseLetter: "asc" } },
+        punishmentRecord: true,
+        appealRecord: true,
+        remedialActions: { orderBy: { createdAt: "desc" } },
+        item21Entries: { orderBy: { entrySequence: "asc" } },
+        signatures: { orderBy: { createdAt: "asc" } },
+        documents: { where: { isCurrent: true }, orderBy: { createdAt: "desc" } },
+        auditLogs: { orderBy: { createdAt: "desc" }, take: 50 },
+        suspensionMonitor: true,
+        vacationRecordsAsParent: true,
       },
     });
 

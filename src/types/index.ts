@@ -1,6 +1,7 @@
 // ============================================================================
 // LegalFlow Type Definitions
 // Based on MCO 5800.16 Volume 14, NAVMC 10132 (REV. 08-2023)
+// Aligned with LegalFlow Data Models v1.0
 // ============================================================================
 
 // --- Roles ---
@@ -36,9 +37,16 @@ export type CasePhase =
   | "HEARING"
   | "NOTIFICATION"
   | "APPEAL"
-  | "REMEDIAL_ACTIONS"
+  | "REMEDIAL_ACTION"
   | "ADMIN_COMPLETION"
-  | "VACATION_OF_SUSPENSION";
+  | "VACATION"
+  | "CLOSED";
+
+// --- Commander Grade Level ---
+export type CommanderGradeLevel = "FIELD_GRADE_AND_ABOVE" | "COMPANY_GRADE";
+
+// --- Component ---
+export type Component = "ACTIVE" | "SMCR" | "IRR";
 
 // --- Rank/Grade ---
 export const RANKS = [
@@ -74,18 +82,17 @@ export function getGradeNumber(grade: Grade): number {
   return 20 + num;
 }
 
-// --- Commander Grade Categories ---
-export type CommanderGradeCategory = "FIELD_GRADE_AND_ABOVE" | "COMPANY_GRADE";
-
-export function getCommanderGradeCategory(grade: Grade): CommanderGradeCategory {
-  if (grade.startsWith("O") && getGradeNumber(grade) >= 24) {
-    return "FIELD_GRADE_AND_ABOVE"; // O4+ (Major and above)
+// --- Commander Grade Level Determination ---
+// Per Section 5.1: COMPANY_GRADE: O1, O1E, O2, O2E, O3, O3E
+// FIELD_GRADE_AND_ABOVE: O4 and above, W1 and above
+export function getCommanderGradeLevel(grade: Grade): CommanderGradeLevel {
+  if (grade.startsWith("W")) return "FIELD_GRADE_AND_ABOVE";
+  if (grade.startsWith("O")) {
+    const num = parseInt(grade.replace(/[OE]/g, ""), 10);
+    if (num >= 4) return "FIELD_GRADE_AND_ABOVE";
   }
-  return "COMPANY_GRADE"; // O3 and below
+  return "COMPANY_GRADE";
 }
-
-// --- Component ---
-export type Component = "ACTIVE_DUTY" | "SMCR";
 
 // --- UCMJ Articles ---
 export const UCMJ_ARTICLES = [
@@ -130,84 +137,30 @@ export type VictimEthnicity =
   | "Not Hispanic or Latino"
   | "Unknown";
 
-export interface VictimDemographic {
-  id: string;
-  offenseLetter: string; // A through E
-  status: VictimStatus;
-  sex: VictimSex;
-  race: VictimRace;
-  ethnicity: VictimEthnicity;
-}
-
-// --- Offense ---
-export interface Offense {
-  id: string;
-  letter: string; // A through E
-  ucmjArticle: UcmjArticle;
-  offenseType: string;
-  summary: string;
-  offenseDate: string; // ISO date
-  offensePlace: string;
-  finding?: "G" | "NG";
-  victims: VictimDemographic[];
-}
-
-// --- Punishment Types ---
-export type PunishmentType =
-  | "CORRECTIONAL_CUSTODY"
-  | "FORFEITURE"
-  | "REDUCTION"
-  | "EXTRA_DUTIES"
-  | "RESTRICTION"
-  | "ARREST_IN_QUARTERS"
-  | "DETENTION_OF_PAY";
-
-export interface PunishmentEntry {
-  type: PunishmentType;
-  duration?: number; // days or months depending on type
-  amount?: number; // dollar amount for forfeitures
-  reducedToGrade?: Grade; // for reduction
-  suspended: boolean;
-  suspensionMonths?: number;
-}
-
-// --- Punishment Limits ---
-export interface PunishmentLimits {
-  correctionalCustody: number; // max days
-  forfeitureDescription: string;
-  extraDuties: number; // max days
-  restriction: number; // max days
-  canReduce: boolean;
-  reductionNote: string;
-}
-
-export const PUNISHMENT_LIMITS: Record<CommanderGradeCategory, PunishmentLimits> = {
-  FIELD_GRADE_AND_ABOVE: {
-    correctionalCustody: 30,
-    forfeitureDescription: "Half of one month's pay per month for 2 months",
-    extraDuties: 45,
-    restriction: 60,
-    canReduce: true,
-    reductionNote: "Next inferior paygrade only. E6 and above cannot be reduced.",
-  },
+// --- Punishment Limits by Commander Grade (Section 5.2) ---
+export const PUNISHMENT_LIMITS = {
   COMPANY_GRADE: {
-    correctionalCustody: 7,
-    forfeitureDescription: "7 days' pay",
-    extraDuties: 14,
-    restriction: 14,
-    canReduce: true,
-    reductionNote: "Next inferior paygrade only. E6 and above cannot be reduced.",
+    corrCustodyDays: 7,
+    forfeitureDays: 7,
+    extraDutiesDays: 14,
+    restrictionDays: 14,
   },
-};
+  FIELD_GRADE_AND_ABOVE: {
+    corrCustodyDays: 30,
+    forfeitureMonths: 2,
+    extraDutiesDays: 45,
+    restrictionDays: 60,
+  },
+} as const;
 
-// --- JA Review Thresholds ---
+// --- JA Review Thresholds (Section 5.3) ---
 export const JA_REVIEW_THRESHOLDS = {
-  arrestInQuarters: 7,
-  correctionalCustody: 7,
+  arrestQuartersDays: 7,
+  corrCustodyDays: 7,
   forfeitureDays: 7,
   reductionFromGrade: "E4" as Grade,
-  extraDuties: 14,
-  restriction: 14,
+  extraDutiesDays: 14,
+  restrictionDays: 14,
   detentionDays: 14,
 };
 
@@ -216,217 +169,73 @@ export type AppealOutcome =
   | "DENIED"
   | "DENIED_UNTIMELY"
   | "GRANTED_SET_ASIDE"
-  | "REDUCTION_SET_ASIDE"
-  | "PARTIAL_RELIEF";
+  | "PARTIAL_RELIEF"
+  | "REDUCTION_SET_ASIDE_ONLY";
 
-// --- Item 21 Remark ---
-export interface Item21Remark {
-  id: string;
-  date: string;
-  itemReference: string;
-  text: string;
-  confirmed: boolean;
-  confirmedBy?: string;
-  confirmedAt?: string;
-}
+// --- Appeal Intent ---
+export type AppealIntent =
+  | "INTENDS_TO_APPEAL"
+  | "DOES_NOT_INTEND"
+  | "REFUSED_TO_SIGN";
 
-// --- Suspension Tracker ---
-export interface SuspensionRecord {
-  caseId: string;
-  punishment: string;
-  suspensionMonths: number;
-  startDate: string;
-  endDate: string;
-  status: "ACTIVE" | "VACATED" | "REMITTED";
-  vacationDate?: string;
-}
+// --- Item 21 Entry Types ---
+export type Item21EntryType =
+  | "ADDITIONAL_OFFENSE"
+  | "FORWARDING_RECOMMENDATION"
+  | "SUSPENSION_VACATED"
+  | "STAY_RESTRICTION"
+  | "STAY_EXTRA_DUTIES"
+  | "APPEAL_DENIED"
+  | "APPEAL_GRANTED"
+  | "SET_ASIDE"
+  | "ADDITIONAL_VICTIM"
+  | "OTHER";
 
-// --- Vacation Action Record ---
-export interface VacationActionRecord {
-  id: string;
-  parentCaseId: string;
-  marineName: string;
-  edipi: string;
-  rankGrade: string;
-  originalNjpDate: string;
-  originalSuspendedPunishment: string;
-  vacationDate: string;
-  commanderName: string;
-  commanderTitle: string;
-  vacatedInFull: boolean;
-  partialDetails?: string;
-  triggeringArticle: UcmjArticle;
-  triggeringSummary: string;
-  triggeringDate: string;
-  accusedInformedOfHearing: boolean;
-  accusedInformedDate?: string;
-  accusedPermittedToAppear: boolean;
-  notPermittedReason?: string;
-  additionalPunishmentContemplated: boolean;
-  newCaseId?: string;
-  summaryTranscript?: string;
-  commanderSignature?: string;
-  commanderSignatureDate?: string;
-}
+// --- Remedial Action Types ---
+export type RemedialActionType =
+  | "SET_ASIDE"
+  | "MITIGATION"
+  | "SUSPENSION_OF_EXECUTED"
+  | "SUSPENSION_REMISSION";
 
-// --- NJP Case (main record) ---
-export interface NjpCase {
-  id: string;
-  caseNumber: string; // UNIT-YYYY-NNNN
-  status: CaseStatus;
-  currentPhase: CasePhase;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string;
+// --- Suspension Status ---
+export type SuspensionStatus = "NONE" | "ACTIVE" | "VACATED" | "REMITTED";
 
-  // Item 1 - Offense data
-  offenses: Offense[];
+// --- Monitor Status ---
+export type MonitorStatus = "ACTIVE" | "VACATED" | "REMITTED";
 
-  // Items 17-20, 22-25 - Accused info
-  accusedLastName: string;
-  accusedFirstName: string;
-  accusedMiddleName: string;
-  accusedRank: Rank;
-  accusedGrade: Grade;
-  accusedEdipi: string;
-  accusedUnit: string;
-  accusedUnitGcmca: string;
+// --- Signature Method ---
+export type SignatureMethod = "ELECTRONIC" | "PHYSICAL_SCANNED" | "REFUSED";
 
-  // Commander info
-  commanderGrade: Grade;
-  commanderGradeCategory: CommanderGradeCategory;
-  component: Component;
+// --- Document Types ---
+export type DocumentType =
+  | "NAVMC_10132"
+  | "CHARGE_SHEET"
+  | "OFFICE_HOURS_SCRIPT"
+  | "FIGURE_14_1"
+  | "MMRP_NOTIFICATION"
+  | "VACATION_RECORD"
+  | "PHYSICAL_SCAN"
+  | "SET_ASIDE_LETTER"
+  | "OTHER";
 
-  // Vessel exception
-  vesselException: boolean;
+// --- Admonition Types ---
+export type AdmonitionType =
+  | "ORAL_ADMONITION"
+  | "WRITTEN_ADMONITION"
+  | "ORAL_REPRIMAND"
+  | "WRITTEN_REPRIMAND";
 
-  // Jurisdiction confirmation
-  jurisdictionConfirmed: boolean;
-
-  // Item 2 - Rights advisement
-  item2AcceptsNjp?: boolean;
-  item2CounselProvided?: boolean;
-  item2AccusedRefusedToSign?: boolean;
-  item2SignedBy?: string;
-  item2SignedAt?: string;
-
-  // Item 3 - CO certification
-  item3SignedBy?: string;
-  item3SignedAt?: string;
-
-  // Item 4 - UA/Desertion (conditional)
-  item4Applicable: boolean;
-  item4UaPeriod?: string;
-  item4DeserterMarks?: string;
-
-  // Item 5 - Findings (stored per offense)
-
-  // Item 6 - Punishment
-  item6Punishments: PunishmentEntry[];
-  item6Date?: string;
-  item6NoPunishment?: boolean;
-
-  // Item 7 - Suspension
-  item7SuspensionDetails?: string;
-  item7SuspensionEndDate?: string;
-
-  // Items 8, 8A, 8B - NJP Authority
-  item8AuthorityName?: string;
-  item8AuthorityTitle?: string;
-  item8AuthorityUnit?: string;
-  item8AuthorityRank?: Rank;
-  item8AuthorityGrade?: Grade;
-  item8AuthorityEdipi?: string;
-
-  // Item 9 - NJP Authority signature
-  item9SignedBy?: string;
-  item9SignedAt?: string;
-
-  // Item 10 - Notification date
-  item10Date?: string;
-
-  // Item 11 - NJP authority signs notification
-  item11SignedBy?: string;
-  item11SignedAt?: string;
-
-  // Item 12 - Accused appeal intent
-  item12IntendsToAppeal?: boolean;
-  item12AccusedRefusedToSign?: boolean;
-  item12SignedBy?: string;
-  item12SignedAt?: string;
-
-  // Item 13 - Appeal date
-  item13AppealDate?: string;
-
-  // Item 14 - Appeal decision
-  item14Outcome?: AppealOutcome;
-  item14PartialReliefDetails?: string;
-  item14SignedBy?: string;
-  item14SignedAt?: string;
-
-  // Item 15 - Appeal notification date
-  item15Date?: string;
-
-  // Item 16 - Admin completion
-  item16SignedBy?: string;
-  item16SignedAt?: string;
-  item16UdNumber?: string;
-  item16UdDate?: string;
-
-  // Item 21 - Remarks
-  item21Remarks: Item21Remark[];
-
-  // JA Review
-  jaReviewRequired: boolean;
-  jaReviewCompleted: boolean;
-  jaReviewerName?: string;
-  jaReviewDate?: string;
-  jaReviewSummary?: string;
-
-  // OMPF/ESR
-  ompfConfirmed: boolean;
-  ompfConfirmedBy?: string;
-  ompfConfirmedAt?: string;
-
-  // Suspension tracking
-  suspensionRecords: SuspensionRecord[];
-
-  // Vacation records
-  vacationRecords: VacationActionRecord[];
-
-  // Locked items tracking
-  lockedItems: number[];
-
-  // Flags
-  statuteOfLimitationsWarning: boolean;
-  doublePunishmentFlag: boolean;
-  fiveDayStayAlertTriggered: boolean;
-}
-
-// --- User ---
-export interface User {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  unitId: string;
-  edipi?: string;
-  rank?: Rank;
-  grade?: Grade;
-}
-
-// --- Audit Log ---
-export interface AuditLogEntry {
-  id: string;
-  caseId: string;
-  userId: string;
-  action: string;
-  fieldChanged?: string;
-  previousValue?: string;
-  newValue?: string;
-  timestamp: string;
-}
+// --- Audit Log Actions ---
+export type AuditAction =
+  | "INSERT"
+  | "UPDATE"
+  | "DELETE"
+  | "SIGN"
+  | "LOCK"
+  | "GENERATE"
+  | "ROUTE"
+  | "VIEW";
 
 // --- SMCR Forfeiture Calculator ---
 export interface SmcrForfeitureInput {
@@ -435,7 +244,7 @@ export interface SmcrForfeitureInput {
   activeDutyBasicPay: number;
   activeDutyDaysInSixtyDays: number;
   njpDate: string;
-  commanderGradeCategory: CommanderGradeCategory;
+  commanderGradeLevel: CommanderGradeLevel;
 }
 
 export interface SmcrForfeitureResult {
@@ -444,11 +253,12 @@ export interface SmcrForfeitureResult {
   sixtyDayEndDate: string;
 }
 
-// --- Dashboard Column ---
+// --- Dashboard Case ---
 export interface DashboardCase {
+  id: string;
   caseNumber: string;
   marineName: string;
-  marineGrade: Grade;
+  marineGrade: string;
   ucmjArticles: string[];
   status: CaseStatus;
   currentPhase: CasePhase;

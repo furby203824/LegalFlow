@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { differenceInDays } from "date-fns";
-import type { CasePhase, CaseStatus, Grade, UserRole } from "@/types";
+import type { CasePhase, CaseStatus, UserRole } from "@/types";
 
 function getNextAction(phase: string, status: string): { action: string; owner: UserRole } {
   switch (status) {
@@ -36,24 +36,24 @@ export async function GET() {
     if (user.role === "ACCUSED") {
       const userRecord = await prisma.user.findUnique({ where: { id: user.userId } });
       if (userRecord?.edipi) {
-        where.accusedEdipi = userRecord.edipi;
+        where.accused = { edipi: userRecord.edipi };
       } else {
         return NextResponse.json({ cases: [], stats: {} });
       }
     } else if (user.role === "IPAC_ADMIN") {
-      where.item16SignedAt = { not: null };
+      where.item16SignedDate = { not: null };
     } else if (user.role !== "SUITE_ADMIN") {
-      where.accusedUnit = user.unitId;
+      where.unitId = user.unitId;
     }
 
-    // Exclude destroyed cases
     where.status = { not: "DESTROYED" };
 
-    const cases = await prisma.njpCase.findMany({
+    const cases = await prisma.case.findMany({
       where,
       include: {
+        accused: true,
         offenses: true,
-        suspensions: true,
+        punishmentRecord: { select: { suspensionStatus: true } },
       },
       orderBy: { updatedAt: "desc" },
     });
@@ -61,13 +61,13 @@ export async function GET() {
     const dashboardCases = cases.map((c) => {
       const daysInPhase = differenceInDays(new Date(), c.updatedAt);
       const { action, owner } = getNextAction(c.currentPhase, c.status);
-      const hasSuspension = c.suspensions.some((s) => s.status === "ACTIVE");
+      const hasSuspension = c.punishmentRecord?.suspensionStatus === "ACTIVE";
 
       return {
         id: c.id,
         caseNumber: c.caseNumber,
-        marineName: `${c.accusedLastName}, ${c.accusedFirstName}`,
-        marineGrade: c.accusedGrade as Grade,
+        marineName: `${c.accused.lastName}, ${c.accused.firstName}`,
+        marineGrade: c.accused.grade,
         ucmjArticles: c.offenses.map((o) => o.ucmjArticle),
         status: c.status as CaseStatus,
         currentPhase: c.currentPhase as CasePhase,
@@ -75,12 +75,11 @@ export async function GET() {
         nextActionRequired: action,
         nextActionOwner: owner,
         overdue: daysInPhase > 14 && !c.status.startsWith("CLOSED"),
-        suspensionActive: hasSuspension,
-        jaReviewRequired: c.jaReviewRequired && !c.jaReviewCompleted,
+        suspensionActive: hasSuspension || false,
+        jaReviewRequired: c.jaReviewRequired && !c.jaReviewComplete,
       };
     });
 
-    // Stats
     const stats = {
       total: dashboardCases.length,
       open: dashboardCases.filter((c) => !c.status.startsWith("CLOSED")).length,

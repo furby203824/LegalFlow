@@ -58,7 +58,7 @@ export default function NewCasePage() {
 
   // Commander info
   const [commanderGrade, setCommanderGrade] = useState<string>("");
-  const [component, setComponent] = useState<string>("ACTIVE_DUTY");
+  const [component, setComponent] = useState<string>("ACTIVE");
   const [vesselException, setVesselException] = useState(false);
   const [jurisdictionConfirmed, setJurisdictionConfirmed] = useState(false);
 
@@ -146,10 +146,9 @@ export default function NewCasePage() {
       accusedRank: rank,
       accusedGrade: grade,
       accusedEdipi: edipi,
-      accusedUnit: unit,
-      accusedUnitGcmca: unitGcmca,
+      accusedUnitFullString: `${unit}, ${unitGcmca}`,
       commanderGrade,
-      component,
+      component: component || "ACTIVE",
       vesselException,
       jurisdictionConfirmed,
       offenses: offenses.map((o, i) => ({
@@ -341,7 +340,7 @@ export default function NewCasePage() {
                   onChange={(e) => setComponent(e.target.value)}
                   required
                 >
-                  <option value="ACTIVE_DUTY">Active Duty</option>
+                  <option value="ACTIVE">Active Duty</option>
                   <option value="SMCR">SMCR</option>
                 </select>
               </div>

@@ -6,7 +6,8 @@ import {
   checkStatuteOfLimitations,
   generateCaseNumber,
 } from "@/lib/validation";
-import type { UserRole } from "@/types";
+import { getCommanderGradeLevel } from "@/types";
+import type { Grade } from "@/types";
 
 // GET /api/cases - List cases based on role
 export async function GET(req: NextRequest) {
@@ -22,44 +23,43 @@ export async function GET(req: NextRequest) {
     const where: Record<string, unknown> = {};
 
     if (user.role === "ACCUSED") {
-      // Accused can only see their own cases
       const userRecord = await prisma.user.findUnique({ where: { id: user.userId } });
       if (userRecord?.edipi) {
-        where.accusedEdipi = userRecord.edipi;
+        where.accused = { edipi: userRecord.edipi };
       } else {
         return NextResponse.json({ cases: [] });
       }
     } else if (user.role === "IPAC_ADMIN") {
-      // IPAC sees cases routed to IPAC (status CLOSED or item16 signed)
       where.OR = [
         { status: "CLOSED" },
         { status: "CLOSED_SUSPENSION_ACTIVE" },
         { status: "CLOSED_SUSPENSION_VACATED" },
         { status: "CLOSED_SUSPENSION_REMITTED" },
-        { item16SignedAt: { not: null } },
+        { item16SignedDate: { not: null } },
       ];
     } else if (user.role !== "SUITE_ADMIN") {
-      // INITIATOR, ADMIN, NJP_AUTHORITY, APPEAL_AUTHORITY see their unit's cases
-      where.accusedUnit = user.unitId;
+      where.unitId = user.unitId;
     }
 
-    // Apply filters
     if (status) where.status = status;
-    if (unit && user.role === "SUITE_ADMIN") where.accusedUnit = unit;
-    if (edipi) where.accusedEdipi = edipi;
+    if (unit && user.role === "SUITE_ADMIN") where.unitId = unit;
+    if (edipi) where.accused = { edipi };
     if (name) {
-      where.OR = [
-        { accusedLastName: { contains: name } },
-        { accusedFirstName: { contains: name } },
-      ];
+      where.accused = {
+        OR: [
+          { lastName: { contains: name } },
+          { firstName: { contains: name } },
+        ],
+      };
     }
 
-    const cases = await prisma.njpCase.findMany({
+    const cases = await prisma.case.findMany({
       where,
       include: {
+        accused: true,
         offenses: true,
-        punishments: true,
-        suspensions: true,
+        punishmentRecord: true,
+        unit: { select: { unitName: true, unitAbbreviation: true } },
       },
       orderBy: { updatedAt: "desc" },
     });
@@ -85,8 +85,8 @@ export async function POST(req: NextRequest) {
       accusedRank,
       accusedGrade,
       accusedEdipi,
-      accusedUnit,
-      accusedUnitGcmca,
+      accusedUnitId,
+      accusedUnitFullString,
       commanderGrade,
       component,
       vesselException,
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     // Validate required fields
     if (!accusedLastName || !accusedFirstName || !accusedRank || !accusedGrade ||
-        !accusedEdipi || !accusedUnit || !accusedUnitGcmca || !commanderGrade ||
+        !accusedEdipi || !accusedUnitFullString || !commanderGrade ||
         !component || !offenses?.length) {
       return NextResponse.json(
         { error: "Missing required fields for case initiation" },
@@ -110,7 +110,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: edipiError.message }, { status: 400 });
     }
 
-    // Jurisdiction confirmation
     if (!jurisdictionConfirmed) {
       return NextResponse.json(
         { error: "Jurisdiction confirmation is required" },
@@ -118,19 +117,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check warnings
+    // Warnings
     const warnings: string[] = [];
 
-    // Statute of limitations check
+    // Statute of limitations
     for (const offense of offenses) {
       const solWarning = checkStatuteOfLimitations(offense.offenseDate);
       if (solWarning) warnings.push(solWarning.message);
     }
 
     // Double punishment check
-    const existingCases = await prisma.njpCase.findMany({
-      where: { accusedEdipi },
-      include: { offenses: true },
+    const existingCases = await prisma.case.findMany({
+      where: { accused: { edipi: accusedEdipi } },
+      include: { offenses: true, accused: true },
     });
     for (const offense of offenses) {
       for (const ec of existingCases) {
@@ -145,10 +144,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Active suspension warning
-    const activeSuspensions = await prisma.suspension.findMany({
+    const activeSuspensions = await prisma.punishmentRecord.findMany({
       where: {
-        case_: { accusedEdipi },
-        status: "ACTIVE",
+        case_: { accused: { edipi: accusedEdipi } },
+        suspensionStatus: "ACTIVE",
       },
       include: { case_: true },
     });
@@ -159,48 +158,69 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Determine commander grade category
-    const gradeNum = parseInt(commanderGrade.replace(/[EOW]/g, ""), 10);
-    const isFieldGrade = commanderGrade.startsWith("O") && gradeNum >= 4;
-    const commanderGradeCategory = isFieldGrade ? "FIELD_GRADE_AND_ABOVE" : "COMPANY_GRADE";
+    // Determine commander grade level
+    const commanderGradeLevel = getCommanderGradeLevel(commanderGrade as Grade);
 
-    // Check if Article 85 or 86 is present (UA/Desertion)
-    const item4Applicable = offenses.some(
+    // Check if Article 85 or 86 is present
+    const uaApplicable = offenses.some(
       (o: { ucmjArticle: string }) => o.ucmjArticle === "85" || o.ucmjArticle === "86"
     );
 
+    // Resolve or create unit
+    const unitId = accusedUnitId || user.unitId;
+
+    // Create or find accused profile
+    let accusedProfile = await prisma.accusedProfile.findFirst({
+      where: { edipi: accusedEdipi },
+    });
+    if (!accusedProfile) {
+      accusedProfile = await prisma.accusedProfile.create({
+        data: {
+          lastName: accusedLastName,
+          firstName: accusedFirstName,
+          middleName: accusedMiddleName || null,
+          rank: accusedRank,
+          grade: accusedGrade,
+          edipi: accusedEdipi,
+          unitId,
+          unitFullString: accusedUnitFullString,
+          component: component || "ACTIVE",
+        },
+      });
+    }
+
     // Generate case number
     const year = new Date().getFullYear();
-    const caseCount = await prisma.njpCase.count({
+    const unit = await prisma.unit.findUnique({ where: { id: unitId } });
+    const unitAbbrev = unit?.unitAbbreviation || "CASE";
+    const caseCount = await prisma.case.count({
       where: {
-        caseNumber: { startsWith: `${accusedUnit}-${year}` },
+        caseNumber: { startsWith: `${unitAbbrev}-${year}` },
       },
     });
-    const caseNumber = generateCaseNumber(accusedUnit, year, caseCount + 1);
+    const caseNumber = generateCaseNumber(unitAbbrev, year, caseCount + 1);
 
-    // Create case with offenses and victims
-    const njpCase = await prisma.njpCase.create({
+    // Earliest offense date
+    const offenseDates = offenses.map((o: { offenseDate: string }) => o.offenseDate).sort();
+    const offenseDateEarliest = offenseDates[0] || null;
+
+    // Create case with offenses
+    const njpCase = await prisma.case.create({
       data: {
         caseNumber,
         status: "INITIATED",
         currentPhase: "INITIATION",
-        createdById: user.userId,
-        accusedLastName,
-        accusedFirstName,
-        accusedMiddleName: accusedMiddleName || "",
-        accusedRank,
-        accusedGrade,
-        accusedEdipi,
-        accusedUnit,
-        accusedUnitGcmca,
-        commanderGrade,
-        commanderGradeCategory,
-        component,
+        unitId,
+        accusedId: accusedProfile.id,
+        initiatedById: user.userId,
+        commanderGradeLevel,
+        component: component || "ACTIVE",
         vesselException: vesselException || false,
         jurisdictionConfirmed,
-        item4Applicable,
-        statuteOfLimitationsWarning: warnings.some((w) => w.includes("statute")),
-        doublePunishmentFlag: warnings.some((w) => w.includes("Double punishment")),
+        uaApplicable,
+        offenseDateEarliest,
+        doublePunishmentChecked: true,
+        statuteWarningAcknowledged: warnings.some((w) => w.includes("statute")),
         offenses: {
           create: offenses.map(
             (o: {
@@ -210,49 +230,63 @@ export async function POST(req: NextRequest) {
               summary: string;
               offenseDate: string;
               offensePlace: string;
-              victims?: {
-                status: string;
-                sex: string;
-                race: string;
-                ethnicity: string;
-              }[];
             }) => ({
-              letter: o.letter,
+              offenseLetter: o.letter,
               ucmjArticle: o.ucmjArticle,
               offenseType: o.offenseType,
-              summary: o.summary,
+              offenseSummary: o.summary,
               offenseDate: o.offenseDate,
               offensePlace: o.offensePlace,
-              victims: {
-                create: (o.victims || []).map(
-                  (v: { status: string; sex: string; race: string; ethnicity: string }) => ({
-                    status: v.status,
-                    sex: v.sex,
-                    race: v.race,
-                    ethnicity: v.ethnicity,
-                  })
-                ),
-              },
             })
           ),
         },
       },
       include: {
-        offenses: { include: { victims: true } },
+        accused: true,
+        offenses: true,
       },
+    });
+
+    // Create victims separately (they need both caseId and offenseId)
+    for (const o of offenses as { letter: string; victims?: { status: string; sex: string; race: string; ethnicity: string }[] }[]) {
+      const offense = njpCase.offenses.find((off) => off.offenseLetter === o.letter);
+      if (!offense || !o.victims?.length) continue;
+      for (const v of o.victims) {
+        await prisma.victim.create({
+          data: {
+            caseId: njpCase.id,
+            offenseId: offense.id,
+            victimLetter: o.letter,
+            victimStatus: v.status,
+            victimSex: v.sex,
+            victimRace: v.race,
+            victimEthnicity: v.ethnicity,
+          },
+        });
+      }
+    }
+
+    // Reload with victims
+    const fullCase = await prisma.case.findUnique({
+      where: { id: njpCase.id },
+      include: { accused: true, offenses: { include: { victims: true } } },
     });
 
     // Create audit log
     await prisma.auditLog.create({
       data: {
         caseId: njpCase.id,
+        tableName: "cases",
+        recordId: njpCase.id,
+        action: "INSERT",
         userId: user.userId,
-        action: "CASE_INITIATED",
-        newValue: caseNumber,
+        userRole: user.role,
+        userName: user.username,
+        notes: `Case ${caseNumber} initiated`,
       },
     });
 
-    return NextResponse.json({ case: njpCase, warnings }, { status: 201 });
+    return NextResponse.json({ case: fullCase, warnings }, { status: 201 });
   } catch (error) {
     console.error("Case creation error:", error);
     const message = error instanceof Error ? error.message : "Internal server error";

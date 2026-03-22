@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { calculateSmcrForfeiture } from "@/lib/calculator";
-import type { CommanderGradeCategory } from "@/types";
+import type { CommanderGradeLevel } from "@/types";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       activeDutyBasicPay,
       activeDutyDaysInSixtyDays,
       njpDate,
-      commanderGradeCategory,
+      commanderGradeLevel,
     } = body;
 
     if (
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       activeDutyBasicPay === undefined ||
       activeDutyDaysInSixtyDays === undefined ||
       !njpDate ||
-      !commanderGradeCategory
+      !commanderGradeLevel
     ) {
       return NextResponse.json(
         { error: "All calculator fields are required" },
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       activeDutyBasicPay,
       activeDutyDaysInSixtyDays,
       njpDate,
-      commanderGradeCategory: commanderGradeCategory as CommanderGradeCategory,
+      commanderGradeLevel: commanderGradeLevel as CommanderGradeLevel,
     });
 
     return NextResponse.json({ result });
