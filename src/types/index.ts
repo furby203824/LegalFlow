@@ -75,6 +75,13 @@ export const RANK_TO_GRADE: Record<Rank, Grade> = {
   LtGen: "O9", Gen: "O10",
 };
 
+// Combined rank/grade options for single dropdown (e.g. "E3/LCpl")
+export const RANK_GRADE_OPTIONS = RANKS.map((r) => ({
+  rank: r,
+  grade: RANK_TO_GRADE[r],
+  label: `${RANK_TO_GRADE[r]}/${r}`,
+}));
+
 export function getGradeNumber(grade: Grade): number {
   const num = parseInt(grade.replace(/[EOW]/g, ""), 10);
   if (grade.startsWith("E")) return num;
