@@ -1002,10 +1002,15 @@ export function vrSys008(
 // ============================================================================
 
 const VALID_RANKS = new Set([
+  // USMC
   "Pvt", "PFC", "LCpl", "Cpl", "Sgt", "SSgt", "GySgt", "MSgt",
   "1stSgt", "MGySgt", "SgtMaj", "WO", "CWO2", "CWO3", "CWO4", "CWO5",
   "2ndLt", "1stLt", "Capt", "Maj", "LtCol", "Col", "BGen", "MajGen",
   "LtGen", "Gen",
+  // USN
+  "SR", "SA", "SN", "PO3", "PO2", "PO1", "CPO", "SCPO", "MCPO",
+  "WO1", "ENS", "LTJG", "LT", "LCDR", "CDR", "CAPT", "RDML", "RADM",
+  "VADM", "ADM",
 ]);
 
 const VALID_GRADES = new Set([
