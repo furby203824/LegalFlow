@@ -3,12 +3,18 @@ import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import {
   vrR2005,
+  vrR3013,
   vrR4001,
+  vrR5002,
+  vrR5005,
+  vrR7001,
+  vrCv001,
   validatePunishment,
   vrR3010,
   vrR5001,
   getLockedItems,
   calculateSuspensionEndDate,
+  applyAbbreviations,
 } from "@/lib/validation";
 import type { Grade, CommanderGradeLevel } from "@/types";
 
@@ -236,7 +242,8 @@ export async function POST(
         if (punishment.arrestQuartersDays) parts.push(`Arrest in quarters for ${punishment.arrestQuartersDays} days`);
         if (punishment.detentionDays) parts.push(`Detention of pay for ${punishment.detentionDays} days`);
         if (punishment.admonitionReprimand) parts.push(punishment.admonitionType || "Admonition/Reprimand");
-        const punishmentText = parts.join("; ") + `. ${punishment.punishmentDate}.`;
+        // VR-CV-003: Apply approved abbreviations
+        const punishmentText = applyAbbreviations(parts.join("; ") + `. ${punishment.punishmentDate}.`);
 
         // Suspension
         let suspensionText = "NONE";
@@ -387,11 +394,25 @@ export async function POST(
       }
 
       case "SIGN_ITEM_9": {
-        if (!njpCase.njpDate && !njpCase.punishmentRecord) {
-          return NextResponse.json({ error: "Punishment must be entered first" }, { status: 400 });
+        // VR-R3-013: Item 9 prerequisites
+        const item9prereqs = vrR3013({
+          item3Signed: signedItems.includes("3"),
+          allFindingsEntered: njpCase.offenses.every((o) => o.finding),
+          punishmentEntered: !!njpCase.punishmentRecord,
+        });
+        if (item9prereqs) {
+          return NextResponse.json({ error: item9prereqs.message, ruleId: item9prereqs.ruleId }, { status: 400 });
         }
 
         const { authorityName, authorityTitle, authorityUnit, authorityRank, authorityGrade, authorityEdipi } = data;
+
+        // VR-CV-001: Validate rank/grade if provided
+        if (authorityRank || authorityGrade) {
+          const cvCheck = vrCv001(authorityRank, authorityGrade);
+          if (cvCheck) {
+            return NextResponse.json({ error: cvCheck.message, ruleId: cvCheck.ruleId }, { status: 400 });
+          }
+        }
 
         await createSignature("9", authorityName || user.username);
 
@@ -528,6 +549,12 @@ export async function POST(
           return NextResponse.json({ error: "JA review not required for this case" }, { status: 400 });
         }
 
+        // VR-R5-002: JA review log requirements
+        const jaLogCheck = vrR5002(data.reviewerName, data.reviewDate);
+        if (jaLogCheck) {
+          return NextResponse.json({ error: jaLogCheck.message, ruleId: jaLogCheck.ruleId }, { status: 400 });
+        }
+
         await prisma.case.update({
           where: { id },
           data: {
@@ -564,6 +591,12 @@ export async function POST(
         }
 
         const { outcome, outcomeDetail, authorityName: appealAuthName, authorityRank: appealAuthRank, item15Date } = data;
+
+        // VR-R5-005: Appeal outcome required
+        const outcomeCheck = vrR5005(outcome, outcomeDetail);
+        if (outcomeCheck) {
+          return NextResponse.json({ error: outcomeCheck.message, ruleId: outcomeCheck.ruleId }, { status: 400 });
+        }
 
         await createSignature("14", appealAuthName || user.username);
 
@@ -610,16 +643,22 @@ export async function POST(
       }
 
       case "SIGN_ITEM_16": {
-        if (!signedItems.includes("9")) {
-          return NextResponse.json({ error: "Prior phases must be complete" }, { status: 400 });
-        }
-
-        const appeal = njpCase.appealRecord;
-        if (appeal?.appealIntent === "INTENDS_TO_APPEAL" && !appeal?.items1314Locked) {
-          return NextResponse.json({ error: "Appeal must be resolved before closing" }, { status: 400 });
-        }
-
         const { udNumber, udDate, signerName } = data;
+        const appeal16 = njpCase.appealRecord;
+
+        // VR-R7-001: Item 16 prerequisites
+        const prereqCheck = vrR7001({
+          item3Signed: signedItems.includes("3"),
+          item9Signed: signedItems.includes("9"),
+          item12Signed: signedItems.includes("12"),
+          appealResolved: !appeal16?.appealIntent || appeal16?.appealIntent !== "INTENDS_TO_APPEAL" || !!appeal16?.items1314Locked,
+          ompfConfirmed: njpCase.ompfScanConfirmed,
+          udNumber: udNumber || "",
+          udDate: udDate || "",
+        });
+        if (prereqCheck) {
+          return NextResponse.json({ error: prereqCheck.message, ruleId: prereqCheck.ruleId }, { status: 400 });
+        }
 
         await createSignature("16", signerName || user.username);
 
