@@ -3,8 +3,8 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/ui/AppShell";
-import { UCMJ_ARTICLES, RANK_GRADE_OPTIONS, RANK_TO_GRADE, GRADES } from "@/types";
-import type { Rank } from "@/types";
+import { UCMJ_ARTICLES, RANK_GRADE_OPTIONS_BY_BRANCH, GRADES } from "@/types";
+import type { ServiceBranch } from "@/types";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, AlertOctagon, Info, Plus, Trash2 } from "lucide-react";
 import { casesStore, caseWithIncludes, auditStore } from "@/lib/db";
@@ -41,6 +41,7 @@ export default function NewCasePage() {
   const [lastName, setLastName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
+  const [branch, setBranch] = useState<ServiceBranch>("USMC");
   const [rankGrade, setRankGrade] = useState(""); // combined "E3/LCpl" value
   const [edipi, setEdipi] = useState("");
   const [unit, setUnit] = useState("");
@@ -180,10 +181,16 @@ export default function NewCasePage() {
               <Field label="Middle Name">
                 <input className="input-field" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
               </Field>
+              <Field label="Branch" required>
+                <select className="input-field" value={branch} onChange={(e) => { setBranch(e.target.value as ServiceBranch); setRankGrade(""); }}>
+                  <option value="USMC">USMC</option>
+                  <option value="USN">USN</option>
+                </select>
+              </Field>
               <Field label="Rank / Grade" required>
                 <select className="input-field" value={rankGrade} onChange={(e) => setRankGrade(e.target.value)} required>
                   <option value="">Select rank/grade</option>
-                  {RANK_GRADE_OPTIONS.map((o) => <option key={o.label} value={o.label}>{o.label}</option>)}
+                  {RANK_GRADE_OPTIONS_BY_BRANCH[branch].map((o) => <option key={o.label} value={o.label}>{o.label}</option>)}
                 </select>
               </Field>
               <Field label="EDIPI (10 digits)" required>

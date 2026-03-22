@@ -49,11 +49,28 @@ export type CommanderGradeLevel = "FIELD_GRADE_AND_ABOVE" | "COMPANY_GRADE";
 export type Component = "ACTIVE" | "SMCR" | "IRR";
 
 // --- Rank/Grade ---
+export const USMC_RANKS = [
+  "Pvt", "PFC", "LCpl", "Cpl", "Sgt", "SSgt", "GySgt", "MSgt",
+  "1stSgt", "MGySgt", "SgtMaj", "WO", "CWO2", "CWO3", "CWO4", "CWO5",
+  "2ndLt", "1stLt", "Capt", "Maj", "LtCol", "Col", "BGen", "MajGen",
+  "LtGen", "Gen",
+] as const;
+
+export const USN_RANKS = [
+  "SR", "SA", "SN", "PO3", "PO2", "PO1", "CPO", "SCPO", "MCPO",
+  "CWO2", "CWO3", "CWO4", "CWO5",
+  "ENS", "LTJG", "LT", "LCDR", "CDR", "CAPT", "RDML", "RADM",
+  "VADM", "ADM",
+] as const;
+
+// All unique ranks across branches
 export const RANKS = [
   "Pvt", "PFC", "LCpl", "Cpl", "Sgt", "SSgt", "GySgt", "MSgt",
   "1stSgt", "MGySgt", "SgtMaj", "WO", "CWO2", "CWO3", "CWO4", "CWO5",
   "2ndLt", "1stLt", "Capt", "Maj", "LtCol", "Col", "BGen", "MajGen",
   "LtGen", "Gen",
+  "SR", "SA", "SN", "PO3", "PO2", "PO1", "CPO", "SCPO", "MCPO",
+  "ENS", "LTJG", "LT", "LCDR", "CDR", "CAPT", "RDML", "RADM", "VADM", "ADM",
 ] as const;
 export type Rank = (typeof RANKS)[number];
 
@@ -66,6 +83,7 @@ export const GRADES = [
 export type Grade = (typeof GRADES)[number];
 
 export const RANK_TO_GRADE: Record<Rank, Grade> = {
+  // USMC
   Pvt: "E1", PFC: "E2", LCpl: "E3", Cpl: "E4", Sgt: "E5",
   SSgt: "E6", GySgt: "E7", MSgt: "E8", "1stSgt": "E8",
   MGySgt: "E9", SgtMaj: "E9",
@@ -73,14 +91,26 @@ export const RANK_TO_GRADE: Record<Rank, Grade> = {
   "2ndLt": "O1", "1stLt": "O2", Capt: "O3", Maj: "O4",
   LtCol: "O5", Col: "O6", BGen: "O7", MajGen: "O8",
   LtGen: "O9", Gen: "O10",
+  // USN
+  SR: "E1", SA: "E2", SN: "E3", PO3: "E4", PO2: "E5",
+  PO1: "E6", CPO: "E7", SCPO: "E8", MCPO: "E9",
+  ENS: "O1", LTJG: "O2", LT: "O3", LCDR: "O4", CDR: "O5", CAPT: "O6",
+  RDML: "O7", RADM: "O8", VADM: "O9", ADM: "O10",
 };
 
-// Combined rank/grade options for single dropdown (e.g. "E3/LCpl")
-export const RANK_GRADE_OPTIONS = RANKS.map((r) => ({
-  rank: r,
-  grade: RANK_TO_GRADE[r],
-  label: `${RANK_TO_GRADE[r]}/${r}`,
-}));
+export type ServiceBranch = "USMC" | "USN";
+
+// Combined rank/grade options grouped by branch
+export const RANK_GRADE_OPTIONS_BY_BRANCH: Record<ServiceBranch, { rank: string; grade: Grade; label: string }[]> = {
+  USMC: USMC_RANKS.map((r) => ({ rank: r, grade: RANK_TO_GRADE[r], label: `${RANK_TO_GRADE[r]}/${r}` })),
+  USN: USN_RANKS.map((r) => ({ rank: r, grade: RANK_TO_GRADE[r], label: `${RANK_TO_GRADE[r]}/${r}` })),
+};
+
+// Flat list for backward compat
+export const RANK_GRADE_OPTIONS = [
+  ...RANK_GRADE_OPTIONS_BY_BRANCH.USMC,
+  ...RANK_GRADE_OPTIONS_BY_BRANCH.USN,
+];
 
 export function getGradeNumber(grade: Grade): number {
   const num = parseInt(grade.replace(/[EOW]/g, ""), 10);
