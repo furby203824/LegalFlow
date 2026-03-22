@@ -11,16 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getSession, logout as doLogout, type SessionUser } from "@/lib/auth";
 
-interface User {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  unitId: string;
-  rank?: string;
-  grade?: string;
-}
+type User = SessionUser;
 
 interface NavItem {
   label: string;

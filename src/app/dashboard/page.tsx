@@ -74,8 +74,8 @@ export default function DashboardPage() {
   useEffect(() => {
     getDashboard()
       .then((data) => {
-        setCases(data.cases || []);
-        setStats(data.stats || null);
+        setCases((data.cases || []) as DashboardCase[]);
+        setStats((data.stats || null) as Stats | null);
       })
       .catch(console.error)
       .finally(() => setLoading(false));

@@ -60,7 +60,7 @@ function CasesListContent() {
 
   useEffect(() => {
     getCases({ status: statusFilter || undefined, name: search || undefined })
-      .then((data) => setCases(data.cases || []))
+      .then((data) => setCases((data.cases || []) as CaseRow[]))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [statusFilter, search]);
