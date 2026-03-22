@@ -1,223 +1,8 @@
-import { format, parseISO } from "date-fns";
-import type { Rank, Grade } from "@/types";
+import type { CaseData } from "./types";
+import { fmtFull } from "./dateFormatters";
+import { punishmentFull, maxPunishmentByGrade } from "./punishmentText";
+import { PUNISHMENT_LIMITS } from "@/types";
 
-// ============================================================================
-// Document Generation
-// Generates text-based document content for NAVMC 10132, Charge Sheet,
-// and Office Hours Script
-// ============================================================================
-
-interface CaseData {
-  caseNumber: string;
-  accusedLastName: string;
-  accusedFirstName: string;
-  accusedMiddleName: string;
-  accusedRank: Rank;
-  accusedGrade: Grade;
-  accusedEdipi: string;
-  accusedUnit: string;
-  accusedUnitGcmca: string;
-  commanderGrade: Grade;
-  component: string;
-  vesselException: boolean;
-  offenses: {
-    letter: string;
-    ucmjArticle: string;
-    offenseType: string;
-    summary: string;
-    offenseDate: string;
-    offensePlace: string;
-    finding?: string;
-    victims: {
-      status: string;
-      sex: string;
-      race: string;
-      ethnicity: string;
-    }[];
-  }[];
-  item6Punishments: {
-    type: string;
-    duration?: number;
-    amount?: number;
-    reducedToGrade?: string;
-    suspended: boolean;
-    suspensionMonths?: number;
-  }[];
-  item6Date?: string;
-  item7SuspensionDetails?: string;
-  item8AuthorityName?: string;
-  item8AuthorityTitle?: string;
-  item8AuthorityUnit?: string;
-  item8AuthorityRank?: string;
-  item8AuthorityGrade?: string;
-}
-
-function fmtDate(date: string): string {
-  try {
-    return format(parseISO(date), "dd MMM yyyy").toUpperCase();
-  } catch {
-    return date;
-  }
-}
-
-function punishmentText(p: {
-  type: string;
-  duration?: number;
-  amount?: number;
-  reducedToGrade?: string;
-}): string {
-  switch (p.type) {
-    case "CORRECTIONAL_CUSTODY":
-      return `Correctional custody for ${p.duration} days`;
-    case "FORFEITURE":
-      return `Forfeiture of $${p.amount}`;
-    case "REDUCTION":
-      return `Reduction to ${p.reducedToGrade}`;
-    case "EXTRA_DUTIES":
-      return `Extra duties for ${p.duration} days`;
-    case "RESTRICTION":
-      return `Restriction for ${p.duration} days`;
-    case "ARREST_IN_QUARTERS":
-      return `Arrest in quarters for ${p.duration} days`;
-    case "DETENTION_OF_PAY":
-      return `Detention of pay for ${p.duration} days`;
-    default:
-      return p.type;
-  }
-}
-
-// --- Charge Sheet ---
-export function generateChargeSheet(data: CaseData): string {
-  const lines: string[] = [];
-  lines.push("═══════════════════════════════════════════════════════════════");
-  lines.push("                        CHARGE SHEET");
-  lines.push("                  NON-JUDICIAL PUNISHMENT");
-  lines.push("═══════════════════════════════════════════════════════════════");
-  lines.push("");
-  lines.push(`Case Number: ${data.caseNumber}`);
-  lines.push(`Date: ${fmtDate(new Date().toISOString())}`);
-  lines.push("");
-  lines.push("ACCUSED:");
-  lines.push(
-    `  Name: ${data.accusedLastName}, ${data.accusedFirstName} ${data.accusedMiddleName}`.trim()
-  );
-  lines.push(`  Rank/Grade: ${data.accusedRank} / ${data.accusedGrade}`);
-  lines.push(`  EDIPI: ${data.accusedEdipi}`);
-  lines.push(`  Unit: ${data.accusedUnit}`);
-  lines.push("");
-  lines.push("───────────────────────────────────────────────────────────────");
-  lines.push("CHARGES:");
-  lines.push("");
-
-  for (const offense of data.offenses) {
-    lines.push(
-      `  Charge ${offense.letter}: Violation of UCMJ Article ${offense.ucmjArticle}`
-    );
-    lines.push(`    Offense Type: ${offense.offenseType}`);
-    lines.push(`    Date: ${fmtDate(offense.offenseDate)}`);
-    lines.push(`    Place: ${offense.offensePlace}`);
-    lines.push(`    Summary: ${offense.summary}`);
-    lines.push("");
-  }
-
-  lines.push("───────────────────────────────────────────────────────────────");
-  lines.push("");
-  lines.push("This charge sheet is for pre-hearing review purposes only.");
-  lines.push("It is not a legal charging document for court-martial purposes.");
-  lines.push("");
-  lines.push("═══════════════════════════════════════════════════════════════");
-
-  return lines.join("\n");
-}
-
-// --- NAVMC 10132 (simplified text representation) ---
-export function generateNavmc10132(data: CaseData): string {
-  const lines: string[] = [];
-  lines.push("═══════════════════════════════════════════════════════════════");
-  lines.push("                    NAVMC 10132 (REV. 08-2023)");
-  lines.push("                   UNIT PUNISHMENT BOOK");
-  lines.push("═══════════════════════════════════════════════════════════════");
-  lines.push("");
-  lines.push(`Case Number: ${data.caseNumber}`);
-  lines.push("");
-
-  // Items 17-20: Accused info
-  lines.push("ITEM 17-20: ACCUSED INFORMATION");
-  lines.push(
-    `  Name: ${data.accusedLastName}, ${data.accusedFirstName} ${data.accusedMiddleName}`.trim()
-  );
-  lines.push(`  Rank/Grade: ${data.accusedRank} / ${data.accusedGrade}`);
-  lines.push(`  EDIPI: ${data.accusedEdipi}`);
-  lines.push(`  Unit: ${data.accusedUnit}`);
-  lines.push(`  Component: ${data.component}`);
-  lines.push("");
-
-  // Item 1: Offenses
-  lines.push("ITEM 1: OFFENSES");
-  for (const offense of data.offenses) {
-    lines.push(
-      `  ${offense.letter}. Article ${offense.ucmjArticle} - ${offense.offenseType}`
-    );
-    lines.push(`     ${offense.summary}`);
-    lines.push(
-      `     Date: ${fmtDate(offense.offenseDate)} | Place: ${offense.offensePlace}`
-    );
-    if (offense.finding) {
-      lines.push(`     Finding: ${offense.finding === "G" ? "GUILTY" : "NOT GUILTY"}`);
-    }
-  }
-  lines.push("");
-
-  // Item 22: Victim demographics
-  lines.push("ITEM 22: VICTIM DEMOGRAPHICS");
-  for (const offense of data.offenses) {
-    for (const v of offense.victims) {
-      lines.push(
-        `  ${offense.letter}. ${v.status} / ${v.sex} / ${v.race} / ${v.ethnicity}`
-      );
-    }
-  }
-  lines.push("");
-
-  // Item 6: Punishment
-  if (data.item6Date) {
-    lines.push("ITEM 6: PUNISHMENT IMPOSED");
-    lines.push(`  Date: ${fmtDate(data.item6Date)}`);
-    for (const p of data.item6Punishments) {
-      let line = `  - ${punishmentText(p)}`;
-      if (p.suspended) {
-        line += ` (SUSPENDED for ${p.suspensionMonths} months)`;
-      }
-      lines.push(line);
-    }
-    lines.push("");
-  }
-
-  // Item 7: Suspension
-  if (data.item7SuspensionDetails) {
-    lines.push("ITEM 7: SUSPENSION");
-    lines.push(`  ${data.item7SuspensionDetails}`);
-    lines.push("");
-  }
-
-  // Items 8-9: NJP Authority
-  if (data.item8AuthorityName) {
-    lines.push("ITEMS 8-9: NJP AUTHORITY");
-    lines.push(`  Name: ${data.item8AuthorityName}`);
-    lines.push(`  Title: ${data.item8AuthorityTitle}`);
-    lines.push(`  Unit: ${data.item8AuthorityUnit}`);
-    lines.push(`  Rank/Grade: ${data.item8AuthorityRank} / ${data.item8AuthorityGrade}`);
-    lines.push("");
-  }
-
-  lines.push("═══════════════════════════════════════════════════════════════");
-  lines.push("  CLASSIFICATION: CUI - PRIVACY SENSITIVE WHEN POPULATED");
-  lines.push("═══════════════════════════════════════════════════════════════");
-
-  return lines.join("\n");
-}
-
-// --- Office Hours Script ---
 export function generateOfficeHoursScript(data: CaseData): string {
   const marineName = `${data.accusedRank} ${data.accusedLastName}`;
   const lines: string[] = [];
@@ -231,7 +16,7 @@ export function generateOfficeHoursScript(data: CaseData): string {
   lines.push(`Marine: ${marineName}`);
   lines.push("");
 
-  // Section 1: Pre-hearing
+  // Section 1: Pre-hearing confirmation
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("1. PRE-HEARING CONFIRMATION");
   lines.push("───────────────────────────────────────────────────────────────");
@@ -240,6 +25,10 @@ export function generateOfficeHoursScript(data: CaseData): string {
   lines.push("  [ ] Items 1 (charges) are entered correctly");
   lines.push("  [ ] Items 17-20 (accused biographical data) are verified");
   lines.push("  [ ] Item 22 (victim demographics) are entered");
+  lines.push("  [ ] Item 2 prepared for accused signature");
+  lines.push("  [ ] Counsel consultation opportunity provided");
+  lines.push("  [ ] Investigating officer's report reviewed (if applicable)");
+  lines.push("  [ ] Chain of command endorsement obtained");
   lines.push("");
 
   // Section 2: Presentation of charges
@@ -253,7 +42,7 @@ export function generateOfficeHoursScript(data: CaseData): string {
   lines.push("");
   for (const offense of data.offenses) {
     lines.push(
-      `  Charge ${offense.letter}: "In that you did, on or about ${fmtDate(offense.offenseDate)},`
+      `  Charge ${offense.letter}: "In that you did, on or about ${fmtFull(offense.offenseDate)},`
     );
     lines.push(`  at ${offense.offensePlace}, ${offense.summary}.`);
     lines.push(`  In violation of Article ${offense.ucmjArticle}, UCMJ."`);
@@ -299,8 +88,10 @@ export function generateOfficeHoursScript(data: CaseData): string {
     lines.push('by court-martial?"');
   }
   lines.push("");
+  lines.push("[Record election on Item 2]");
+  lines.push("");
 
-  // Section 5: Counsel
+  // Section 5: Counsel consultation
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("5. COUNSEL CONSULTATION");
   lines.push("───────────────────────────────────────────────────────────────");
@@ -308,21 +99,26 @@ export function generateOfficeHoursScript(data: CaseData): string {
   lines.push(`"${marineName}, have you been provided the opportunity to`);
   lines.push('consult with counsel regarding this matter?"');
   lines.push("");
+  lines.push("[Document counsel consultation on Item 2]");
+  lines.push("");
 
-  // Section 6: Item 2
+  // Section 6: Item 2 execution
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("6. ITEM 2 EXECUTION");
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("");
-  lines.push("[Accused signs Item 2, or CO signs for refusal]");
+  lines.push("[Accused signs Item 2 with date]");
+  lines.push("[If accused REFUSES to sign: CO notes refusal and signs for accused]");
+  lines.push("[Record signer name and date]");
   lines.push("");
 
-  // Section 7: Item 3
+  // Section 7: Item 3 execution
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("7. ITEM 3 EXECUTION");
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("");
-  lines.push("[CO certifies rights advisement and signs Item 3]");
+  lines.push("[CO certifies that accused was advised of rights and signs Item 3]");
+  lines.push("[Record signer name and date]");
   lines.push("");
 
   // Section 8: Evidence
@@ -346,16 +142,37 @@ export function generateOfficeHoursScript(data: CaseData): string {
     );
   }
   lines.push("");
+  lines.push("[Record findings on NAVMC 10132 Item 5]");
+  lines.push("");
 
   // Section 10: Punishment
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("10. PUNISHMENT ANNOUNCEMENT");
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("");
+
+  // Show punishment limits
+  lines.push(`Maximum punishment authorized (${data.commanderGradeLevel}):`);
+  for (const limit of maxPunishmentByGrade(data.commanderGradeLevel)) {
+    lines.push(`  * ${limit}`);
+  }
+
+  if (data.component === "SMCR") {
+    lines.push("");
+    lines.push("  NOTE (SMCR): Forfeiture is limited to pay earned during the");
+    lines.push("  60-day period beginning on the NJP date. See SMCR forfeiture");
+    lines.push("  calculator for maximum amount.");
+  }
+
+  lines.push("");
   if (data.item6Punishments.length > 0) {
     lines.push(`"${marineName}, your punishment is as follows:"`);
     for (const p of data.item6Punishments) {
-      lines.push(`  - ${punishmentText(p)}`);
+      let line = `  - ${punishmentFull(p)}`;
+      if (p.suspended) {
+        line += ` (suspended for ${p.suspensionMonths} months)`;
+      }
+      lines.push(line);
     }
   } else {
     lines.push(`"${marineName}, your punishment is as follows:"`);
@@ -369,26 +186,34 @@ export function generateOfficeHoursScript(data: CaseData): string {
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("");
   if (data.item7SuspensionDetails) {
-    lines.push(`"The following punishment is suspended: ${data.item7SuspensionDetails}"`);
+    lines.push(`"The following punishment is suspended: ${data.item7SuspensionDetails}`);
+    if (data.item7SuspensionMonths) {
+      lines.push(`for a period of ${data.item7SuspensionMonths} months.`);
+    }
+    if (data.item7RemissionTerms) {
+      lines.push(`The suspension will be automatically remitted unless: ${data.item7RemissionTerms}`);
+    }
+    lines.push('"');
   } else {
     lines.push("[No suspension or suspension details to be announced]");
   }
   lines.push("");
 
-  // Section 12: Item 9
+  // Section 12: Item 9 execution
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("12. ITEM 9 EXECUTION");
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("");
-  lines.push("[NJP Authority signs Item 9]");
+  lines.push("[NJP Authority signs Item 9 with date]");
   lines.push("");
 
-  // Section 13: Notification
+  // Section 13: Item 10 - Notification
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("13. NOTIFICATION OF FINAL DISPOSITION (Item 10)");
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("");
-  lines.push("[Record date of notification]");
+  lines.push("[Record date of notification to accused on Item 10]");
+  lines.push("[NJP Authority signs Item 11 with date]");
   lines.push("");
 
   // Section 14: Appeal rights
@@ -404,93 +229,36 @@ export function generateOfficeHoursScript(data: CaseData): string {
   lines.push('your appeal rights."');
   lines.push("");
 
-  // Section 15: Item 11
+  // Section 15: Item 12 - Appeal election
   lines.push("───────────────────────────────────────────────────────────────");
-  lines.push("15. ITEM 11 EXECUTION");
+  lines.push("15. ITEM 12 EXECUTION - APPEAL ELECTION");
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("");
-  lines.push("[NJP Authority signs Item 11]");
+  lines.push("[Accused indicates appeal intent on Item 12:]");
+  lines.push('  ( ) "I intend to appeal"');
+  lines.push('  ( ) "I do not intend to appeal"');
+  lines.push('  ( ) Refused to sign');
+  lines.push("");
+  lines.push("[Accused signs Item 12 with date]");
   lines.push("");
 
-  // Section 16: Item 12
+  // Section 16: Post-hearing checklist
   lines.push("───────────────────────────────────────────────────────────────");
-  lines.push("16. ITEM 12 EXECUTION");
+  lines.push("16. POST-HEARING CHECKLIST");
   lines.push("───────────────────────────────────────────────────────────────");
   lines.push("");
-  lines.push("[Accused indicates appeal intent and signs Item 12]");
-  lines.push("[Legal officer or assistant facilitates]");
+  lines.push("  [ ] Item 5 - Findings recorded");
+  lines.push("  [ ] Item 6 - Punishment recorded");
+  lines.push("  [ ] Item 7 - Suspension recorded (if applicable)");
+  lines.push("  [ ] Item 9 - NJP Authority signed");
+  lines.push("  [ ] Item 10 - Date of notification recorded");
+  lines.push("  [ ] Item 11 - NJP Authority notification signed");
+  lines.push("  [ ] Item 12 - Accused appeal election signed");
+  lines.push("  [ ] NJP logged in LegalFlow database");
   lines.push("");
 
   lines.push("═══════════════════════════════════════════════════════════════");
   lines.push("                     END OF SCRIPT");
-  lines.push("═══════════════════════════════════════════════════════════════");
-
-  return lines.join("\n");
-}
-
-// --- Vacation Notice (Figure 14-1) ---
-export function generateVacationNotice(data: {
-  caseNumber: string;
-  marineName: string;
-  marineRank: string;
-  marineUnit: string;
-  commanderName: string;
-  commanderTitle: string;
-  commanderUnit: string;
-  njpDate: string;
-  suspensionDuration: string;
-  triggeringOffense: string;
-  vacatedInFull: boolean;
-  partialDetails?: string;
-  pocInfo: string;
-}): string {
-  const lines: string[] = [];
-  const today = format(new Date(), "dd MMM yyyy").toUpperCase();
-
-  lines.push("═══════════════════════════════════════════════════════════════");
-  lines.push("        NOTICE OF INTENT TO VACATE SUSPENDED PUNISHMENT");
-  lines.push("                        (Figure 14-1)");
-  lines.push("═══════════════════════════════════════════════════════════════");
-  lines.push("");
-  lines.push("                                              SSIC 5800");
-  lines.push("                                              S1");
-  lines.push(`                                              ${today}`);
-  lines.push("");
-  lines.push(`From: ${data.commanderName}, ${data.commanderTitle}`);
-  lines.push(`To:   ${data.marineRank} ${data.marineName}`);
-  lines.push("");
-  lines.push("Subj: NOTICE OF INTENT TO VACATE SUSPENDED PUNISHMENT");
-  lines.push("");
-  lines.push(`Ref:  (a) Case ${data.caseNumber}`);
-  lines.push("");
-  lines.push(
-    `1. On ${fmtDate(data.njpDate)}, you received Non-Judicial Punishment ` +
-    `under Article 15, UCMJ, which included a suspended punishment for a ` +
-    `period of ${data.suspensionDuration}. You have committed a subsequent ` +
-    `offense: ${data.triggeringOffense}.`
-  );
-  lines.push("");
-  if (data.vacatedInFull) {
-    lines.push(
-      "2. It is my intent to vacate the suspended punishment IN FULL."
-    );
-  } else {
-    lines.push(
-      `2. It is my intent to vacate the suspended punishment IN PART: ${data.partialDetails}`
-    );
-  }
-  lines.push("");
-  lines.push(
-    `3. Point of contact for this matter is ${data.pocInfo}.`
-  );
-  lines.push("");
-  lines.push("");
-  lines.push(`                                    ${data.commanderName}`);
-  lines.push("");
-  lines.push("Copy to:");
-  lines.push("  Files");
-  lines.push("  IPAC");
-  lines.push("");
   lines.push("═══════════════════════════════════════════════════════════════");
 
   return lines.join("\n");

@@ -17,6 +17,7 @@ import {
   applyAbbreviations,
 } from "@/lib/validation";
 import type { Grade, CommanderGradeLevel } from "@/types";
+import { createVersionedDocument } from "@/lib/documents";
 
 // POST /api/cases/[id]/phase - Advance case through phases
 export async function POST(
@@ -685,15 +686,21 @@ export async function POST(
           data: { locked: true },
         });
 
-        // Create document record for completed UPB
-        await prisma.document.create({
-          data: {
-            caseId: id,
-            documentType: "NAVMC_10132",
-            generatedById: user.userId,
-            generatedAt: new Date(),
-          },
-        });
+        // Create 4 distribution copy document records for completed UPB
+        const distributions = [
+          { suffix: "E-SRB", flags: { esrb: true } },
+          { suffix: "OMPF", flags: { ompf: true } },
+          { suffix: "FILES", flags: { files: true } },
+          { suffix: "MEMBER", flags: { member: true } },
+        ] as const;
+        for (const dist of distributions) {
+          await createVersionedDocument(
+            id,
+            `NAVMC_10132_${dist.suffix}`,
+            user.userId,
+            dist.flags
+          );
+        }
 
         await audit("SIGN", "Item 16 signed - case closed");
         return NextResponse.json({ message: "Case closed", status: finalStatus });
