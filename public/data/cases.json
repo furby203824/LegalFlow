@@ -239,6 +239,17 @@
         "preInitiation": true,
         "addedBy": "user-1774218618690-02z7m",
         "addedByName": "admin"
+      },
+      {
+        "id": "ev-1774223162538-jsiuw",
+        "createdAt": "2026-03-22T23:46:02.538Z",
+        "evidenceType": "WITNESS_STATEMENT",
+        "description": "",
+        "dateReceived": "2026-03-04",
+        "source": "CWO4 Smith Statement",
+        "preInitiation": true,
+        "addedBy": "user-1774218618690-02z7m",
+        "addedByName": "admin"
       }
     ],
     "documents": [],
