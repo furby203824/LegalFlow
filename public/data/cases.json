@@ -228,7 +228,19 @@
     "appeal": null,
     "item21Entries": [],
     "signatures": [],
-    "evidence": [],
+    "evidence": [
+      {
+        "id": "ev-1774223161845-aatsa",
+        "createdAt": "2026-03-22T23:46:01.845Z",
+        "evidenceType": "PHOTOGRAPHS",
+        "description": "",
+        "dateReceived": "2026-03-21",
+        "source": "",
+        "preInitiation": true,
+        "addedBy": "user-1774218618690-02z7m",
+        "addedByName": "admin"
+      }
+    ],
     "documents": [],
     "remedialActions": [],
     "vacationRecordsAsParent": [],
