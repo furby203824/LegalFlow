@@ -252,7 +252,21 @@
         "addedByName": "admin"
       }
     ],
-    "documents": [],
+    "documents": [
+      {
+        "id": "doc-1774223176684-jop7w",
+        "documentVersion": 1,
+        "isCurrent": true,
+        "createdAt": "2026-03-22T23:46:16.684Z",
+        "documentType": "CHARGE_SHEET",
+        "generatedById": "user-1774218618690-02z7m",
+        "generatedAt": "2026-03-22T23:46:16.684Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
+      }
+    ],
     "remedialActions": [],
     "vacationRecordsAsParent": [],
     "flags": [],
