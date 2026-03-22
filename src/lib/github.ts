@@ -16,8 +16,26 @@ const SHA_CACHE = new Map<string, string>();
 
 let config: GitHubConfig | null = null;
 
+// Build-time environment variables (injected from GitHub repo secrets)
+const ENV_CONFIG: GitHubConfig | null =
+  process.env.NEXT_PUBLIC_GH_OWNER &&
+  process.env.NEXT_PUBLIC_GH_REPO &&
+  process.env.NEXT_PUBLIC_GH_TOKEN
+    ? {
+        owner: process.env.NEXT_PUBLIC_GH_OWNER,
+        repo: process.env.NEXT_PUBLIC_GH_REPO,
+        branch: process.env.NEXT_PUBLIC_GH_BRANCH || "main",
+        token: process.env.NEXT_PUBLIC_GH_TOKEN,
+      }
+    : null;
+
 export function getGitHubConfig(): GitHubConfig | null {
   if (config) return config;
+  // Prefer build-time env config
+  if (ENV_CONFIG) {
+    config = ENV_CONFIG;
+    return config;
+  }
   if (typeof window === "undefined") return null;
   const stored = localStorage.getItem("legalflow_github");
   if (!stored) return null;

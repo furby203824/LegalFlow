@@ -7,8 +7,9 @@ import { setGitHubConfig, isGitHubConfigured } from "@/lib/github";
 import { login, seedDefaultUser } from "@/lib/auth";
 
 export default function LoginPage() {
+  const ghConfigured = isGitHubConfigured();
   const [step, setStep] = useState<"github" | "login">(
-    isGitHubConfigured() ? "login" : "github"
+    ghConfigured ? "login" : "github"
   );
   const [owner, setOwner] = useState("");
   const [repo, setRepo] = useState("");
@@ -45,6 +46,8 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
+      // Ensure default user exists (in case GitHub setup step was skipped)
+      await seedDefaultUser();
       await login(username, password);
       router.push("/dashboard");
     } catch (err) {
@@ -171,12 +174,14 @@ export default function LoginPage() {
             <p className="text-xs text-center text-neutral-mid mt-4">
               Default: admin / admin
             </p>
-            <button
-              onClick={() => { setStep("github"); setError(""); }}
-              className="text-xs text-primary hover:underline w-full text-center mt-2"
-            >
-              Change GitHub connection
-            </button>
+            {!ghConfigured && (
+              <button
+                onClick={() => { setStep("github"); setError(""); }}
+                className="text-xs text-primary hover:underline w-full text-center mt-2"
+              >
+                Change GitHub connection
+              </button>
+            )}
           </div>
         )}
 
