@@ -43,6 +43,18 @@
         "signatureMethod": "ELECTRONIC",
         "refusalNoted": false,
         "coSignedInstead": false
+      },
+      {
+        "id": "sig-1774220871118-8r197",
+        "createdAt": "2026-03-22T23:07:51.118Z",
+        "itemNumber": "3",
+        "signerRole": "SUITE_ADMIN",
+        "signerUserId": "user-1774218618690-02z7m",
+        "signerName": "Commanding Officer",
+        "signedDate": "2026-03-22",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
       }
     ],
     "documents": [
