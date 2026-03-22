@@ -8,6 +8,7 @@ import {
   ChevronRight, Scale, Inbox, FileCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getDashboard } from "@/services/api";
 
 interface DashboardCase {
   id: string;
@@ -71,8 +72,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/dashboard")
-      .then((res) => res.json())
+    getDashboard()
       .then((data) => {
         setCases(data.cases || []);
         setStats(data.stats || null);
@@ -178,7 +178,7 @@ export default function DashboardPage() {
                     >
                       <td className="px-5 py-3">
                         <Link
-                          href={`/cases/${c.id}`}
+                          href={`/cases/view?id=${c.id}`}
                           className="font-mono text-primary font-medium hover:underline"
                         >
                           {c.caseNumber}
@@ -232,7 +232,7 @@ export default function DashboardPage() {
                     <tr key={c.id} className="border-b border-border hover:bg-surface/50">
                       <td className="px-5 py-3">
                         <Link
-                          href={`/cases/${c.id}`}
+                          href={`/cases/view?id=${c.id}`}
                           className="font-mono text-primary font-medium hover:underline"
                         >
                           {c.caseNumber}

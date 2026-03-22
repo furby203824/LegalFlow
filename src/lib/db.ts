@@ -1,69 +1,78 @@
-import fs from "fs";
-import path from "path";
+"use client";
 
 // =============================================================================
-// JSON File Data Layer
-// Replaces Prisma/SQLite with JSON files per LegalFlow JSON Data Structure v1.0
-// Files: public/data/cases.json, users.json, audit.json
+// Client-Side Data Store backed by GitHub Contents API
+// Per LegalFlow JSON Data Structure v1.0
 // =============================================================================
 
-const DATA_DIR = path.join(process.cwd(), "public", "data");
+import { readJsonFile, writeJsonFile } from "./github";
 
-function readJson<T>(filename: string): T[] {
-  const filePath = path.join(DATA_DIR, filename);
-  try {
-    const raw = fs.readFileSync(filePath, "utf-8");
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
+const DATA_PATH = "public/data";
 
-function writeJson<T>(filename: string, data: T[]): void {
-  const filePath = path.join(DATA_DIR, filename);
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
-}
+// In-memory caches
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let casesCache: Record<string, any>[] | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let usersCache: Record<string, any>[] | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let auditCache: Record<string, any>[] | null = null;
 
 function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Rec = Record<string, any>;
+
+export function clearCaches() {
+  casesCache = null;
+  usersCache = null;
+  auditCache = null;
 }
 
 // =============================================================================
 // Cases Store
 // =============================================================================
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type CaseRecord = Record<string, any>;
-
 export const casesStore = {
-  findAll(): CaseRecord[] {
-    return readJson<CaseRecord>("cases.json");
+  async load(): Promise<Rec[]> {
+    if (casesCache) return casesCache;
+    casesCache = await readJsonFile<Rec[]>(`${DATA_PATH}/cases.json`);
+    return casesCache;
   },
 
-  findById(id: string): CaseRecord | null {
-    const cases = this.findAll();
+  async save(): Promise<void> {
+    if (!casesCache) return;
+    await writeJsonFile(`${DATA_PATH}/cases.json`, casesCache);
+  },
+
+  async findAll(): Promise<Rec[]> {
+    return this.load();
+  },
+
+  async findById(id: string): Promise<Rec | null> {
+    const cases = await this.load();
     return cases.find((c) => c.id === id) || null;
   },
 
-  findByNumber(caseNumber: string): CaseRecord | null {
-    const cases = this.findAll();
+  async findByNumber(caseNumber: string): Promise<Rec | null> {
+    const cases = await this.load();
     return cases.find((c) => c.caseNumber === caseNumber) || null;
   },
 
-  findMany(filter?: (c: CaseRecord) => boolean): CaseRecord[] {
-    const cases = this.findAll();
-    if (!filter) return cases;
-    return cases.filter(filter);
+  async findMany(filter?: (c: Rec) => boolean): Promise<Rec[]> {
+    const cases = await this.load();
+    return filter ? cases.filter(filter) : cases;
   },
 
-  count(filter?: (c: CaseRecord) => boolean): number {
-    return this.findMany(filter).length;
+  async count(filter?: (c: Rec) => boolean): Promise<number> {
+    return (await this.findMany(filter)).length;
   },
 
-  create(data: Partial<CaseRecord>): CaseRecord {
-    const cases = this.findAll();
+  async create(data: Partial<Rec>): Promise<Rec> {
+    const cases = await this.load();
     const now = new Date().toISOString();
-    const record: CaseRecord = {
+    const record: Rec = {
       id: data.id || generateId("case"),
       createdAt: now.split("T")[0],
       updatedAt: now.split("T")[0],
@@ -84,12 +93,13 @@ export const casesStore = {
       ...data,
     };
     cases.push(record);
-    writeJson("cases.json", cases);
+    casesCache = cases;
+    await this.save();
     return record;
   },
 
-  update(id: string, data: Partial<CaseRecord>): CaseRecord | null {
-    const cases = this.findAll();
+  async update(id: string, data: Partial<Rec>): Promise<Rec | null> {
+    const cases = await this.load();
     const idx = cases.findIndex((c) => c.id === id);
     if (idx === -1) return null;
     cases[idx] = {
@@ -97,47 +107,13 @@ export const casesStore = {
       ...data,
       updatedAt: new Date().toISOString().split("T")[0],
     };
-    writeJson("cases.json", cases);
+    casesCache = cases;
+    await this.save();
     return cases[idx];
   },
 
-  /**
-   * Add or update a nested offense within a case
-   */
-  upsertOffense(caseId: string, offense: CaseRecord): void {
-    const cases = this.findAll();
-    const idx = cases.findIndex((c) => c.id === caseId);
-    if (idx === -1) return;
-    const offenses = cases[idx].offenses || [];
-    const oIdx = offenses.findIndex((o: CaseRecord) => o.id === offense.id);
-    if (oIdx >= 0) {
-      offenses[oIdx] = { ...offenses[oIdx], ...offense };
-    } else {
-      offenses.push(offense);
-    }
-    cases[idx].offenses = offenses;
-    cases[idx].updatedAt = new Date().toISOString().split("T")[0];
-    writeJson("cases.json", cases);
-  },
-
-  /**
-   * Add a victim to a case
-   */
-  addVictim(caseId: string, victim: CaseRecord): void {
-    const cases = this.findAll();
-    const idx = cases.findIndex((c) => c.id === caseId);
-    if (idx === -1) return;
-    if (!cases[idx].victims) cases[idx].victims = [];
-    cases[idx].victims.push(victim);
-    cases[idx].updatedAt = new Date().toISOString().split("T")[0];
-    writeJson("cases.json", cases);
-  },
-
-  /**
-   * Update punishment sub-object
-   */
-  upsertPunishment(caseId: string, punishment: CaseRecord): void {
-    const cases = this.findAll();
+  async upsertPunishment(caseId: string, punishment: Rec): Promise<void> {
+    const cases = await this.load();
     const idx = cases.findIndex((c) => c.id === caseId);
     if (idx === -1) return;
     if (cases[idx].punishment) {
@@ -146,14 +122,12 @@ export const casesStore = {
       cases[idx].punishment = { id: generateId("pun"), ...punishment };
     }
     cases[idx].updatedAt = new Date().toISOString().split("T")[0];
-    writeJson("cases.json", cases);
+    casesCache = cases;
+    await this.save();
   },
 
-  /**
-   * Update appeal sub-object
-   */
-  upsertAppeal(caseId: string, appeal: CaseRecord): void {
-    const cases = this.findAll();
+  async upsertAppeal(caseId: string, appeal: Rec): Promise<void> {
+    const cases = await this.load();
     const idx = cases.findIndex((c) => c.id === caseId);
     if (idx === -1) return;
     if (cases[idx].appeal) {
@@ -162,76 +136,68 @@ export const casesStore = {
       cases[idx].appeal = { id: generateId("app"), ...appeal };
     }
     cases[idx].updatedAt = new Date().toISOString().split("T")[0];
-    writeJson("cases.json", cases);
+    casesCache = cases;
+    await this.save();
   },
 
-  /**
-   * Add a signature record
-   */
-  addSignature(caseId: string, signature: CaseRecord): void {
-    const cases = this.findAll();
+  async addSignature(caseId: string, signature: Rec): Promise<void> {
+    const cases = await this.load();
     const idx = cases.findIndex((c) => c.id === caseId);
     if (idx === -1) return;
     if (!cases[idx].signatures) cases[idx].signatures = [];
-    cases[idx].signatures.push({ id: generateId("sig"), createdAt: new Date().toISOString(), ...signature });
+    cases[idx].signatures.push({
+      id: generateId("sig"),
+      createdAt: new Date().toISOString(),
+      ...signature,
+    });
     cases[idx].updatedAt = new Date().toISOString().split("T")[0];
-    writeJson("cases.json", cases);
+    casesCache = cases;
+    await this.save();
   },
 
-  /**
-   * Add an Item 21 entry
-   */
-  addItem21Entry(caseId: string, entry: CaseRecord): CaseRecord {
-    const cases = this.findAll();
+  async addItem21Entry(caseId: string, entry: Rec): Promise<Rec> {
+    const cases = await this.load();
     const idx = cases.findIndex((c) => c.id === caseId);
     if (idx === -1) throw new Error("Case not found");
     if (!cases[idx].item21Entries) cases[idx].item21Entries = [];
     const newEntry = { id: generateId("e21"), createdAt: new Date().toISOString(), ...entry };
     cases[idx].item21Entries.push(newEntry);
     cases[idx].updatedAt = new Date().toISOString().split("T")[0];
-    writeJson("cases.json", cases);
+    casesCache = cases;
+    await this.save();
     return newEntry;
   },
 
-  /**
-   * Update an Item 21 entry
-   */
-  updateItem21Entry(caseId: string, entryId: string, data: Partial<CaseRecord>): CaseRecord | null {
-    const cases = this.findAll();
+  async updateItem21Entry(caseId: string, entryId: string, data: Partial<Rec>): Promise<Rec | null> {
+    const cases = await this.load();
     const idx = cases.findIndex((c) => c.id === caseId);
     if (idx === -1) return null;
     const entries = cases[idx].item21Entries || [];
-    const eIdx = entries.findIndex((e: CaseRecord) => e.id === entryId);
+    const eIdx = entries.findIndex((e: Rec) => e.id === entryId);
     if (eIdx === -1) return null;
     entries[eIdx] = { ...entries[eIdx], ...data };
     cases[idx].item21Entries = entries;
     cases[idx].updatedAt = new Date().toISOString().split("T")[0];
-    writeJson("cases.json", cases);
+    casesCache = cases;
+    await this.save();
     return entries[eIdx];
   },
 
-  /**
-   * Add a document record
-   */
-  addDocument(caseId: string, doc: CaseRecord): CaseRecord {
-    const cases = this.findAll();
+  async addDocument(caseId: string, doc: Rec): Promise<Rec> {
+    const cases = await this.load();
     const idx = cases.findIndex((c) => c.id === caseId);
     if (idx === -1) throw new Error("Case not found");
     if (!cases[idx].documents) cases[idx].documents = [];
-
-    // Mark existing current docs of same type as superseded
     const docs = cases[idx].documents;
     const existingIdx = docs.findIndex(
-      (d: CaseRecord) => d.documentType === doc.documentType && d.isCurrent
+      (d: Rec) => d.documentType === doc.documentType && d.isCurrent
     );
     const newVersion = existingIdx >= 0 ? (docs[existingIdx].documentVersion || 1) + 1 : 1;
     const newId = generateId("doc");
-
     if (existingIdx >= 0) {
       docs[existingIdx].isCurrent = false;
       docs[existingIdx].supersededById = newId;
     }
-
     const newDoc = {
       id: newId,
       documentVersion: newVersion,
@@ -242,7 +208,8 @@ export const casesStore = {
     docs.push(newDoc);
     cases[idx].documents = docs;
     cases[idx].updatedAt = new Date().toISOString().split("T")[0];
-    writeJson("cases.json", cases);
+    casesCache = cases;
+    await this.save();
     return newDoc;
   },
 };
@@ -251,43 +218,42 @@ export const casesStore = {
 // Users Store
 // =============================================================================
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UserRecord = Record<string, any>;
-
 export const usersStore = {
-  findAll(): UserRecord[] {
-    return readJson<UserRecord>("users.json");
+  async load(): Promise<Rec[]> {
+    if (usersCache) return usersCache;
+    usersCache = await readJsonFile<Rec[]>(`${DATA_PATH}/users.json`);
+    return usersCache;
   },
 
-  findById(id: string): UserRecord | null {
-    return this.findAll().find((u) => u.id === id) || null;
+  async save(): Promise<void> {
+    if (!usersCache) return;
+    await writeJsonFile(`${DATA_PATH}/users.json`, usersCache);
   },
 
-  findByUsername(username: string): UserRecord | null {
-    return this.findAll().find((u) => u.username === username) || null;
+  async findAll(): Promise<Rec[]> {
+    return this.load();
   },
 
-  findByEmail(email: string): UserRecord | null {
-    return this.findAll().find((u) => u.email === email) || null;
+  async findById(id: string): Promise<Rec | null> {
+    return (await this.load()).find((u) => u.id === id) || null;
   },
 
-  findByEdipi(edipi: string): UserRecord | null {
-    return this.findAll().find((u) => u.edipi === edipi) || null;
+  async findByUsername(username: string): Promise<Rec | null> {
+    return (await this.load()).find((u) => u.username === username) || null;
   },
 
-  findFirst(filter: (u: UserRecord) => boolean): UserRecord | null {
-    return this.findAll().find(filter) || null;
+  async findByEmail(email: string): Promise<Rec | null> {
+    return (await this.load()).find((u) => u.email === email) || null;
   },
 
-  findMany(filter?: (u: UserRecord) => boolean): UserRecord[] {
-    const users = this.findAll();
-    return filter ? users.filter(filter) : users;
+  async findFirst(filter: (u: Rec) => boolean): Promise<Rec | null> {
+    return (await this.load()).find(filter) || null;
   },
 
-  create(data: Partial<UserRecord>): UserRecord {
-    const users = this.findAll();
+  async create(data: Partial<Rec>): Promise<Rec> {
+    const users = await this.load();
     const now = new Date().toISOString();
-    const record: UserRecord = {
+    const record: Rec = {
       id: data.id || generateId("user"),
       createdAt: now,
       updatedAt: now,
@@ -296,16 +262,18 @@ export const usersStore = {
       ...data,
     };
     users.push(record);
-    writeJson("users.json", users);
+    usersCache = users;
+    await this.save();
     return record;
   },
 
-  update(id: string, data: Partial<UserRecord>): UserRecord | null {
-    const users = this.findAll();
+  async update(id: string, data: Partial<Rec>): Promise<Rec | null> {
+    const users = await this.load();
     const idx = users.findIndex((u) => u.id === id);
     if (idx === -1) return null;
     users[idx] = { ...users[idx], ...data, updatedAt: new Date().toISOString() };
-    writeJson("users.json", users);
+    usersCache = users;
+    await this.save();
     return users[idx];
   },
 };
@@ -314,46 +282,48 @@ export const usersStore = {
 // Audit Store
 // =============================================================================
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AuditRecord = Record<string, any>;
-
 const MAX_AUDIT_ENTRIES = 500;
 
 export const auditStore = {
-  findAll(): AuditRecord[] {
-    return readJson<AuditRecord>("audit.json");
+  async load(): Promise<Rec[]> {
+    if (auditCache) return auditCache;
+    auditCache = await readJsonFile<Rec[]>(`${DATA_PATH}/audit.json`);
+    return auditCache;
   },
 
-  findByCaseId(caseId: string): AuditRecord[] {
-    return this.findAll().filter((a) => a.caseId === caseId);
+  async save(): Promise<void> {
+    if (!auditCache) return;
+    await writeJsonFile(`${DATA_PATH}/audit.json`, auditCache);
   },
 
-  append(entry: Partial<AuditRecord>): AuditRecord {
-    const logs = this.findAll();
-    const record: AuditRecord = {
+  async findByCaseId(caseId: string): Promise<Rec[]> {
+    return (await this.load()).filter((a) => a.caseId === caseId);
+  },
+
+  async append(entry: Partial<Rec>): Promise<Rec> {
+    const logs = await this.load();
+    const record: Rec = {
       id: generateId("audit"),
       timestamp: new Date().toISOString(),
       ...entry,
     };
     logs.push(record);
-    // Trim to max entries
     const trimmed = logs.length > MAX_AUDIT_ENTRIES
       ? logs.slice(logs.length - MAX_AUDIT_ENTRIES)
       : logs;
-    writeJson("audit.json", trimmed);
+    auditCache = trimmed;
+    await this.save();
     return record;
   },
 };
 
 // =============================================================================
-// Helper: generate case-compatible view with Prisma-like nested structures
-// Used by routes that expect Prisma-style includes
+// Case view helper - builds Prisma-compatible nested structure for UI
 // =============================================================================
 
-export function caseWithIncludes(c: CaseRecord): CaseRecord {
+export function caseWithIncludes(c: Rec): Rec {
   if (!c) return c;
 
-  // Build an "accused" sub-object from flat case fields
   const accused = {
     id: c.accusedEdipi || c.id,
     lastName: c.accusedLastName,
@@ -366,14 +336,12 @@ export function caseWithIncludes(c: CaseRecord): CaseRecord {
     component: c.component,
   };
 
-  // Build unit sub-object
   const unit = {
     unitName: c.unitName || c.unitFullString || "",
     unitAbbreviation: c.unitAbbreviation || "",
     unitFullString: c.unitFullString || "",
   };
 
-  // Map JSON-spec nested fields to Prisma-compatible names
   return {
     ...c,
     accused,
@@ -381,23 +349,16 @@ export function caseWithIncludes(c: CaseRecord): CaseRecord {
     punishmentRecord: c.punishment || null,
     appealRecord: c.appeal || null,
     signatures: c.signatures || [],
-    offenses: (c.offenses || []).map((o: CaseRecord) => ({
+    offenses: (c.offenses || []).map((o: Rec) => ({
       ...o,
-      victims: (c.victims || []).filter((v: CaseRecord) => v.victimLetter === o.offenseLetter || v.offenseId === o.id),
+      victims: (c.victims || []).filter(
+        (v: Rec) => v.victimLetter === o.offenseLetter || v.offenseId === o.id
+      ),
     })),
     item21Entries: (c.item21Entries || []).sort(
-      (a: CaseRecord, b: CaseRecord) => (a.entrySequence || 0) - (b.entrySequence || 0)
+      (a: Rec, b: Rec) => (a.entrySequence || 0) - (b.entrySequence || 0)
     ),
-    documents: (c.documents || []).filter((d: CaseRecord) => d.isCurrent),
-    auditLogs: auditStore.findByCaseId(c.id).slice(-50).reverse(),
-    suspensionMonitor: c.punishment?.suspensionStatus === "ACTIVE"
-      ? {
-          suspensionStart: c.punishment.suspensionStartDate,
-          suspensionEnd: c.punishment.suspensionEndDate,
-          suspendedPunishment: c.punishment.suspensionPunishment,
-          monitorStatus: "ACTIVE",
-        }
-      : null,
+    documents: (c.documents || []).filter((d: Rec) => d.isCurrent),
     vacationRecordsAsParent: c.vacationRecordsAsParent || [],
     remedialActions: c.remedialActions || [],
   };

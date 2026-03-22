@@ -7,6 +7,10 @@ import { RANKS, GRADES, UCMJ_ARTICLES, RANK_TO_GRADE } from "@/types";
 import type { Rank } from "@/types";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, AlertOctagon, Info, Plus, Trash2 } from "lucide-react";
+import { casesStore, caseWithIncludes, auditStore } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { getCommanderGradeLevel } from "@/types";
+import type { Grade } from "@/types";
 
 const VICTIM_STATUSES = [
   "Military", "Military (spouse)", "Civilian (spouse)", "Civilian (dependent)",
@@ -75,22 +79,64 @@ export default function NewCasePage() {
     const letters = ["A", "B", "C", "D", "E"];
 
     try {
-      const res = await fetch("/api/cases", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          accusedLastName: lastName, accusedFirstName: firstName, accusedMiddleName: middleName,
-          accusedRank: rank, accusedGrade: grade, accusedEdipi: edipi,
-          accusedUnitFullString: unit, commanderGrade, component,
-          vesselException, jurisdictionConfirmed,
-          offenses: offenses.map((o, i) => ({ ...o, letter: letters[i] })),
-        }),
+      const session = getSession();
+      if (!session) { setErrors(["Not authenticated"]); return; }
+      const cmdGradeLevel = getCommanderGradeLevel(commanderGrade as Grade);
+      const uaApplicable = offenses.some((o) => o.ucmjArticle === "85" || o.ucmjArticle === "86");
+      const offenseDates = offenses.map((o) => o.offenseDate).filter(Boolean).sort();
+      const offenseRecords = offenses.map((o, i) => ({
+        id: `off-${Date.now()}-${letters[i]}`,
+        offenseLetter: letters[i],
+        ucmjArticle: o.ucmjArticle,
+        offenseType: o.offenseType,
+        offenseSummary: o.summary,
+        offenseDate: o.offenseDate,
+        offensePlace: o.offensePlace,
+        finding: null,
+        locked: false,
+      }));
+      const victimRecords = offenses.flatMap((o, i) =>
+        (o.victims || []).map((v: { status: string; sex: string; race: string; ethnicity: string }) => ({
+          id: `v-${Date.now()}-${letters[i]}`,
+          offenseId: offenseRecords[i].id,
+          victimLetter: letters[i],
+          victimStatus: v.status,
+          victimSex: v.sex,
+          victimRace: v.race,
+          victimEthnicity: v.ethnicity,
+          locked: false,
+        }))
+      );
+      const caseCount = await casesStore.count((c) => c.caseNumber?.startsWith(`CASE-${new Date().getFullYear()}`));
+      const caseNumber = `CASE-${new Date().getFullYear()}-${String(caseCount + 1).padStart(4, "0")}`;
+      const njpCase = await casesStore.create({
+        caseNumber,
+        status: "INITIATED",
+        currentPhase: "INITIATION",
+        unitId: session.unitId,
+        unitFullString: unit,
+        accusedName: `${lastName}, ${firstName}${middleName ? " " + middleName : ""}`,
+        accusedLastName: lastName, accusedFirstName: firstName, accusedMiddleName: middleName || null,
+        accusedRank: rank, accusedGrade: grade, accusedEdipi: edipi,
+        component: component || "ACTIVE",
+        vesselException: vesselException || false,
+        commanderGradeLevel: cmdGradeLevel,
+        jurisdictionConfirmed,
+        uaApplicable,
+        offenseDateEarliest: offenseDates[0] || null,
+        formLocked: false, jaReviewRequired: false, jaReviewComplete: false,
+        njpDate: null, appealNotFiled: false, accusedTransferred: false,
+        initiatedById: session.userId,
+        offenses: offenseRecords,
+        victims: victimRecords,
       });
-      const data = await res.json();
-      if (!res.ok) { setErrors([data.error || "Failed to create case"]); return; }
-      if (data.warnings?.length) setWarnings(data.warnings);
-      router.push(`/cases/${data.case.id}`);
-    } catch { setErrors(["Network error"]); } finally { setLoading(false); }
+      await auditStore.append({
+        caseId: njpCase.id, caseNumber, userId: session.userId,
+        userRole: session.role, userName: session.username,
+        action: "INSERT", notes: `Case ${caseNumber} initiated`,
+      });
+      router.push(`/cases/view?id=${njpCase.id}`);
+    } catch (err) { setErrors([err instanceof Error ? err.message : "Error creating case"]); } finally { setLoading(false); }
   }
 
   const gradeLevel = commanderGrade && GRADES.indexOf(commanderGrade as typeof GRADES[number]) >= GRADES.indexOf("O4")

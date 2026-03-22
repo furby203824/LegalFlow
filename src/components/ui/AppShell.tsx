@@ -9,6 +9,7 @@ import {
   Inbox, Clock, PanelLeftClose, PanelLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getSession, logout as doLogout, type SessionUser } from "@/lib/auth";
 
 interface User {
   id: string;
@@ -74,17 +75,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => {
-        if (!res.ok) throw new Error("Not authenticated");
-        return res.json();
-      })
-      .then((data) => setUser(data.user))
-      .catch(() => router.push("/login"));
+    const session = getSession();
+    if (session) {
+      setUser(session);
+    } else {
+      router.push("/login");
+    }
   }, [router]);
 
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+  function handleLogout() {
+    doLogout();
     router.push("/login");
   }
 

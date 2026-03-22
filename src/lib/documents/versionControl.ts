@@ -13,7 +13,7 @@ export async function createVersionedDocument(
   userId: string,
   distributionFlags?: DistributionFlags
 ): Promise<{ id: string; version: number }> {
-  const doc = casesStore.addDocument(caseId, {
+  const doc = await casesStore.addDocument(caseId, {
     documentType,
     generatedById: userId,
     generatedAt: new Date().toISOString(),

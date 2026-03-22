@@ -7,6 +7,7 @@ import {
   AlertTriangle, AlertOctagon, Info, Clock, FileText,
   ChevronDown, ChevronRight,
 } from "lucide-react";
+import { performPhaseAction } from "@/services/api";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CaseData = any;
@@ -21,20 +22,11 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
     setError("");
     setSuccess("");
     try {
-      const res = await fetch(`/api/cases/${caseData.id}/phase`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, data }),
-      });
-      const result = await res.json();
-      if (!res.ok) {
-        setError(result.error || result.errors?.join("; ") || "Action failed");
-      } else {
-        setSuccess(result.message || "Done");
-        onUpdate();
-      }
-    } catch {
-      setError("Network error");
+      const result = await performPhaseAction(caseData.id, action, data);
+      setSuccess(result.message || "Done");
+      onUpdate();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Action failed");
     } finally {
       setLoading(false);
     }
@@ -264,20 +256,7 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
       {/* Documents */}
       <div className="card p-4">
         <h3 className="text-xs font-medium text-neutral-mid uppercase tracking-wide mb-3">Documents</h3>
-        <div className="space-y-2">
-          {["charge_sheet", "office_hours_script", "navmc_10132"].map((type) => (
-            <a
-              key={type}
-              href={`/api/cases/${caseData.id}/documents?type=${type}`}
-              target="_blank"
-              rel="noopener"
-              className="flex items-center gap-2 text-sm text-primary hover:underline"
-            >
-              <FileText size={14} />
-              {type === "charge_sheet" ? "Charge Sheet" : type === "office_hours_script" ? "Office Hours Script" : "NAVMC 10132"}
-            </a>
-          ))}
-        </div>
+        <p className="text-xs text-neutral-mid">Use the Documents tab below to generate and download documents.</p>
       </div>
     </div>
   );

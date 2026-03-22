@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import AppShell from "@/components/ui/AppShell";
 import { cn } from "@/lib/utils";
 import { Search, Download, ChevronLeft, ChevronRight, FilePlus } from "lucide-react";
+import { getCases } from "@/services/api";
 
 interface CaseRow {
   id: string;
@@ -58,12 +59,7 @@ function CasesListContent() {
   const pageSize = 20;
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (statusFilter) params.set("status", statusFilter);
-    if (search) params.set("name", search);
-
-    fetch(`/api/cases?${params.toString()}`)
-      .then((res) => res.json())
+    getCases({ status: statusFilter || undefined, name: search || undefined })
       .then((data) => setCases(data.cases || []))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -151,7 +147,7 @@ function CasesListContent() {
                       return (
                         <tr key={c.id} className="border-b border-border hover:bg-surface/50 transition-colors">
                           <td className="px-5 py-3">
-                            <Link href={`/cases/${c.id}`} className="font-mono text-primary font-medium hover:underline">
+                            <Link href={`/cases/view?id=${c.id}`} className="font-mono text-primary font-medium hover:underline">
                               {c.caseNumber}
                             </Link>
                           </td>
