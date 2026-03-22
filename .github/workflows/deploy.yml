@@ -34,9 +34,12 @@ jobs:
           NEXT_PUBLIC_GH_BRANCH: main
           NEXT_PUBLIC_GH_TOKEN: ${{ secrets.VITE_GITHUB_TOKEN }}
 
+      - run: touch out/.nojekyll
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
+          include-hidden-files: true
 
   deploy:
     needs: build
