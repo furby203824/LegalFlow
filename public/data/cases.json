@@ -92,6 +92,18 @@
         "signatureMethod": "ELECTRONIC",
         "refusalNoted": false,
         "coSignedInstead": false
+      },
+      {
+        "id": "sig-1774222486972-vwisf",
+        "createdAt": "2026-03-22T23:34:46.972Z",
+        "itemNumber": "12",
+        "signerRole": "SUITE_ADMIN",
+        "signerUserId": "user-1774218618690-02z7m",
+        "signerName": "Test",
+        "signedDate": "2026-03-22",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
       }
     ],
     "documents": [
