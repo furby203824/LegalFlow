@@ -303,7 +303,7 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
   const [extraDays, setExtraDays] = useState("");
   const [restrDays, setRestrDays] = useState("");
   const [suspImposed, setSuspImposed] = useState(false);
-  const [suspPun, setSuspPun] = useState("");
+  const [suspItems, setSuspItems] = useState<Record<string, boolean>>({});
   const [suspMo, setSuspMo] = useState("");
 
   const isField = caseData.commanderGradeLevel === "FIELD_GRADE_AND_ABOVE";
@@ -359,14 +359,51 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
           {gradeNum >= 6 ? " Marines E-6 and above may not be reduced at NJP." : ""}
         </div>
       )}
-      <label className="flex items-center gap-2 text-xs mb-2">
-        <input type="checkbox" checked={suspImposed} onChange={(e) => setSuspImposed(e.target.checked)} /> Suspend punishment
-      </label>
-      {suspImposed && (
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          <input type="text" value={suspPun} onChange={(e) => setSuspPun(e.target.value)} className="input-field text-xs" placeholder="Which punishment" />
-          <input type="number" value={suspMo} onChange={(e) => setSuspMo(e.target.value)} className="input-field text-xs" placeholder="Months" />
-        </div>
+      {hasPun && (
+        <>
+          <label className="flex items-center gap-2 text-xs mb-2">
+            <input type="checkbox" checked={suspImposed} onChange={(e) => { setSuspImposed(e.target.checked); if (!e.target.checked) setSuspItems({}); }} /> Suspend punishment
+          </label>
+          {suspImposed && (
+            <div className="ml-6 mb-2 space-y-1.5">
+              <p className="text-xs text-neutral-mid mb-1">Select punishments to suspend:</p>
+              {corrDays && (
+                <label className="flex items-center gap-2 text-xs">
+                  <input type="checkbox" checked={!!suspItems["custody"]} onChange={(e) => setSuspItems({ ...suspItems, custody: e.target.checked })} />
+                  Correctional custody ({corrDays}d)
+                </label>
+              )}
+              {forfAmt && (
+                <label className="flex items-center gap-2 text-xs">
+                  <input type="checkbox" checked={!!suspItems["forfeiture"]} onChange={(e) => setSuspItems({ ...suspItems, forfeiture: e.target.checked })} />
+                  Forfeiture (${forfAmt}{isField ? "/mo" : ""})
+                </label>
+              )}
+              {reduction && (
+                <label className="flex items-center gap-2 text-xs">
+                  <input type="checkbox" checked={!!suspItems["reduction"]} onChange={(e) => setSuspItems({ ...suspItems, reduction: e.target.checked })} />
+                  Reduction to {redGrade}
+                </label>
+              )}
+              {extraDays && (
+                <label className="flex items-center gap-2 text-xs">
+                  <input type="checkbox" checked={!!suspItems["extra"]} onChange={(e) => setSuspItems({ ...suspItems, extra: e.target.checked })} />
+                  Extra duties ({extraDays}d)
+                </label>
+              )}
+              {restrDays && (
+                <label className="flex items-center gap-2 text-xs">
+                  <input type="checkbox" checked={!!suspItems["restriction"]} onChange={(e) => setSuspItems({ ...suspItems, restriction: e.target.checked })} />
+                  Restriction ({restrDays}d)
+                </label>
+              )}
+              <div className="pt-1">
+                <input type="number" value={suspMo} onChange={(e) => setSuspMo(e.target.value)} className="input-field text-xs w-32" placeholder="Months" min={1} max={6} />
+                <span className="text-xs text-neutral-mid ml-2">suspension period</span>
+              </div>
+            </div>
+          )}
+        </>
       )}
       <div className="flex gap-2">
         <button onClick={() => onSubmit({ noPunishment: true, punishment: { punishmentDate: date } })} disabled={loading} className="btn-ghost text-xs flex-1">
@@ -382,7 +419,7 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
           extraDutiesDays: extraDays ? parseInt(extraDays) : undefined,
           restrictionDays: restrDays ? parseInt(restrDays) : undefined,
           suspensionImposed: suspImposed,
-          suspensionPunishment: suspImposed ? suspPun : undefined,
+          suspensionPunishment: suspImposed ? Object.entries(suspItems).filter(([, v]) => v).map(([k]) => k).join(", ") : undefined,
           suspensionMonths: suspImposed && suspMo ? parseInt(suspMo) : undefined,
         }})} disabled={loading || !date || !hasPun} className="btn-primary text-xs flex-1">
           Submit
