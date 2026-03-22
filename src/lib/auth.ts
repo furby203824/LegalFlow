@@ -6,7 +6,7 @@
 // =============================================================================
 
 import { usersStore } from "./db";
-import { isGitHubConfigured, clearGitHubConfig } from "./github";
+import { isGitHubConfigured, isEnvConfigured, clearGitHubConfig } from "./github";
 import type { UserRole } from "@/types";
 
 export interface SessionUser {
@@ -100,6 +100,29 @@ export function requireAuth(...allowedRoles: UserRole[]): SessionUser {
     throw new Error("Insufficient permissions");
   }
   return user;
+}
+
+// Auto-login when GitHub env config is present (no manual login needed)
+export async function autoLogin(): Promise<SessionUser | null> {
+  if (!isEnvConfigured()) return null;
+  await seedDefaultUser();
+  const users = await usersStore.findAll();
+  if (users.length === 0) return null;
+  const user = users[0];
+  const session: SessionUser = {
+    userId: user.id,
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role as UserRole,
+    unitId: user.unitId || "",
+    rank: user.rank,
+    grade: user.grade,
+    edipi: user.edipi,
+    email: user.email,
+  };
+  setSession(session);
+  return session;
 }
 
 // Seed default admin if users.json is empty

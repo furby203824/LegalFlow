@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Scale } from "lucide-react";
 import { setGitHubConfig, isGitHubConfigured } from "@/lib/github";
-import { login, seedDefaultUser } from "@/lib/auth";
+import { login, seedDefaultUser, autoLogin } from "@/lib/auth";
 
 export default function LoginPage() {
+  const router = useRouter();
   const ghConfigured = isGitHubConfigured();
   const [step, setStep] = useState<"github" | "login">(
     ghConfigured ? "login" : "github"
@@ -19,7 +20,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+
+  // Auto-login when env config is present
+  useEffect(() => {
+    autoLogin().then((session) => {
+      if (session) router.push("/dashboard");
+    });
+  }, [router]);
 
   async function handleGitHubSetup(e: FormEvent) {
     e.preventDefault();

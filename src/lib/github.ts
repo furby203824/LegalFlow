@@ -29,6 +29,10 @@ const ENV_CONFIG: GitHubConfig | null =
       }
     : null;
 
+export function isEnvConfigured(): boolean {
+  return !!ENV_CONFIG;
+}
+
 export function getGitHubConfig(): GitHubConfig | null {
   if (config) return config;
   // Prefer build-time env config
