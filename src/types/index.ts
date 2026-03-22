@@ -48,14 +48,35 @@ export type CommanderGradeLevel = "FIELD_GRADE_AND_ABOVE" | "COMPANY_GRADE";
 // --- Component ---
 export type Component = "ACTIVE" | "SMCR" | "IRR";
 
+// --- Service Branch ---
+export type ServiceBranch = "USMC" | "USN";
+
 // --- Rank/Grade ---
-export const RANKS = [
+
+// Marine Corps Ranks
+export const USMC_RANKS = [
   "Pvt", "PFC", "LCpl", "Cpl", "Sgt", "SSgt", "GySgt", "MSgt",
   "1stSgt", "MGySgt", "SgtMaj", "WO", "CWO2", "CWO3", "CWO4", "CWO5",
   "2ndLt", "1stLt", "Capt", "Maj", "LtCol", "Col", "BGen", "MajGen",
   "LtGen", "Gen",
 ] as const;
-export type Rank = (typeof RANKS)[number];
+export type UsmcRank = (typeof USMC_RANKS)[number];
+
+// Navy Ranks
+export const NAVY_RANKS = [
+  "SR", "SA", "SN", "PO3", "PO2", "PO1", "CPO", "SCPO", "MCPO",
+  "WO1", "CWO2", "CWO3", "CWO4", "CWO5",
+  "ENS", "LTJG", "LT", "LCDR", "CDR", "CAPT", "RDML", "RADM",
+  "VADM", "ADM",
+] as const;
+export type NavyRank = (typeof NAVY_RANKS)[number];
+
+// Combined ranks (all branches, deduplicated)
+export const RANKS = [
+  ...USMC_RANKS,
+  ...NAVY_RANKS.filter((r) => !(USMC_RANKS as readonly string[]).includes(r)),
+] as const;
+export type Rank = UsmcRank | NavyRank;
 
 export const GRADES = [
   "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9",
@@ -65,7 +86,7 @@ export const GRADES = [
 ] as const;
 export type Grade = (typeof GRADES)[number];
 
-export const RANK_TO_GRADE: Record<Rank, Grade> = {
+export const USMC_RANK_TO_GRADE: Record<UsmcRank, Grade> = {
   Pvt: "E1", PFC: "E2", LCpl: "E3", Cpl: "E4", Sgt: "E5",
   SSgt: "E6", GySgt: "E7", MSgt: "E8", "1stSgt": "E8",
   MGySgt: "E9", SgtMaj: "E9",
@@ -75,12 +96,40 @@ export const RANK_TO_GRADE: Record<Rank, Grade> = {
   LtGen: "O9", Gen: "O10",
 };
 
+export const NAVY_RANK_TO_GRADE: Record<NavyRank, Grade> = {
+  SR: "E1", SA: "E2", SN: "E3", PO3: "E4", PO2: "E5",
+  PO1: "E6", CPO: "E7", SCPO: "E8", MCPO: "E9",
+  WO1: "W1", CWO2: "W2", CWO3: "W3", CWO4: "W4", CWO5: "W5",
+  ENS: "O1", LTJG: "O2", LT: "O3", LCDR: "O4",
+  CDR: "O5", CAPT: "O6", RDML: "O7", RADM: "O8",
+  VADM: "O9", ADM: "O10",
+};
+
+export const RANK_TO_GRADE: Record<Rank, Grade> = {
+  ...USMC_RANK_TO_GRADE,
+  ...NAVY_RANK_TO_GRADE,
+};
+
 // Combined rank/grade options for single dropdown (e.g. "E3/LCpl")
-export const RANK_GRADE_OPTIONS = RANKS.map((r) => ({
-  rank: r,
-  grade: RANK_TO_GRADE[r],
-  label: `${RANK_TO_GRADE[r]}/${r}`,
+export const USMC_RANK_GRADE_OPTIONS = USMC_RANKS.map((r) => ({
+  rank: r as Rank,
+  grade: USMC_RANK_TO_GRADE[r],
+  label: `${USMC_RANK_TO_GRADE[r]}/${r}`,
+  branch: "USMC" as ServiceBranch,
 }));
+
+export const NAVY_RANK_GRADE_OPTIONS = NAVY_RANKS.map((r) => ({
+  rank: r as Rank,
+  grade: NAVY_RANK_TO_GRADE[r],
+  label: `${NAVY_RANK_TO_GRADE[r]}/${r}`,
+  branch: "USN" as ServiceBranch,
+}));
+
+export const RANK_GRADE_OPTIONS = [...USMC_RANK_GRADE_OPTIONS, ...NAVY_RANK_GRADE_OPTIONS];
+
+export function getRankGradeOptionsByBranch(branch: ServiceBranch) {
+  return branch === "USMC" ? USMC_RANK_GRADE_OPTIONS : NAVY_RANK_GRADE_OPTIONS;
+}
 
 export function getGradeNumber(grade: Grade): number {
   const num = parseInt(grade.replace(/[EOW]/g, ""), 10);
