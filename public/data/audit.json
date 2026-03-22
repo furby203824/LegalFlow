@@ -42,5 +42,16 @@
     "userName": "admin",
     "action": "SIGN",
     "notes": "Item 2 signed - NJP accepted"
+  },
+  {
+    "id": "audit-1774220845777-xg0wl",
+    "timestamp": "2026-03-22T23:07:25.778Z",
+    "caseId": "case-1774220758799-tm18d",
+    "caseNumber": "CASE-2026-0001",
+    "userId": "user-1774218618690-02z7m",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated navmc_10132 (PARTIAL)"
   }
 ]
