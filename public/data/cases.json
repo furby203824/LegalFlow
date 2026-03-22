@@ -144,7 +144,7 @@
     "isOverdue": false,
     "caseNumber": "CASE-2026-0001",
     "status": "PUNISHMENT_IMPOSED",
-    "currentPhase": "HEARING",
+    "currentPhase": "NOTIFICATION",
     "unitId": "unit-hq",
     "unitFullString": "Test, test",
     "accusedName": "Test, Test T",
@@ -172,6 +172,7 @@
     "njpAuthorityUnit": "Test, Unit",
     "njpAuthorityRank": "LtCol",
     "njpAuthorityGrade": "O5",
-    "njpAuthorityEdipi": "1234567891"
+    "njpAuthorityEdipi": "1234567891",
+    "dateNoticeToAccused": "2026-03-22"
   }
 ]
