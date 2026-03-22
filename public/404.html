@@ -5,9 +5,14 @@
   <title>LegalFlow</title>
   <script>
     // SPA redirect for GitHub Pages
-    // Stores the path and redirects to index so client-side routing can handle it
-    sessionStorage.setItem('spa_redirect', window.location.pathname + window.location.search);
-    window.location.replace('/');
+    // Stores the original path and redirects to the app root
+    var basePath = '/LegalFlow';
+    var path = window.location.pathname;
+    if (path.startsWith(basePath)) {
+      path = path.slice(basePath.length);
+    }
+    sessionStorage.setItem('spa_redirect', path + window.location.search);
+    window.location.replace(basePath + '/');
   </script>
 </head>
 <body>
