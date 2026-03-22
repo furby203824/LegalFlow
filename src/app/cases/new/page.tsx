@@ -6,7 +6,7 @@ import AppShell from "@/components/ui/AppShell";
 import { UCMJ_ARTICLES, RANK_GRADE_OPTIONS, RANK_TO_GRADE, GRADES } from "@/types";
 import type { Rank } from "@/types";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, AlertOctagon, Info, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, AlertOctagon, Info, Plus, Trash2, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { casesStore, caseWithIncludes, auditStore } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getCommanderGradeLevel } from "@/types";
@@ -49,6 +49,8 @@ export default function NewCasePage() {
   const [vesselException, setVesselException] = useState(false);
   const [jurisdictionConfirmed, setJurisdictionConfirmed] = useState(false);
   const [statuteAck, setStatuteAck] = useState(false);
+
+  const [detailsOpen, setDetailsOpen] = useState<Record<number, boolean>>({});
 
   const [offenses, setOffenses] = useState<OffenseInput[]>([{
     ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offensePlace: "",
@@ -250,12 +252,46 @@ export default function NewCasePage() {
               <div key={oi} className="border border-border rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-medium">Offense {String.fromCharCode(65 + oi)}</h4>
-                  {offenses.length > 1 && (
-                    <button type="button" onClick={() => setOffenses(offenses.filter((_, i) => i !== oi))} className="text-error text-xs hover:underline flex items-center gap-1">
-                      <Trash2 size={12} /> Remove
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDetailsOpen((prev) => ({ ...prev, [oi]: !prev[oi] }))}
+                      className="btn-ghost text-xs gap-1 text-primary"
+                    >
+                      <HelpCircle size={14} />
+                      Details
+                      {detailsOpen[oi] ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                     </button>
-                  )}
+                    {offenses.length > 1 && (
+                      <button type="button" onClick={() => setOffenses(offenses.filter((_, i) => i !== oi))} className="text-error text-xs hover:underline flex items-center gap-1">
+                        <Trash2 size={12} /> Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
+                {detailsOpen[oi] && (
+                  <div className="mb-4 rounded-md bg-blue-50 border border-blue-200 p-3 text-xs text-neutral-dark space-y-2">
+                    <p className="font-semibold text-sm">Offense Field Guide</p>
+                    <div>
+                      <span className="font-medium">UCMJ Article:</span> The specific article of the Uniform Code of Military Justice the accused is alleged to have violated (e.g., Article 86 — Absence without leave, Article 92 — Failure to obey order). Select the article that most closely matches the misconduct.
+                    </div>
+                    <div>
+                      <span className="font-medium">Offense Type:</span> A short label describing the nature of the offense (e.g., &quot;UA&quot;, &quot;Drunk on duty&quot;, &quot;Assault consummated by battery&quot;). This appears on the NAVMC 10132 and charge sheet.
+                    </div>
+                    <div>
+                      <span className="font-medium">Date:</span> The date the offense was committed. For continuing offenses (e.g., UA), use the start date. The exact date must match the charge sheet specification.
+                    </div>
+                    <div>
+                      <span className="font-medium">Place:</span> The location where the offense occurred, including the installation or ship name if applicable (e.g., &quot;Camp Lejeune, NC&quot; or &quot;USS Wasp (LHD-1)&quot;).
+                    </div>
+                    <div>
+                      <span className="font-medium">Summary:</span> A brief, factual description of the alleged misconduct. <span className="text-error font-medium">Do not include victim PII</span> (names, SSNs, etc.). Focus on what the accused did, when, and where.
+                    </div>
+                    <div>
+                      <span className="font-medium">Victim Demographics:</span> Required for reporting purposes per MCO 5800.16. If there is no identifiable victim, leave as &quot;Unknown.&quot; Demographics do not appear on case documents — they are used for aggregate reporting only.
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="UCMJ Article" required>
                     <select className="input-field" value={o.ucmjArticle} onChange={(e) => updateOffense(oi, "ucmjArticle", e.target.value)} required>
