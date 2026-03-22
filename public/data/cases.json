@@ -194,5 +194,73 @@
     "njpAuthorityGrade": "O5",
     "njpAuthorityEdipi": "1234567891",
     "dateNoticeToAccused": "2026-03-22"
+  },
+  {
+    "id": "case-1774223160076-5vamv",
+    "createdAt": "2026-03-22",
+    "updatedAt": "2026-03-22",
+    "offenses": [
+      {
+        "id": "off-1774223160073-A",
+        "offenseLetter": "A",
+        "ucmjArticle": "100",
+        "offenseType": "Motivation",
+        "offenseSummary": "Beat up people and things ",
+        "offenseDate": "2026-03-22",
+        "offensePlace": "Chow hall",
+        "finding": null,
+        "locked": false
+      }
+    ],
+    "victims": [
+      {
+        "id": "v-1774223160073-A",
+        "offenseId": "off-1774223160073-A",
+        "victimLetter": "A",
+        "victimStatus": "Unknown",
+        "victimSex": "Unknown",
+        "victimRace": "Unknown",
+        "victimEthnicity": "Unknown",
+        "locked": false
+      }
+    ],
+    "punishment": null,
+    "appeal": null,
+    "item21Entries": [],
+    "signatures": [],
+    "evidence": [],
+    "documents": [],
+    "remedialActions": [],
+    "vacationRecordsAsParent": [],
+    "flags": [],
+    "daysOpen": 0,
+    "nextAction": "Complete Item 2 - Rights advisement",
+    "nextActionOwner": "ACCUSED",
+    "isOverdue": false,
+    "caseNumber": "CASE-2026-0002",
+    "status": "INITIATED",
+    "currentPhase": "INITIATION",
+    "unitId": "unit-hq",
+    "unitFullString": "HQBN",
+    "accusedName": "SHORTER, STEPHEN N",
+    "accusedLastName": "SHORTER",
+    "accusedFirstName": "STEPHEN",
+    "accusedMiddleName": "N",
+    "accusedRank": "MSgt",
+    "accusedGrade": "E8",
+    "accusedEdipi": "1111111111",
+    "component": "ACTIVE",
+    "vesselException": false,
+    "commanderGradeLevel": "FIELD_GRADE_AND_ABOVE",
+    "jurisdictionConfirmed": true,
+    "uaApplicable": false,
+    "offenseDateEarliest": "2026-03-22",
+    "formLocked": false,
+    "jaReviewRequired": false,
+    "jaReviewComplete": false,
+    "njpDate": null,
+    "appealNotFiled": false,
+    "accusedTransferred": false,
+    "initiatedById": "user-1774218618690-02z7m"
   }
 ]
