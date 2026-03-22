@@ -7,6 +7,9 @@ import {
   vrInit004,
   vrInit005,
   vrInit006,
+  vrInit007,
+  vrCv001,
+  vrCv002,
   generateCaseNumber,
 } from "@/lib/validation";
 import { getCommanderGradeLevel } from "@/types";
@@ -118,6 +121,22 @@ export async function POST(req: NextRequest) {
     const jurisdError = vrInit004(jurisdictionConfirmed);
     if (jurisdError) {
       return NextResponse.json({ error: jurisdError.message, ruleId: jurisdError.ruleId }, { status: 400 });
+    }
+
+    // VR-CV-001: Validate rank and grade
+    const rankGradeCheck = vrCv001(accusedRank, accusedGrade);
+    if (rankGradeCheck) {
+      return NextResponse.json({ error: rankGradeCheck.message, ruleId: rankGradeCheck.ruleId }, { status: 400 });
+    }
+
+    // VR-CV-002: Validate victim demographics
+    for (const offense of offenses) {
+      for (const v of (offense.victims || [])) {
+        const victimCheck = vrCv002(v.status, v.sex, v.race, v.ethnicity);
+        if (victimCheck) {
+          return NextResponse.json({ error: victimCheck.message, ruleId: victimCheck.ruleId }, { status: 400 });
+        }
+      }
     }
 
     // Warnings

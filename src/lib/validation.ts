@@ -636,6 +636,464 @@ export function getLockedItems(signedItems: string[]): string[] {
 }
 
 // ============================================================================
+// Missing INIT Rules
+// ============================================================================
+
+/** VR-INIT-009: No PII in offense summary (ADVISORY - persistent helper text) */
+export const VR_INIT_009_MESSAGE =
+  "Do not include victim PII in the offense summary per NAVMC 10132 Item 1 instructions. Enter victim information in the Victim Demographics section.";
+
+/** VR-INIT-010: SMCR flag activation (AUTO_ACTION) */
+export function vrInit010(component: string): boolean {
+  return component === "SMCR" || component === "IRR";
+}
+
+/** VR-INIT-011: Vessel exception flag (AUTO_ACTION) */
+export function vrInit011(vesselException: boolean): boolean {
+  return vesselException;
+}
+
+// ============================================================================
+// Missing Phase 2 Rules (handled as AUTO_ACTION in API)
+// ============================================================================
+
+/** VR-R2-001: Court-martial demand routing */
+export function vrR2001(acceptsNjp: boolean, vesselException: boolean): { route: boolean; message: string } {
+  if (!acceptsNjp && !vesselException) {
+    return {
+      route: true,
+      message: "The accused has demanded trial by court-martial. NJP cannot be imposed. This case will be marked as referred to court-martial jurisdiction and routed for disposition.",
+    };
+  }
+  return { route: false, message: "" };
+}
+
+/** VR-R2-002: Vessel exception override (ADVISORY) */
+export function vrR2002(acceptsNjp: boolean, vesselException: boolean): ValidationResult | null {
+  if (!acceptsNjp && vesselException) {
+    return {
+      ruleId: "VR-R2-002",
+      type: "ADVISORY",
+      field: "item2",
+      message: "The vessel exception applies. The accused does not have the right to demand trial by court-martial per MCO 5800.16 para 010702. The NJP may proceed.",
+    };
+  }
+  return null;
+}
+
+/** VR-R2-003: Refusal to sign routing */
+export function vrR2003(refusedToSign: boolean, vesselException: boolean): { route: boolean; message: string } {
+  if (refusedToSign && !vesselException) {
+    return {
+      route: true,
+      message: "The accused has refused to indicate intentions and/or refused to sign Item 2. Per MCO 5800.16 para 011105.B, this is treated as a refusal of NJP. This case will be referred to the officer exercising court-martial jurisdiction.",
+    };
+  }
+  return { route: false, message: "" };
+}
+
+/** VR-R2-004: Vessel refusal - CO signs instead */
+export function vrR2004(refusedToSign: boolean, vesselException: boolean): ValidationResult | null {
+  if (refusedToSign && vesselException) {
+    return {
+      ruleId: "VR-R2-004",
+      type: "AUTO_ACTION",
+      field: "item2",
+      message: "The accused refused to sign Item 2. The vessel exception applies. The Commanding Officer will sign Item 2 in place of the accused. NJP may proceed.",
+    };
+  }
+  return null;
+}
+
+/** VR-R2-007: Block offense add after Item 2 signed */
+export function vrR2007(item2Signed: boolean): ValidationResult | null {
+  if (item2Signed) {
+    return {
+      ruleId: "VR-R2-007",
+      type: "HARD_BLOCK",
+      field: "offenses",
+      message: "Offenses cannot be added after the accused has signed Item 2 per NAVMC 10132 Item 1 instructions. Additional offenses must be added through Item 21 Remarks.",
+    };
+  }
+  return null;
+}
+
+// ============================================================================
+// Missing Phase 3 Rules
+// ============================================================================
+
+/** VR-R3-003: Forfeiture amount limits (needs pay table - simplified) */
+export function vrR3003(
+  forfeitureAmount: number | undefined,
+  gradeLevel: CommanderGradeLevel,
+  calculatedMax?: number
+): ValidationResult | null {
+  if (!forfeitureAmount || !calculatedMax) return null;
+  if (forfeitureAmount > calculatedMax) {
+    return {
+      ruleId: "VR-R3-003",
+      type: "HARD_BLOCK",
+      field: "forfeiture_amount",
+      message: `Forfeiture amount of $${forfeitureAmount} exceeds the maximum permissible forfeiture of $${calculatedMax} for a ${gradeLevel === "COMPANY_GRADE" ? "Company Grade" : "Field Grade or above"} imposing officer. Correct the amount before proceeding.`,
+    };
+  }
+  return null;
+}
+
+/** VR-R3-011: Forfeiture recalc when reduction imposed (WARNING) */
+export function vrR3011(reductionImposed: boolean, reductionToGrade?: string): ValidationResult | null {
+  if (reductionImposed && reductionToGrade) {
+    return {
+      ruleId: "VR-R3-011",
+      type: "WARNING",
+      field: "forfeiture_amount",
+      message: `A reduction in grade has also been imposed (suspended or not). Per MCO 5800.16 para 010904 and Part V MCM para 5, the maximum forfeiture must be calculated on the pay of the reduced grade (${reductionToGrade}). The calculator has been updated to reflect the reduced grade pay.`,
+    };
+  }
+  return null;
+}
+
+/** VR-R3-012: SMCR 60-day period locked */
+export function vrR3012(smcr60DayStart: string | undefined, njpDate: string | undefined): ValidationResult | null {
+  if (smcr60DayStart && njpDate && smcr60DayStart !== njpDate) {
+    return {
+      ruleId: "VR-R3-012",
+      type: "HARD_BLOCK",
+      field: "smcr_60_day_start",
+      message: `The 60-day period for SMCR forfeiture calculation begins on the NJP date (${njpDate}) and cannot be adjusted per MCO 5800.16 para 010905.E.`,
+    };
+  }
+  return null;
+}
+
+/** VR-R3-013: Item 9 prerequisites */
+export function vrR3013(prerequisites: {
+  item3Signed: boolean;
+  allFindingsEntered: boolean;
+  punishmentEntered: boolean;
+}): ValidationResult | null {
+  const incomplete: string[] = [];
+  if (!prerequisites.item3Signed) incomplete.push("Item 3 (CO certification)");
+  if (!prerequisites.allFindingsEntered) incomplete.push("Item 5 (all findings)");
+  if (!prerequisites.punishmentEntered) incomplete.push("Items 6-7 (punishment)");
+
+  if (incomplete.length > 0) {
+    return {
+      ruleId: "VR-R3-013",
+      type: "HARD_BLOCK",
+      field: "item9",
+      message: `The following items must be completed before Item 9 can be signed: ${incomplete.join(", ")}.`,
+    };
+  }
+  return null;
+}
+
+// ============================================================================
+// Missing Phase 4 Rules (AUTO_ACTION)
+// ============================================================================
+
+/** VR-R4-002: No appeal - advance to ADMIN_COMPLETION */
+export function vrR4002(): { phase: string; message: string } {
+  return {
+    phase: "ADMIN_COMPLETION",
+    message: "No appeal filed. Case advancing to Admin Completion phase. Appeal period clock started.",
+  };
+}
+
+/** VR-R4-003: Appeal intent - advance to APPEAL */
+export function vrR4003(): { phase: string; message: string } {
+  return {
+    phase: "APPEAL",
+    message: "Appeal intent recorded. Case advancing to Appeal phase. Five-day stay clock will start when appeal is filed (Item 13).",
+  };
+}
+
+/** VR-R4-004: Item 12 refusal handling */
+export function vrR4004(): { message: string } {
+  return {
+    message: "Accused refused to indicate understanding of appeal rights. This has been noted on the form. The Commanding Officer will sign Item 12 noting the refusal. The NJP is final and valid.",
+  };
+}
+
+// ============================================================================
+// Missing Phase 5 Rules
+// ============================================================================
+
+/** VR-R5-002: JA review log requirements */
+export function vrR5002(reviewerName: string | undefined, reviewDate: string | undefined): ValidationResult | null {
+  if (!reviewerName || !reviewDate) {
+    return {
+      ruleId: "VR-R5-002",
+      type: "HARD_BLOCK",
+      field: "ja_review",
+      message: "JA reviewer name and review date are required to log the judge advocate review.",
+    };
+  }
+  // Check date not in future
+  if (parseISO(reviewDate) > new Date()) {
+    return {
+      ruleId: "VR-R5-002",
+      type: "HARD_BLOCK",
+      field: "ja_review_date",
+      message: "JA review date cannot be in the future.",
+    };
+  }
+  return null;
+}
+
+/** VR-R5-005: Appeal outcome required */
+export function vrR5005(outcome: string | undefined, outcomeDetail: string | undefined): ValidationResult | null {
+  if (!outcome) {
+    return {
+      ruleId: "VR-R5-005",
+      type: "HARD_BLOCK",
+      field: "appeal_outcome",
+      message: "An appeal outcome must be selected.",
+    };
+  }
+  if (outcome === "PARTIAL_RELIEF" && !outcomeDetail) {
+    return {
+      ruleId: "VR-R5-005",
+      type: "HARD_BLOCK",
+      field: "appeal_outcome_detail",
+      message: "Specific relief granted must be described when partial relief is selected.",
+    };
+  }
+  return null;
+}
+
+// ============================================================================
+// Missing Phase 7 Rules
+// ============================================================================
+
+/** VR-R7-004: OMPF confirmation must be by IPAC_ADMIN */
+export function vrR7004(userRole: string): ValidationResult | null {
+  if (userRole !== "IPAC_ADMIN" && userRole !== "SUITE_ADMIN") {
+    return {
+      ruleId: "VR-R7-004",
+      type: "HARD_BLOCK",
+      field: "ompf_confirmation",
+      message: "OMPF scan confirmation must be completed by an IPAC Administrator.",
+    };
+  }
+  return null;
+}
+
+// ============================================================================
+// Missing System Rules
+// ============================================================================
+
+/** VR-SYS-001: Item 6/7 correction role lock */
+export function vrSys001(
+  userRole: string,
+  userId: string,
+  caseNjpAuthorityId: string | null
+): ValidationResult | null {
+  if (userRole !== "NJP_AUTHORITY" || userId !== caseNjpAuthorityId) {
+    return {
+      ruleId: "VR-SYS-001",
+      type: "HARD_BLOCK",
+      field: "punishment",
+      message: "Corrections to Items 6 and 7 may only be made by the officer who imposed the punishment per NAVMC 10132 Item 6 instructions. This action requires the NJP Authority user role for this specific case.",
+    };
+  }
+  return null;
+}
+
+/** VR-SYS-002: Post-lock edit block */
+export function vrSys002(lockedItems: string[], attemptedItem: string): ValidationResult | null {
+  if (lockedItems.includes(attemptedItem)) {
+    return {
+      ruleId: "VR-SYS-002",
+      type: "HARD_BLOCK",
+      field: `item_${attemptedItem}`,
+      message: "This item has been locked by a signature event and cannot be modified digitally. Per MCO 5800.16 para 011104, corrections must be made in ink on the physical form, initialed by the appropriate officer, and the corrected form must be scanned and uploaded to this case record.",
+    };
+  }
+  return null;
+}
+
+/** VR-SYS-004: Item 21 entry confirmation required */
+export function vrSys004(hasPendingEntries: boolean): ValidationResult | null {
+  if (hasPendingEntries) {
+    return {
+      ruleId: "VR-SYS-004",
+      type: "HARD_BLOCK",
+      field: "item21",
+      message: "The Item 21 entry below has been generated. Review and confirm before it is written to the case record.",
+    };
+  }
+  return null;
+}
+
+/** VR-SYS-005: No case deletion */
+export function vrSys005(): ValidationResult {
+  return {
+    ruleId: "VR-SYS-005",
+    type: "HARD_BLOCK",
+    field: "case",
+    message: "Case records cannot be permanently deleted. A case may only be marked as DESTROYED if no punishment was imposed per NAVMC 10132 Item 6 instructions.",
+  };
+}
+
+/** VR-SYS-007: Unit-based access control */
+export function vrSys007(
+  userRole: string,
+  userUnitId: string,
+  caseUnitId: string,
+  userEdipi?: string,
+  accusedEdipi?: string
+): ValidationResult | null {
+  // SUITE_ADMIN has full access
+  if (userRole === "SUITE_ADMIN") return null;
+  // IPAC_ADMIN sees routed cases (handled at query level)
+  if (userRole === "IPAC_ADMIN") return null;
+  // ACCUSED only sees own case
+  if (userRole === "ACCUSED") {
+    if (userEdipi && accusedEdipi && userEdipi === accusedEdipi) return null;
+    return {
+      ruleId: "VR-SYS-007",
+      type: "HARD_BLOCK",
+      field: "case_access",
+      message: "You do not have access to this case.",
+    };
+  }
+  // Unit-based access
+  if (userUnitId !== caseUnitId) {
+    return {
+      ruleId: "VR-SYS-007",
+      type: "HARD_BLOCK",
+      field: "case_access",
+      message: "You do not have access to this case.",
+    };
+  }
+  return null;
+}
+
+/** VR-SYS-008: Document availability by phase */
+export function vrSys008(
+  documentType: string,
+  currentPhase: string,
+  formLocked: boolean
+): ValidationResult | null {
+  const phaseOrder = ["INITIATION", "RIGHTS_ADVISEMENT", "HEARING", "NOTIFICATION", "APPEAL", "REMEDIAL_ACTION", "ADMIN_COMPLETION", "VACATION", "CLOSED"];
+  const currentIdx = phaseOrder.indexOf(currentPhase);
+
+  if (documentType === "CHARGE_SHEET" || documentType === "OFFICE_HOURS_SCRIPT") {
+    if (currentIdx < 1) {
+      return {
+        ruleId: "VR-SYS-008",
+        type: "HARD_BLOCK",
+        field: "document",
+        message: `This document is not yet available. ${documentType === "CHARGE_SHEET" ? "Charge Sheet" : "Office Hours Script"} becomes available after Phase 1 completion.`,
+      };
+    }
+  }
+  if (documentType === "NAVMC_10132" && formLocked) {
+    // Final version only after Item 16
+    return null; // Available
+  }
+
+  return null;
+}
+
+// ============================================================================
+// Controlled Vocabulary Validation (VR-CV-*)
+// ============================================================================
+
+const VALID_RANKS = new Set([
+  "Pvt", "PFC", "LCpl", "Cpl", "Sgt", "SSgt", "GySgt", "MSgt",
+  "1stSgt", "MGySgt", "SgtMaj", "WO", "CWO2", "CWO3", "CWO4", "CWO5",
+  "2ndLt", "1stLt", "Capt", "Maj", "LtCol", "Col", "BGen", "MajGen",
+  "LtGen", "Gen",
+]);
+
+const VALID_GRADES = new Set([
+  "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9",
+  "W1", "W2", "W3", "W4", "W5",
+  "O1", "O1E", "O2", "O2E", "O3", "O3E", "O4", "O5", "O6",
+  "O7", "O8", "O9", "O10",
+]);
+
+/** VR-CV-001: Rank/grade controlled vocabulary */
+export function vrCv001(rank: string | undefined, grade: string | undefined): ValidationResult | null {
+  if (rank && !VALID_RANKS.has(rank)) {
+    return {
+      ruleId: "VR-CV-001",
+      type: "HARD_BLOCK",
+      field: "rank",
+      message: "Invalid rank entered. Select from the approved list.",
+    };
+  }
+  if (grade && !VALID_GRADES.has(grade)) {
+    return {
+      ruleId: "VR-CV-001",
+      type: "HARD_BLOCK",
+      field: "grade",
+      message: "Invalid grade entered. Select from the approved list.",
+    };
+  }
+  return null;
+}
+
+const VALID_VICTIM_STATUS = new Set([
+  "Military", "Military (spouse)", "Civilian (spouse)", "Civilian (dependent)",
+  "Civilian (DON employee)", "Civilian (other)", "Other", "Unknown",
+]);
+const VALID_VICTIM_SEX = new Set(["Male", "Female", "Unknown"]);
+const VALID_VICTIM_RACE = new Set([
+  "American Indian or Alaskan Native", "Asian", "Black or African American",
+  "Native Hawaiian or Other Pacific Islander", "White", "Other", "Unknown",
+]);
+const VALID_VICTIM_ETHNICITY = new Set(["Hispanic or Latino", "Not Hispanic or Latino", "Unknown"]);
+
+/** VR-CV-002: Victim demographics controlled vocabulary */
+export function vrCv002(status?: string, sex?: string, race?: string, ethnicity?: string): ValidationResult | null {
+  if (status && !VALID_VICTIM_STATUS.has(status)) {
+    return { ruleId: "VR-CV-002", type: "HARD_BLOCK", field: "victim_status", message: "Invalid value for victim status. Select from the approved options." };
+  }
+  if (sex && !VALID_VICTIM_SEX.has(sex)) {
+    return { ruleId: "VR-CV-002", type: "HARD_BLOCK", field: "victim_sex", message: "Invalid value for victim sex. Select from the approved options." };
+  }
+  if (race && !VALID_VICTIM_RACE.has(race)) {
+    return { ruleId: "VR-CV-002", type: "HARD_BLOCK", field: "victim_race", message: "Invalid value for victim race. Select from the approved options." };
+  }
+  if (ethnicity && !VALID_VICTIM_ETHNICITY.has(ethnicity)) {
+    return { ruleId: "VR-CV-002", type: "HARD_BLOCK", field: "victim_ethnicity", message: "Invalid value for victim ethnicity. Select from the approved options." };
+  }
+  return null;
+}
+
+/** VR-CV-003: Approved abbreviations for punishment text (AUTO_ACTION) */
+export const APPROVED_ABBREVIATIONS: Record<string, string> = {
+  confinement: "conf",
+  confined: "conf",
+  "correctional custody": "cust",
+  duty: "du",
+  forfeitures: "forf",
+  forfeiture: "forf",
+  from: "fr",
+  forwarded: "fwd",
+  recommending: "rec",
+  reduction: "red",
+  reduced: "red",
+  restriction: "restr",
+  restricted: "restr",
+  suspension: "susp",
+  suspended: "susp",
+  without: "w/o",
+};
+
+export function applyAbbreviations(text: string): string {
+  let result = text;
+  for (const [full, abbr] of Object.entries(APPROVED_ABBREVIATIONS)) {
+    const regex = new RegExp(`\\b${full}\\b`, "gi");
+    result = result.replace(regex, abbr);
+  }
+  return result;
+}
+
+// ============================================================================
 // Helpers
 // ============================================================================
 
