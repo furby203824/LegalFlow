@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "audit-1774220760441-z0p5w",
+    "timestamp": "2026-03-22T23:06:00.441Z",
+    "caseId": "case-1774220758799-tm18d",
+    "caseNumber": "CASE-2026-0001",
+    "userId": "user-1774218618690-02z7m",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "INSERT",
+    "notes": "Case CASE-2026-0001 initiated"
+  }
+]
