@@ -146,8 +146,9 @@ export async function getCase(id: string) {
 export async function performPhaseAction(caseId: string, action: string, data: Rec = {}) {
   const u = user();
 
-  const njpCase = await casesStore.findById(caseId);
-  if (!njpCase) throw new Error("Case not found");
+  const njpCaseOrNull = await casesStore.findById(caseId);
+  if (!njpCaseOrNull) throw new Error("Case not found");
+  const njpCase = njpCaseOrNull;
   if (njpCase.formLocked) throw new Error("Case form is locked");
 
   const signedItems = (njpCase.signatures || []).map((s: Rec) => s.itemNumber);

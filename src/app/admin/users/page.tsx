@@ -33,7 +33,7 @@ export default function UsersPage() {
 
   function loadUsers() {
     getUsers()
-      .then((data) => setUsers(data.users || []))
+      .then((data) => setUsers((data.users || []) as UserInfo[]))
       .catch(console.error)
       .finally(() => setLoading(false));
   }
