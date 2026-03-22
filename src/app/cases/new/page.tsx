@@ -3,7 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/ui/AppShell";
-import { RANKS, GRADES, UCMJ_ARTICLES, RANK_TO_GRADE } from "@/types";
+import { UCMJ_ARTICLES, RANK_GRADE_OPTIONS, RANK_TO_GRADE, GRADES } from "@/types";
 import type { Rank } from "@/types";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, AlertOctagon, Info, Plus, Trash2 } from "lucide-react";
@@ -41,8 +41,7 @@ export default function NewCasePage() {
   const [lastName, setLastName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
-  const [rank, setRank] = useState("");
-  const [grade, setGrade] = useState("");
+  const [rankGrade, setRankGrade] = useState(""); // combined "E3/LCpl" value
   const [edipi, setEdipi] = useState("");
   const [unit, setUnit] = useState("");
   const [component, setComponent] = useState("ACTIVE");
@@ -56,10 +55,9 @@ export default function NewCasePage() {
     victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }],
   }]);
 
-  function handleRankChange(newRank: string) {
-    setRank(newRank);
-    if (newRank in RANK_TO_GRADE) setGrade(RANK_TO_GRADE[newRank as Rank]);
-  }
+  // Parse rank and grade from combined value like "E3/LCpl"
+  const rank = rankGrade ? rankGrade.split("/")[1] : "";
+  const grade = rankGrade ? rankGrade.split("/")[0] : "";
 
   function updateOffense(idx: number, field: keyof OffenseInput, value: string) {
     const updated = [...offenses];
@@ -182,16 +180,10 @@ export default function NewCasePage() {
               <Field label="Middle Name">
                 <input className="input-field" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
               </Field>
-              <Field label="Rank" required>
-                <select className="input-field" value={rank} onChange={(e) => handleRankChange(e.target.value)} required>
-                  <option value="">Select rank</option>
-                  {RANKS.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
-              </Field>
-              <Field label="Grade" required>
-                <select className="input-field" value={grade} onChange={(e) => setGrade(e.target.value)} required>
-                  <option value="">Select grade</option>
-                  {GRADES.map((g) => <option key={g} value={g}>{g}</option>)}
+              <Field label="Rank / Grade" required>
+                <select className="input-field" value={rankGrade} onChange={(e) => setRankGrade(e.target.value)} required>
+                  <option value="">Select rank/grade</option>
+                  {RANK_GRADE_OPTIONS.map((o) => <option key={o.label} value={o.label}>{o.label}</option>)}
                 </select>
               </Field>
               <Field label="EDIPI (10 digits)" required>
