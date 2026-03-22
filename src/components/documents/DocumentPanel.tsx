@@ -4,27 +4,72 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { FileText, Download, RefreshCw } from "lucide-react";
 
+type Navmc10132Version = "PARTIAL" | "HEARING" | "FINAL";
+
+interface DocDef {
+  key: string;
+  label: string;
+  desc: string;
+  hasVersions?: boolean;
+  requiresVacation?: boolean;
+  requiresRemedial?: boolean;
+  finalOnly?: boolean;
+}
+
+const DOCS: DocDef[] = [
+  { key: "navmc_10132", label: "NAVMC 10132", desc: "Unit Punishment Book", hasVersions: true },
+  { key: "charge_sheet", label: "Charge Sheet", desc: "Pre-hearing charges" },
+  { key: "office_hours_script", label: "Office Hours Script", desc: "Commander hearing guidance" },
+  { key: "figure_14_1", label: "Figure 14-1", desc: "Vacation notice", requiresVacation: true },
+  { key: "mmrp_notification", label: "MMRP Notification", desc: "Set-aside email", requiresRemedial: true },
+];
+
+const VERSION_OPTIONS: { key: Navmc10132Version; label: string }[] = [
+  { key: "PARTIAL", label: "Partial (Pre-hearing)" },
+  { key: "HEARING", label: "Hearing (Post-hearing)" },
+  { key: "FINAL", label: "Final (Case closed)" },
+];
+
 export default function DocumentPanel({
   caseId,
   component,
   commanderGradeCategory,
+  currentPhase,
+  hasVacationRecords,
+  hasMmrpPending,
 }: {
   caseId: string;
   component: string;
   commanderGradeCategory: string;
+  currentPhase?: string;
+  hasVacationRecords?: boolean;
+  hasMmrpPending?: boolean;
 }) {
   const [document, setDocument] = useState("");
   const [docType, setDocType] = useState("");
+  const [docVersion, setDocVersion] = useState<Navmc10132Version | null>(null);
   const [loading, setLoading] = useState(false);
+  const [caseNumber, setCaseNumber] = useState("");
+  const [showVersionSelector, setShowVersionSelector] = useState(false);
 
-  async function generateDocument(type: string) {
+  async function generateDocument(type: string, version?: Navmc10132Version) {
     setLoading(true);
     setDocType(type);
+    setDocVersion(version || null);
+    setShowVersionSelector(false);
     try {
-      const res = await fetch(`/api/cases/${caseId}/documents?type=${type}`);
+      let url = `/api/cases/${caseId}/documents?type=${type}`;
+      if (version) {
+        url += `&version=${version}`;
+      }
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setDocument(data.document);
+        if (data.caseNumber) setCaseNumber(data.caseNumber);
+      } else {
+        const err = await res.json().catch(() => ({ error: "Unknown error" }));
+        setDocument(`Error: ${err.error}`);
       }
     } catch {
       setDocument("Error generating document");
@@ -33,19 +78,33 @@ export default function DocumentPanel({
     }
   }
 
-  const docs = [
-    { key: "navmc_10132", label: "NAVMC 10132", desc: "Unit Punishment Book" },
-    { key: "charge_sheet", label: "Charge Sheet", desc: "Pre-hearing review" },
-    { key: "office_hours_script", label: "Office Hours Script", desc: "Commander guidance" },
-  ];
+  function handleDocClick(doc: DocDef) {
+    if (doc.hasVersions) {
+      setShowVersionSelector(showVersionSelector && docType === doc.key ? false : true);
+      setDocType(doc.key);
+      return;
+    }
+    generateDocument(doc.key);
+  }
+
+  // Filter visible docs based on case state
+  const visibleDocs = DOCS.filter((d) => {
+    if (d.requiresVacation && !hasVacationRecords) return false;
+    if (d.requiresRemedial && !hasMmrpPending) return false;
+    return true;
+  });
+
+  const downloadFilename = caseNumber
+    ? `${caseNumber}_${docType}${docVersion ? `_${docVersion}` : ""}.txt`
+    : `${docType}.txt`;
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {docs.map((d) => (
+        {visibleDocs.map((d) => (
           <button
             key={d.key}
-            onClick={() => generateDocument(d.key)}
+            onClick={() => handleDocClick(d)}
             disabled={loading}
             className={cn(
               "card p-4 text-left hover:shadow-md transition-shadow",
@@ -61,13 +120,45 @@ export default function DocumentPanel({
         ))}
       </div>
 
+      {/* NAVMC 10132 version selector */}
+      {showVersionSelector && docType === "navmc_10132" && (
+        <div className="card p-3">
+          <p className="text-xs font-medium mb-2">Select NAVMC 10132 version:</p>
+          <div className="flex gap-2">
+            {VERSION_OPTIONS.map((v) => {
+              const disabled =
+                v.key === "FINAL" &&
+                currentPhase !== "ADMIN_COMPLETION" &&
+                currentPhase !== "CLOSED";
+              return (
+                <button
+                  key={v.key}
+                  onClick={() => generateDocument("navmc_10132", v.key)}
+                  disabled={loading || disabled}
+                  className={cn(
+                    "btn-ghost text-xs px-3 py-1.5 rounded border",
+                    disabled && "opacity-50 cursor-not-allowed"
+                  )}
+                  title={disabled ? "Only available in ADMIN_COMPLETION or CLOSED phase" : ""}
+                >
+                  {v.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {document && (
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-surface border-b border-border">
-            <span className="text-sm font-medium">Document Preview</span>
+            <span className="text-sm font-medium">
+              Document Preview
+              {docVersion && <span className="text-xs text-neutral-mid ml-2">({docVersion})</span>}
+            </span>
             <div className="flex gap-2">
               <button
-                onClick={() => generateDocument(docType)}
+                onClick={() => generateDocument(docType, docVersion || undefined)}
                 className="btn-ghost text-xs gap-1"
               >
                 <RefreshCw size={12} /> Regenerate
@@ -78,7 +169,7 @@ export default function DocumentPanel({
                   const url = URL.createObjectURL(blob);
                   const a = window.document.createElement("a");
                   a.href = url;
-                  a.download = `${docType}.txt`;
+                  a.download = downloadFilename;
                   a.click();
                   URL.revokeObjectURL(url);
                 }}

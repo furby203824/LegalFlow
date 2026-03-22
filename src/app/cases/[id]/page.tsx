@@ -176,6 +176,12 @@ export default function CaseDetailPage({
                 caseId={caseData.id}
                 component={caseData.component}
                 commanderGradeCategory={caseData.commanderGradeLevel}
+                currentPhase={caseData.currentPhase}
+                hasVacationRecords={caseData.vacationRecordsAsParent?.length > 0}
+                hasMmrpPending={caseData.remedialActions?.some(
+                  (ra: { mmrpNotificationRequired: boolean; mmrpNotificationSent: boolean }) =>
+                    ra.mmrpNotificationRequired && !ra.mmrpNotificationSent
+                )}
               />
             )}
             {activeTab === "audit" && (
