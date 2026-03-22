@@ -131,7 +131,7 @@
     "nextActionOwner": "ACCUSED",
     "isOverdue": false,
     "caseNumber": "CASE-2026-0001",
-    "status": "RIGHTS_ADVISED",
+    "status": "PUNISHMENT_IMPOSED",
     "currentPhase": "HEARING",
     "unitId": "unit-hq",
     "unitFullString": "Test, test",
@@ -154,6 +154,12 @@
     "njpDate": "2026-03-22",
     "appealNotFiled": false,
     "accusedTransferred": false,
-    "initiatedById": "user-1774218618690-02z7m"
+    "initiatedById": "user-1774218618690-02z7m",
+    "njpAuthorityName": "Test commander",
+    "njpAuthorityTitle": "Commanding officer",
+    "njpAuthorityUnit": "Test, Unit",
+    "njpAuthorityRank": "LtCol",
+    "njpAuthorityGrade": "O5",
+    "njpAuthorityEdipi": "1234567891"
   }
 ]
