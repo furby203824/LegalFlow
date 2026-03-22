@@ -12,7 +12,7 @@
         "offenseSummary": "Test of the summary",
         "offenseDate": "2026-03-05",
         "offensePlace": "Test",
-        "finding": null,
+        "finding": "G",
         "locked": true
       }
     ],
@@ -107,7 +107,7 @@
     "isOverdue": false,
     "caseNumber": "CASE-2026-0001",
     "status": "RIGHTS_ADVISED",
-    "currentPhase": "RIGHTS_ADVISEMENT",
+    "currentPhase": "HEARING",
     "unitId": "unit-hq",
     "unitFullString": "Test, test",
     "accusedName": "Test, Test T",
