@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { casesStore, usersStore, caseWithIncludes } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { differenceInDays } from "date-fns";
 import type { CasePhase, CaseStatus, UserRole } from "@/types";
@@ -31,44 +31,34 @@ export async function GET() {
   try {
     const user = await requireAuth();
 
-    const where: Record<string, unknown> = {};
+    let cases = casesStore.findMany((c) => c.status !== "DESTROYED");
 
+    // Role-based filtering
     if (user.role === "ACCUSED") {
-      const userRecord = await prisma.user.findUnique({ where: { id: user.userId } });
+      const userRecord = usersStore.findById(user.userId);
       if (userRecord?.edipi) {
-        where.accused = { edipi: userRecord.edipi };
+        cases = cases.filter((c) => c.accusedEdipi === userRecord.edipi);
       } else {
         return NextResponse.json({ cases: [], stats: {} });
       }
     } else if (user.role === "IPAC_ADMIN") {
-      where.item16SignedDate = { not: null };
+      cases = cases.filter((c) => c.item16SignedDate);
     } else if (user.role !== "SUITE_ADMIN") {
-      where.unitId = user.unitId;
+      cases = cases.filter((c) => c.unitId === user.unitId);
     }
 
-    where.status = { not: "DESTROYED" };
-
-    const cases = await prisma.case.findMany({
-      where,
-      include: {
-        accused: true,
-        offenses: true,
-        punishmentRecord: { select: { suspensionStatus: true } },
-      },
-      orderBy: { updatedAt: "desc" },
-    });
-
     const dashboardCases = cases.map((c) => {
-      const daysInPhase = differenceInDays(new Date(), c.updatedAt);
+      const full = caseWithIncludes(c);
+      const daysInPhase = differenceInDays(new Date(), new Date(c.updatedAt));
       const { action, owner } = getNextAction(c.currentPhase, c.status);
-      const hasSuspension = c.punishmentRecord?.suspensionStatus === "ACTIVE";
+      const hasSuspension = c.punishment?.suspensionStatus === "ACTIVE";
 
       return {
         id: c.id,
         caseNumber: c.caseNumber,
-        marineName: `${c.accused.lastName}, ${c.accused.firstName}`,
-        marineGrade: c.accused.grade,
-        ucmjArticles: c.offenses.map((o) => o.ucmjArticle),
+        marineName: `${c.accusedLastName}, ${c.accusedFirstName}`,
+        marineGrade: c.accusedGrade,
+        ucmjArticles: (c.offenses || []).map((o: { ucmjArticle: string }) => o.ucmjArticle),
         status: c.status as CaseStatus,
         currentPhase: c.currentPhase as CasePhase,
         daysInCurrentPhase: daysInPhase,

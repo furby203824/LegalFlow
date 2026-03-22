@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { casesStore, usersStore, auditStore } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 
 // GET /api/cases/[id]/remarks
@@ -11,13 +11,26 @@ export async function GET(
     await requireAuth();
     const { id } = await params;
 
-    const entries = await prisma.item21Entry.findMany({
-      where: { caseId: id },
-      orderBy: { entrySequence: "asc" },
-      include: {
-        confirmedBy: { select: { firstName: true, lastName: true } },
-      },
-    });
+    const njpCase = casesStore.findById(id);
+    if (!njpCase) {
+      return NextResponse.json({ error: "Case not found" }, { status: 404 });
+    }
+
+    const entries = (njpCase.item21Entries || [])
+      .sort((a: { entrySequence: number }, b: { entrySequence: number }) =>
+        (a.entrySequence || 0) - (b.entrySequence || 0)
+      )
+      .map((e: Record<string, unknown>) => {
+        const confirmedBy = e.confirmedById
+          ? usersStore.findById(e.confirmedById as string)
+          : null;
+        return {
+          ...e,
+          confirmedBy: confirmedBy
+            ? { firstName: confirmedBy.firstName, lastName: confirmedBy.lastName }
+            : null,
+        };
+      });
 
     return NextResponse.json({ remarks: entries });
   } catch (error) {
@@ -44,35 +57,36 @@ export async function POST(
       );
     }
 
+    const njpCase = casesStore.findById(id);
+    if (!njpCase) {
+      return NextResponse.json({ error: "Case not found" }, { status: 404 });
+    }
+
     // Get next sequence number
-    const lastEntry = await prisma.item21Entry.findFirst({
-      where: { caseId: id },
-      orderBy: { entrySequence: "desc" },
-    });
-    const nextSequence = (lastEntry?.entrySequence ?? 0) + 1;
+    const entries = njpCase.item21Entries || [];
+    const maxSeq = entries.reduce(
+      (max: number, e: { entrySequence?: number }) => Math.max(max, e.entrySequence || 0),
+      0
+    );
 
-    const entry = await prisma.item21Entry.create({
-      data: {
-        caseId: id,
-        entryDate: date,
-        entrySequence: nextSequence,
-        entryType: entryType || "OTHER",
-        entryText: text,
-        systemGenerated: false,
-      },
+    const entry = casesStore.addItem21Entry(id, {
+      entryDate: date,
+      entrySequence: maxSeq + 1,
+      entryType: entryType || "OTHER",
+      entryText: text,
+      systemGenerated: false,
+      confirmed: false,
+      locked: false,
     });
 
-    await prisma.auditLog.create({
-      data: {
-        caseId: id,
-        tableName: "item_21_entries",
-        recordId: entry.id,
-        action: "INSERT",
-        userId: user.userId,
-        userRole: user.role,
-        userName: user.username,
-        notes: `Item 21 entry added: ${entryType}`,
-      },
+    auditStore.append({
+      caseId: id,
+      caseNumber: njpCase.caseNumber,
+      userId: user.userId,
+      userRole: user.role,
+      userName: user.username,
+      action: "INSERT",
+      notes: `Item 21 entry added: ${entryType}`,
     });
 
     return NextResponse.json({ remark: entry }, { status: 201 });
@@ -90,16 +104,19 @@ export async function PATCH(
 ) {
   try {
     const user = await requireAuth("ADMIN", "SUITE_ADMIN");
+    const { id } = await params;
     const body = await req.json();
     const { remarkId } = body;
 
-    const entry = await prisma.item21Entry.update({
-      where: { id: remarkId },
-      data: {
-        confirmedById: user.userId,
-        confirmedAt: new Date(),
-      },
+    const entry = casesStore.updateItem21Entry(id, remarkId, {
+      confirmedById: user.userId,
+      confirmedAt: new Date().toISOString(),
+      confirmed: true,
     });
+
+    if (!entry) {
+      return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    }
 
     return NextResponse.json({ remark: entry });
   } catch (error) {

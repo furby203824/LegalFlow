@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { casesStore, caseWithIncludes } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 
 export async function GET(
@@ -10,31 +10,12 @@ export async function GET(
     await requireAuth();
     const { id } = await params;
 
-    const njpCase = await prisma.case.findUnique({
-      where: { id },
-      include: {
-        accused: true,
-        unit: { select: { unitName: true, unitAbbreviation: true, unitFullString: true } },
-        initiatedBy: { select: { firstName: true, lastName: true, role: true } },
-        njpAuthority: { select: { firstName: true, lastName: true, role: true } },
-        offenses: { include: { victims: true }, orderBy: { offenseLetter: "asc" } },
-        punishmentRecord: true,
-        appealRecord: true,
-        remedialActions: { orderBy: { createdAt: "desc" } },
-        item21Entries: { orderBy: { entrySequence: "asc" } },
-        signatures: { orderBy: { createdAt: "asc" } },
-        documents: { where: { isCurrent: true }, orderBy: { createdAt: "desc" } },
-        auditLogs: { orderBy: { createdAt: "desc" }, take: 50 },
-        suspensionMonitor: true,
-        vacationRecordsAsParent: true,
-      },
-    });
-
+    const njpCase = casesStore.findById(id);
     if (!njpCase) {
       return NextResponse.json({ error: "Case not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ case: njpCase });
+    return NextResponse.json({ case: caseWithIncludes(njpCase) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     const status = message.includes("Authentication") ? 401 : 500;
