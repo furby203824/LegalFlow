@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { FileText, Download, RefreshCw } from "lucide-react";
 
 export default function DocumentPanel({
   caseId,
@@ -19,9 +21,7 @@ export default function DocumentPanel({
     setLoading(true);
     setDocType(type);
     try {
-      const res = await fetch(
-        `/api/cases/${caseId}/documents?type=${type}`
-      );
+      const res = await fetch(`/api/cases/${caseId}/documents?type=${type}`);
       if (res.ok) {
         const data = await res.json();
         setDocument(data.document);
@@ -33,75 +33,62 @@ export default function DocumentPanel({
     }
   }
 
-  const docTypes = [
-    {
-      key: "charge_sheet",
-      label: "Charge Sheet",
-      desc: "Pre-hearing review document",
-    },
-    {
-      key: "navmc_10132",
-      label: "NAVMC 10132 (UPB)",
-      desc: "Unit Punishment Book",
-    },
-    {
-      key: "office_hours_script",
-      label: "Office Hours Script",
-      desc: "Commander guidance for NJP proceedings",
-    },
+  const docs = [
+    { key: "navmc_10132", label: "NAVMC 10132", desc: "Unit Punishment Book" },
+    { key: "charge_sheet", label: "Charge Sheet", desc: "Pre-hearing review" },
+    { key: "office_hours_script", label: "Office Hours Script", desc: "Commander guidance" },
   ];
 
   return (
     <div className="space-y-4">
-      {/* Document Buttons */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-[var(--color-navy)] mb-3">
-          Generate Documents
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {docTypes.map((dt) => (
-            <button
-              key={dt.key}
-              onClick={() => generateDocument(dt.key)}
-              disabled={loading}
-              className={`p-4 border rounded-lg text-left hover:bg-blue-50 transition-colors ${
-                docType === dt.key
-                  ? "border-[var(--color-navy)] bg-blue-50"
-                  : "border-[var(--color-border)]"
-              }`}
-            >
-              <div className="font-medium text-sm">{dt.label}</div>
-              <div className="text-xs text-[var(--color-text-muted)] mt-1">
-                {dt.desc}
-              </div>
-            </button>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {docs.map((d) => (
+          <button
+            key={d.key}
+            onClick={() => generateDocument(d.key)}
+            disabled={loading}
+            className={cn(
+              "card p-4 text-left hover:shadow-md transition-shadow",
+              docType === d.key && "ring-2 ring-primary"
+            )}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <FileText size={16} className="text-primary" />
+              <span className="text-sm font-medium">{d.label}</span>
+            </div>
+            <p className="text-xs text-neutral-mid">{d.desc}</p>
+          </button>
+        ))}
       </div>
 
-      {/* Document Preview */}
       {document && (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-[var(--color-navy)]">
-              Document Preview
-            </h3>
-            <button
-              onClick={() => {
-                const blob = new Blob([document], { type: "text/plain" });
-                const url = URL.createObjectURL(blob);
-                const a = window.document.createElement("a");
-                a.href = url;
-                a.download = `${docType}.txt`;
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-              className="btn-secondary"
-            >
-              Download
-            </button>
+        <div className="card overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-surface border-b border-border">
+            <span className="text-sm font-medium">Document Preview</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => generateDocument(docType)}
+                className="btn-ghost text-xs gap-1"
+              >
+                <RefreshCw size={12} /> Regenerate
+              </button>
+              <button
+                onClick={() => {
+                  const blob = new Blob([document], { type: "text/plain" });
+                  const url = URL.createObjectURL(blob);
+                  const a = window.document.createElement("a");
+                  a.href = url;
+                  a.download = `${docType}.txt`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="btn-primary text-xs gap-1"
+              >
+                <Download size={12} /> Download
+              </button>
+            </div>
           </div>
-          <pre className="bg-gray-50 border border-gray-200 rounded p-4 text-xs font-mono overflow-auto max-h-[600px] whitespace-pre-wrap">
+          <pre className="p-4 text-xs font-mono overflow-auto max-h-[500px] whitespace-pre-wrap bg-bg">
             {document}
           </pre>
         </div>

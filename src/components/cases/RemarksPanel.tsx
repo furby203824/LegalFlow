@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Check, Clock, Plus } from "lucide-react";
 
 interface Remark {
   id: string;
@@ -8,39 +10,46 @@ interface Remark {
   itemReference: string;
   text: string;
   confirmed: boolean;
+  systemGenerated?: boolean;
 }
+
+const ENTRY_TYPES = [
+  "ADDITIONAL_OFFENSE", "FORWARDING_RECOMMENDATION", "SUSPENSION_VACATED",
+  "STAY_RESTRICTION", "STAY_EXTRA_DUTIES", "APPEAL_DENIED", "APPEAL_GRANTED",
+  "SET_ASIDE", "ADDITIONAL_VICTIM", "OTHER",
+];
 
 export default function RemarksPanel({
   caseId,
   remarks,
   onUpdate,
+  locked,
 }: {
   caseId: string;
   remarks: Remark[];
   onUpdate: () => void;
+  locked?: boolean;
 }) {
+  const [showAdd, setShowAdd] = useState(false);
   const [date, setDate] = useState("");
-  const [itemRef, setItemRef] = useState("");
+  const [entryType, setEntryType] = useState("OTHER");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const confirmed = remarks.filter((r) => r.confirmed);
+  const pending = remarks.filter((r) => !r.confirmed);
+
   async function addRemark() {
-    if (!date || !itemRef || !text) return;
+    if (!date || !text) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/cases/${caseId}/remarks`, {
+      await fetch(`/api/cases/${caseId}/remarks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, itemReference: itemRef, text }),
+        body: JSON.stringify({ date, entryType, text }),
       });
-      if (res.ok) {
-        setDate("");
-        setItemRef("");
-        setText("");
-        onUpdate();
-      }
-    } catch {
-      // ignore
+      setDate(""); setText(""); setShowAdd(false);
+      onUpdate();
     } finally {
       setLoading(false);
     }
@@ -57,91 +66,91 @@ export default function RemarksPanel({
 
   return (
     <div className="space-y-4">
-      {/* Existing Remarks */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-[var(--color-navy)] mb-3">
-          Item 21 Remarks
-        </h3>
-        {remarks.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)]">No remarks recorded.</p>
-        ) : (
-          <div className="space-y-2">
-            {remarks.map((r) => (
-              <div
-                key={r.id}
-                className={`p-3 rounded border text-sm font-mono ${
-                  r.confirmed
-                    ? "bg-green-50 border-green-200"
-                    : "bg-yellow-50 border-yellow-200"
-                }`}
-              >
-                <div>{r.text}</div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-[var(--color-text-muted)]">
-                    {r.confirmed ? "Confirmed" : "Pending confirmation"}
-                  </span>
-                  {!r.confirmed && (
-                    <button
-                      onClick={() => confirmRemark(r.id)}
-                      className="text-xs text-[var(--color-navy)] hover:underline"
-                    >
-                      Confirm
-                    </button>
-                  )}
+      {/* Confirmed entries */}
+      {confirmed.length > 0 && (
+        <div className="space-y-2">
+          {confirmed.map((r) => (
+            <div key={r.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
+              <Check size={14} className="text-success shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-mono">{r.text}</p>
+                <p className="text-xs text-neutral-mid mt-0.5">
+                  {r.systemGenerated ? "System generated" : "Manual entry"} &middot; Confirmed
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Pending confirmation */}
+      {pending.length > 0 && (
+        <div>
+          <h4 className="text-xs font-medium text-warning uppercase tracking-wide mb-2">
+            Pending Confirmation
+          </h4>
+          {pending.map((r) => (
+            <div key={r.id} className="rounded-md bg-amber-50 border border-amber-200 p-3 mb-2">
+              <p className="text-sm font-mono">{r.text}</p>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-amber-600 flex items-center gap-1">
+                  <Clock size={12} /> Awaiting confirmation
+                </span>
+                <button onClick={() => confirmRemark(r.id)} className="btn-primary text-xs py-1 px-3">
+                  Confirm
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {remarks.length === 0 && (
+        <p className="text-sm text-neutral-mid py-4 text-center">No Item 21 remarks recorded.</p>
+      )}
+
+      {/* Add remark */}
+      {!locked && (
+        <>
+          {!showAdd ? (
+            <button onClick={() => setShowAdd(true)} className="btn-ghost text-xs gap-1">
+              <Plus size={14} /> Add Manual Remark
+            </button>
+          ) : (
+            <div className="rounded-md border border-border p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium mb-1">Date</label>
+                  <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-field" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Type</label>
+                  <select value={entryType} onChange={(e) => setEntryType(e.target.value)} className="input-field">
+                    {ENTRY_TYPES.map((t) => (
+                      <option key={t} value={t}>{t.replace(/_/g, " ")}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Entry Text</label>
+                <textarea value={text} onChange={(e) => setText(e.target.value)} className="input-field h-16" placeholder="YYYY-MM-DD ITEM X: ..." />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setShowAdd(false)} className="btn-ghost text-xs">Cancel</button>
+                <button onClick={addRemark} disabled={loading || !date || !text} className="btn-primary text-xs">Add</button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
-      {/* Add Remark */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-[var(--color-navy)] mb-3">
-          Add Remark
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">Date</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="input-field"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Item Reference
-            </label>
-            <input
-              type="text"
-              value={itemRef}
-              onChange={(e) => setItemRef(e.target.value)}
-              placeholder="e.g., ITEM 1, ITEM 14"
-              className="input-field"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium mb-1">
-              Remark Text
-            </label>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="input-field h-20"
-              placeholder="YYYY-MM-DD ITEM X: ..."
-            />
-          </div>
-        </div>
-        <button
-          onClick={addRemark}
-          disabled={loading || !date || !itemRef || !text}
-          className="btn-primary"
-        >
-          Add Remark
-        </button>
-      </div>
+      {locked && (
+        <p className="text-xs text-neutral-mid italic">
+          Form is locked. No new entries can be added to Item 21.
+        </p>
+      )}
     </div>
   );
 }

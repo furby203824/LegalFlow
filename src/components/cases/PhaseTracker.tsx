@@ -1,12 +1,16 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 const PHASES = [
-  { key: "INITIATION", label: "Initiation", num: 1 },
-  { key: "RIGHTS_ADVISEMENT", label: "Rights Advisement", num: 2 },
+  { key: "INITIATION", label: "Init", num: 1 },
+  { key: "RIGHTS_ADVISEMENT", label: "Rights", num: 2 },
   { key: "HEARING", label: "Hearing", num: 3 },
-  { key: "NOTIFICATION", label: "Notification", num: 4 },
+  { key: "NOTIFICATION", label: "Notice", num: 4 },
   { key: "APPEAL", label: "Appeal", num: 5 },
-  { key: "ADMIN_COMPLETION", label: "Admin Completion", num: 7 },
+  { key: "REMEDIAL_ACTION", label: "Remedial", num: 6 },
+  { key: "ADMIN_COMPLETION", label: "Admin", num: 7 },
+  { key: "VACATION", label: "Vacation", num: 8 },
 ];
 
 export default function PhaseTracker({
@@ -17,12 +21,12 @@ export default function PhaseTracker({
   status: string;
 }) {
   const currentIdx = PHASES.findIndex((p) => p.key === currentPhase);
-  const isClosed = status.startsWith("CLOSED") || status === "DESTROYED";
+  const isClosed = status.startsWith("CLOSED") || status === "DESTROYED" || currentPhase === "CLOSED";
   const isReferred = status === "REFERRED_COURT_MARTIAL";
 
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4">
-      <div className="flex items-center justify-between">
+    <div className="card px-4 py-3">
+      <div className="flex items-center">
         {PHASES.map((phase, idx) => {
           let state: "completed" | "current" | "pending" = "pending";
           if (isClosed) {
@@ -36,36 +40,33 @@ export default function PhaseTracker({
           }
 
           return (
-            <div key={phase.key} className="flex items-center flex-1">
-              <div className="flex flex-col items-center flex-1">
+            <div key={phase.key} className="flex items-center flex-1 last:flex-none">
+              <div className="flex flex-col items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    state === "completed"
-                      ? "bg-green-600 text-white"
-                      : state === "current"
-                      ? "bg-[var(--color-navy)] text-white ring-4 ring-blue-200"
-                      : "bg-gray-200 text-gray-500"
-                  }`}
+                  className={cn(
+                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all",
+                    state === "completed" && "bg-success text-white",
+                    state === "current" && "bg-secondary text-white ring-2 ring-secondary/30",
+                    state === "pending" && "bg-neutral-light text-neutral-mid"
+                  )}
                 >
                   {state === "completed" ? "\u2713" : phase.num}
                 </div>
                 <span
-                  className={`text-xs mt-1 text-center ${
-                    state === "current"
-                      ? "font-bold text-[var(--color-navy)]"
-                      : "text-[var(--color-text-muted)]"
-                  }`}
+                  className={cn(
+                    "text-[10px] mt-1 whitespace-nowrap",
+                    state === "current" ? "font-semibold text-secondary" : "text-neutral-mid"
+                  )}
                 >
                   {phase.label}
                 </span>
               </div>
               {idx < PHASES.length - 1 && (
                 <div
-                  className={`h-0.5 flex-1 mx-1 ${
-                    idx < currentIdx || isClosed
-                      ? "bg-green-600"
-                      : "bg-gray-200"
-                  }`}
+                  className={cn(
+                    "h-0.5 flex-1 mx-1",
+                    (idx < currentIdx || isClosed) ? "bg-success" : "bg-neutral-light"
+                  )}
                 />
               )}
             </div>
