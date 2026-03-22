@@ -31,5 +31,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated office_hours_script"
+  },
+  {
+    "id": "audit-1774220833185-k84m7",
+    "timestamp": "2026-03-22T23:07:13.185Z",
+    "caseId": "case-1774220758799-tm18d",
+    "caseNumber": "CASE-2026-0001",
+    "userId": "user-1774218618690-02z7m",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "SIGN",
+    "notes": "Item 2 signed - NJP accepted"
   }
 ]
