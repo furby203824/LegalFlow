@@ -164,7 +164,7 @@ function CaseViewContent() {
                   className={cn(
                     "px-5 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0",
                     activeTab === tab.key
-                      ? "border-secondary text-secondary bg-white"
+                      ? "border-accent text-accent bg-white"
                       : "border-transparent text-neutral-mid hover:text-neutral-dark"
                   )}
                 >
