@@ -8,7 +8,7 @@ import UPBItemsPanel from "@/components/cases/UPBItemsPanel";
 import ActionsPanel from "@/components/cases/ActionsPanel";
 import RemarksPanel from "@/components/cases/RemarksPanel";
 import EvidencePanel from "@/components/cases/EvidencePanel";
-import ChargeSheetPanel from "@/components/cases/ChargeSheetPanel";
+import RightsAcknowledgementPanel from "@/components/cases/RightsAcknowledgementPanel";
 import HearingGuidePanel from "@/components/cases/HearingGuidePanel";
 import DocumentPanel from "@/components/documents/DocumentPanel";
 import AuditLogPanel from "@/components/cases/AuditLogPanel";
@@ -32,7 +32,7 @@ function CaseViewContent() {
   const id = searchParams.get("id") || "";
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"remarks" | "evidence" | "hearing" | "chargesheet" | "documents" | "audit">("chargesheet");
+  const [activeTab, setActiveTab] = useState<"remarks" | "evidence" | "hearing" | "rights" | "documents" | "audit">("rights");
   const router = useRouter();
 
   function loadCase() {
@@ -123,7 +123,7 @@ function CaseViewContent() {
           <div className="border-b border-border">
             <nav className="flex overflow-x-auto scrollbar-hide -mb-px">
               {([
-                { key: "chargesheet" as const, label: "DD 458", minPhase: "INITIATION" },
+                { key: "rights" as const, label: "Rights Ack.", minPhase: "INITIATION" },
                 { key: "remarks" as const, label: "Item 21 Remarks", minPhase: "INITIATION" },
                 { key: "evidence" as const, label: "Evidence", minPhase: "RIGHTS_ADVISEMENT" },
                 { key: "hearing" as const, label: "Mast Guide", minPhase: "HEARING" },
@@ -178,8 +178,8 @@ function CaseViewContent() {
                 onUpdate={loadCase}
               />
             )}
-            {activeTab === "chargesheet" && (
-              <ChargeSheetPanel
+            {activeTab === "rights" && (
+              <RightsAcknowledgementPanel
                 caseId={caseData.id}
                 caseData={caseData}
                 onUpdate={loadCase}
