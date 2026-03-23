@@ -16,6 +16,7 @@ export interface SessionUser {
   lastName: string;
   role: UserRole;
   unitId: string;
+  unitName?: string;
   rank?: string;
   grade?: string;
   edipi?: string;
@@ -77,6 +78,7 @@ export async function login(username: string, password: string): Promise<Session
     lastName: user.lastName,
     role: user.role as UserRole,
     unitId: user.unitId || "",
+    unitName: user.unitName || "",
     rank: user.rank,
     grade: user.grade,
     edipi: user.edipi,
@@ -116,6 +118,7 @@ export async function autoLogin(): Promise<SessionUser | null> {
     lastName: user.lastName,
     role: user.role as UserRole,
     unitId: user.unitId || "",
+    unitName: user.unitName || "",
     rank: user.rank,
     grade: user.grade,
     edipi: user.edipi,
