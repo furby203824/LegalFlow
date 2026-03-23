@@ -17,8 +17,8 @@ export async function generateAppealRightsAckPdf(data: CaseData): Promise<Uint8A
 
   const name = `${data.accusedRank} ${data.accusedLastName}, ${data.accusedFirstName}${data.accusedMiddleName ? " " + data.accusedMiddleName : ""}`;
   const njpDate = data.njpDate ? fmtFull(data.njpDate) : "____________________";
-  const appealTo = data.njpAuthorityName
-    ? `${data.njpAuthorityRank || ""} ${data.njpAuthorityName}`.trim()
+  const appealTo = data.appealAuthorityName
+    ? `${data.appealAuthorityRank || ""} ${data.appealAuthorityName}`.trim()
     : "(specify to whom the appeal should be addressed)";
 
   // Header

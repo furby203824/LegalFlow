@@ -384,23 +384,7 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
 
           {/* 10. Appeal Authority Decision (Item 14) */}
           {appeal?.appealFiledDate && !hasSig("14") && (!caseData.jaReviewRequired || caseData.jaReviewComplete) && canPerformAction(userRole, "SIGN_ITEM_14") && (
-            <ActionSection title="Appeal Authority Decision (Item 14)">
-              <select id="appealOutcome" className="input-field mb-2">
-                <option value="DENIED">Denied</option>
-                <option value="DENIED_UNTIMELY">Denied - Untimely</option>
-                <option value="GRANTED_SET_ASIDE">Granted - Set Aside</option>
-                <option value="REDUCTION_SET_ASIDE_ONLY">Reduction Set Aside</option>
-                <option value="PARTIAL_RELIEF">Partial Relief</option>
-              </select>
-              <input type="date" id="item15Date" className="input-field mb-2" />
-              <button onClick={() => {
-                const outcome = (document.getElementById("appealOutcome") as HTMLSelectElement).value;
-                const date = (document.getElementById("item15Date") as HTMLInputElement).value;
-                performAction("SIGN_ITEM_14", { outcome, item15Date: date, authorityName: "Appeal Authority" });
-              }} disabled={loading} className="btn-primary text-xs w-full">
-                Sign Item 14
-              </button>
-            </ActionSection>
+            <AppealDecisionAction caseData={caseData} loading={loading} onSubmit={(data) => performAction("SIGN_ITEM_14", data)} />
           )}
 
           {/* UPB Completion & Administrative Closure (JAGMAN 0119a) */}
@@ -916,6 +900,127 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
             <button onClick={onAcknowledge} disabled={loading} className="btn-primary text-xs w-full gap-1">
               <CheckCircle size={14} />
               {loading ? "Processing..." : "Validate Election & Confirm Rights Acknowledged"}
+            </button>
+          </div>
+        )}
+      </div>
+    </ActionSection>
+  );
+}
+
+function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseData; loading: boolean; onSubmit: (d: Record<string, unknown>) => void }) {
+  const [step, setStep] = useState<"decision" | "upload" | "confirm">("decision");
+  const [outcome, setOutcome] = useState("DENIED");
+  const [item15Date, setItem15Date] = useState("");
+  const [authorityName, setAuthorityName] = useState(caseData.hearingRecord?.appealAuthority || "");
+  const [fileName, setFileName] = useState("");
+  const accused = caseData.accused || {};
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFileName(file.name);
+      setStep("confirm");
+    }
+  }
+
+  return (
+    <ActionSection title="Appeal Authority Decision (Item 14)">
+      <div className="space-y-4">
+        {/* Step indicator */}
+        <div className="flex items-center gap-2 text-xs">
+          <span className={cn("flex items-center gap-1 font-medium", step === "decision" ? "text-primary" : "text-success")}>
+            {step !== "decision" ? <CheckCircle size={14} /> : <span className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center text-[10px] font-bold">1</span>}
+            Decision
+          </span>
+          <span className="w-6 border-t border-border" />
+          <span className={cn("flex items-center gap-1 font-medium", step === "upload" ? "text-primary" : step === "confirm" ? "text-success" : "text-neutral-mid")}>
+            {step === "confirm" ? <CheckCircle size={14} /> : <span className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold", step === "upload" ? "border-primary" : "border-neutral-mid/40")}>2</span>}
+            Print &amp; Sign
+          </span>
+          <span className="w-6 border-t border-border" />
+          <span className={cn("flex items-center gap-1 font-medium", step === "confirm" ? "text-primary" : "text-neutral-mid")}>
+            <span className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold", step === "confirm" ? "border-primary" : "border-neutral-mid/40")}>3</span>
+            Upload &amp; Validate
+          </span>
+        </div>
+
+        {/* Step 1: Enter Decision */}
+        {step === "decision" && (
+          <div className="space-y-3">
+            <p className="text-xs text-neutral-mid">
+              The next higher commander reviews the appeal and renders a decision. Enter the appeal authority information and decision below.
+            </p>
+            <div>
+              <label className="block text-xs font-medium text-neutral-mid mb-1">Appeal Authority (Next Higher Commander)</label>
+              <input type="text" value={authorityName} onChange={(e) => setAuthorityName(e.target.value)} className="input-field text-xs" placeholder="e.g., Commanding General, 1st MARDIV" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-mid mb-1">Decision</label>
+              <select value={outcome} onChange={(e) => setOutcome(e.target.value)} className="input-field">
+                <option value="DENIED">Denied</option>
+                <option value="DENIED_UNTIMELY">Denied - Untimely</option>
+                <option value="GRANTED_SET_ASIDE">Granted - Set Aside</option>
+                <option value="REDUCTION_SET_ASIDE_ONLY">Reduction Set Aside</option>
+                <option value="PARTIAL_RELIEF">Partial Relief</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-mid mb-1">Date Notice of Appeal Decision (Item 15)</label>
+              <input type="date" value={item15Date} onChange={(e) => setItem15Date(e.target.value)} className="input-field" />
+            </div>
+            <button onClick={() => setStep("upload")} disabled={!authorityName} className="btn-primary text-xs w-full">
+              Continue — Print for Signature
+            </button>
+          </div>
+        )}
+
+        {/* Step 2: Print & Upload */}
+        {step === "upload" && (
+          <div className="space-y-3">
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800 space-y-1">
+              <p className="font-medium flex items-center gap-1"><AlertTriangle size={12} /> Instructions:</p>
+              <ol className="list-decimal ml-5 space-y-0.5">
+                <li>Print the appeal decision document</li>
+                <li>Have the appeal authority ({authorityName}) sign the document</li>
+                <li>Scan/photograph the signed document and upload below</li>
+              </ol>
+            </div>
+
+            <label className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-blue-50/30 transition-colors">
+              <Upload size={20} className="text-neutral-mid" />
+              <span className="text-xs text-neutral-mid">Upload signed appeal decision document</span>
+              <span className="text-[10px] text-neutral-mid">PDF, JPG, or PNG</span>
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileUpload} className="hidden" />
+            </label>
+
+            <button onClick={() => setStep("decision")} className="btn-ghost text-xs w-full">
+              Back to Decision
+            </button>
+          </div>
+        )}
+
+        {/* Step 3: Confirm */}
+        {step === "confirm" && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+              <CheckCircle size={16} className="text-success shrink-0" />
+              <div>
+                <p className="text-xs font-medium text-success">Signed document uploaded</p>
+                <p className="text-[10px] text-neutral-mid">{fileName}</p>
+              </div>
+            </div>
+            <div className="text-xs p-2 rounded bg-surface border border-border space-y-1">
+              <p><span className="font-medium">Appeal Authority:</span> {authorityName}</p>
+              <p><span className="font-medium">Decision:</span> {outcome.replace(/_/g, " ")}</p>
+              {item15Date && <p><span className="font-medium">Notice Date:</span> {item15Date}</p>}
+            </div>
+            <p className="text-xs text-neutral-mid">
+              Confirm that the signed appeal decision for {accused.rank} {accused.lastName} has been received from the next higher commander.
+            </p>
+            <button onClick={() => onSubmit({ outcome, item15Date, authorityName })} disabled={loading} className="btn-primary text-xs w-full gap-1">
+              <CheckCircle size={14} />
+              {loading ? "Processing..." : "Validate Appeal Decision"}
             </button>
           </div>
         )}
