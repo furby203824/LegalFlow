@@ -198,7 +198,7 @@
   {
     "id": "case-1774223160076-5vamv",
     "createdAt": "2026-03-22",
-    "updatedAt": "2026-03-22",
+    "updatedAt": "2026-03-23",
     "offenses": [
       {
         "id": "off-1774223160073-A",
@@ -256,11 +256,25 @@
       {
         "id": "doc-1774223176684-jop7w",
         "documentVersion": 1,
-        "isCurrent": true,
+        "isCurrent": false,
         "createdAt": "2026-03-22T23:46:16.684Z",
         "documentType": "CHARGE_SHEET",
         "generatedById": "user-1774218618690-02z7m",
         "generatedAt": "2026-03-22T23:46:16.684Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false,
+        "supersededById": "doc-1774225399115-kqxb3"
+      },
+      {
+        "id": "doc-1774225399115-kqxb3",
+        "documentVersion": 2,
+        "isCurrent": true,
+        "createdAt": "2026-03-23T00:23:19.115Z",
+        "documentType": "CHARGE_SHEET",
+        "generatedById": "user-1774218618690-02z7m",
+        "generatedAt": "2026-03-23T00:23:19.114Z",
         "distributionEsrb": false,
         "distributionOmpf": false,
         "distributionFiles": false,
