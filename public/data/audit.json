@@ -922,5 +922,16 @@
     "userName": "co-preparer",
     "action": "GENERATE",
     "notes": "Generated PDF: notification_election_rights"
+  },
+  {
+    "id": "audit-1774294142531-kac0y",
+    "timestamp": "2026-03-23T19:29:02.531Z",
+    "caseId": "case-1774294101445-2c51m",
+    "caseNumber": "CASE-2026-0005",
+    "userId": "user-co-preparer",
+    "userRole": "NJP_PREPARER",
+    "userName": "co-preparer",
+    "action": "UPDATE",
+    "notes": "Member rights acknowledged"
   }
 ]
