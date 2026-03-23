@@ -14,7 +14,7 @@ import {
   generateRightsAcknowledgement,
   createVersionedDocument,
 } from "@/lib/documents";
-import { generateNotificationElectionRightsPdf, generateAppealRightsAckPdf, generateSuspectsRightsAckPdf } from "@/lib/documents/pdf";
+import { generateNotificationElectionRightsPdf, generateAppealRightsAckPdf, generateSuspectsRightsAckPdf, fillNavmc10132Pdf } from "@/lib/documents/pdf";
 import type { CaseData, Navmc10132Version } from "@/lib/documents";
 import type { Rank, Grade, CommanderGradeLevel } from "@/types";
 
@@ -160,7 +160,7 @@ export async function generateDocumentContent(
   return { document, caseNumber: rawCase.caseNumber };
 }
 
-export type PdfDocType = "suspects_rights_ack" | "notification_election_rights" | "appeal_rights_ack";
+export type PdfDocType = "suspects_rights_ack" | "notification_election_rights" | "appeal_rights_ack" | "navmc_10132_pdf";
 
 /**
  * Generate a PDF document from case data.
@@ -270,6 +270,17 @@ export async function generatePdfDocument(
       pdfBytes = await generateAppealRightsAckPdf(caseData);
       filename = `${cn}_Appeal_Rights_Acknowledgement.pdf`;
       break;
+    case "navmc_10132_pdf": {
+      // Determine version based on case progress
+      let navmcVersion: Navmc10132Version = "PARTIAL";
+      if (sig16) navmcVersion = "FINAL";
+      else if (sig9) navmcVersion = "FINAL";
+      else if (sig3) navmcVersion = "HEARING";
+      else if (sig2) navmcVersion = "HEARING";
+      pdfBytes = await fillNavmc10132Pdf(caseData, navmcVersion);
+      filename = `${cn}_NAVMC_10132_${navmcVersion}.pdf`;
+      break;
+    }
     default:
       throw new Error("Invalid PDF document type");
   }
