@@ -412,6 +412,21 @@ export async function fillNavmc10132Pdf(
   // ═══ Booker statement (Item 2 area) ═══
   // The template has a pre-filled booker text; leave it as-is
 
+  // Remove borders from all form field widgets so filled text appears clean
+  const fields = form.getFields();
+  for (const field of fields) {
+    const widgets = field.acroField.getWidgets();
+    for (const widget of widgets) {
+      // Remove border style dict
+      widget.dict.delete(PDFName.of("BS"));
+      // Remove or clear appearance characteristics (border/background color)
+      const mk = widget.dict.lookup(PDFName.of("MK"));
+      if (mk instanceof PDFDict) {
+        mk.delete(PDFName.of("BC")); // border color
+      }
+    }
+  }
+
   // Flatten form to prevent further editing (for FINAL version)
   if (version === "FINAL") {
     form.flatten();
