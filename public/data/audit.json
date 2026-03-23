@@ -570,5 +570,16 @@
     "userName": "admin",
     "action": "SIGN",
     "notes": "Item 16 signed - case closed"
+  },
+  {
+    "id": "audit-1774251868131-wqvvc",
+    "timestamp": "2026-03-23T07:44:28.131Z",
+    "caseId": "case-1774237256718-s3m2a",
+    "caseNumber": "CASE-2026-0003",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated PDF: navmc_10132_pdf"
   }
 ]
