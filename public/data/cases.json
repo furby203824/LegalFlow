@@ -519,7 +519,8 @@
         "restriction"
       ],
       "accusedGrade": "E5",
-      "accusedRank": "Sgt"
+      "accusedRank": "Sgt",
+      "locked": true
     },
     "appeal": null,
     "chargeSheet": null,
