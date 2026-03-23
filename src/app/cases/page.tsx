@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AppShell from "@/components/ui/AppShell";
 import { cn } from "@/lib/utils";
-import { Search, Download, ChevronLeft, ChevronRight, FilePlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Download } from "lucide-react";
 import { getCases } from "@/services/api";
 
 interface CaseRow {
@@ -13,33 +13,36 @@ interface CaseRow {
   caseNumber: string;
   status: string;
   currentPhase: string;
-  accused: { lastName: string; firstName: string; grade: string };
+  accused: { lastName: string; firstName: string; middleName?: string; grade: string; edipi: string };
   offenses: { ucmjArticle: string }[];
   punishmentRecord?: { suspensionStatus: string | null } | null;
   createdAt: string;
   updatedAt: string;
+  jaReviewRequired?: boolean;
+  jaReviewComplete?: boolean;
 }
 
-const STATUS_BADGE: Record<string, string> = {
-  INITIATED: "bg-gray-100 text-gray-700",
-  REFERRED_COURT_MARTIAL: "bg-purple-100 text-purple-700",
-  RIGHTS_ADVISED: "bg-blue-100 text-blue-700",
-  PUNISHMENT_IMPOSED: "bg-orange-100 text-orange-700",
-  NOTIFICATION_COMPLETE: "bg-blue-100 text-blue-700",
-  APPEAL_PENDING: "bg-yellow-100 text-yellow-700",
-  APPEAL_COMPLETE: "bg-green-100 text-green-700",
-  CLOSED: "bg-gray-200 text-gray-600",
-  CLOSED_SUSPENSION_ACTIVE: "bg-orange-100 text-orange-700",
-  CLOSED_SUSPENSION_VACATED: "bg-gray-200 text-gray-600",
-  CLOSED_SUSPENSION_REMITTED: "bg-gray-200 text-gray-600",
-  DESTROYED: "bg-red-100 text-red-600",
-};
-
-const STATUSES = [
+const STATUS_OPTIONS = [
   "INITIATED", "REFERRED_COURT_MARTIAL", "RIGHTS_ADVISED", "PUNISHMENT_IMPOSED",
   "NOTIFICATION_COMPLETE", "APPEAL_PENDING", "APPEAL_COMPLETE",
   "CLOSED", "CLOSED_SUSPENSION_ACTIVE", "DESTROYED",
 ];
+
+const STATUS_LABEL: Record<string, string> = {
+  INITIATED: "Draft",
+  REFERRED_COURT_MARTIAL: "Referred",
+  RIGHTS_ADVISED: "Rights Advised",
+  PUNISHMENT_IMPOSED: "Punishment Imposed",
+  NOTIFICATION_COMPLETE: "Post-Notification",
+  APPEAL_PENDING: "Appeal Pending",
+  APPEAL_COMPLETE: "Appeal Complete",
+  CLOSED: "Closed",
+  CLOSED_SUSPENSION_ACTIVE: "Suspension Active",
+  DESTROYED: "Destroyed",
+};
+
+type SortField = "caseNumber" | "edipi" | "name" | "status" | "phase" | "articles" | "updatedAt";
+type SortDir = "asc" | "desc";
 
 export default function CasesListPage() {
   return (
@@ -53,20 +56,114 @@ function CasesListContent() {
   const searchParams = useSearchParams();
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "");
   const [page, setPage] = useState(1);
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(50);
+  const [sortField, setSortField] = useState<SortField>("caseNumber");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  // Per-column filters
+  const [filterCaseNum, setFilterCaseNum] = useState("");
+  const [filterEdipi, setFilterEdipi] = useState("");
+  const [filterName, setFilterName] = useState("");
+  const [filterStatus, setFilterStatus] = useState(searchParams.get("status") || "");
+  const [filterPhase, setFilterPhase] = useState("");
+  const [filterArticle, setFilterArticle] = useState("");
 
   useEffect(() => {
-    getCases({ status: statusFilter || undefined, name: search || undefined })
+    getCases({})
       .then((data) => setCases((data.cases || []) as CaseRow[]))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [statusFilter, search]);
+  }, []);
 
-  const totalPages = Math.ceil(cases.length / pageSize);
-  const paginatedCases = cases.slice((page - 1) * pageSize, page * pageSize);
+  // Filter + sort
+  const filteredCases = useMemo(() => {
+    let result = [...cases];
+
+    if (filterCaseNum) {
+      const q = filterCaseNum.toLowerCase();
+      result = result.filter((c) => c.caseNumber.toLowerCase().includes(q));
+    }
+    if (filterEdipi) {
+      result = result.filter((c) => c.accused.edipi.includes(filterEdipi));
+    }
+    if (filterName) {
+      const q = filterName.toLowerCase();
+      result = result.filter((c) =>
+        `${c.accused.lastName} ${c.accused.firstName}`.toLowerCase().includes(q)
+      );
+    }
+    if (filterStatus) {
+      result = result.filter((c) => c.status === filterStatus);
+    }
+    if (filterPhase) {
+      const q = filterPhase.toLowerCase();
+      result = result.filter((c) => c.currentPhase.toLowerCase().includes(q));
+    }
+    if (filterArticle) {
+      const q = filterArticle.toLowerCase();
+      result = result.filter((c) =>
+        c.offenses.some((o) => o.ucmjArticle.toLowerCase().includes(q))
+      );
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "caseNumber": cmp = a.caseNumber.localeCompare(b.caseNumber); break;
+        case "edipi": cmp = a.accused.edipi.localeCompare(b.accused.edipi); break;
+        case "name": cmp = `${a.accused.lastName}`.localeCompare(`${b.accused.lastName}`); break;
+        case "status": cmp = a.status.localeCompare(b.status); break;
+        case "phase": cmp = a.currentPhase.localeCompare(b.currentPhase); break;
+        case "articles": cmp = (a.offenses[0]?.ucmjArticle || "").localeCompare(b.offenses[0]?.ucmjArticle || ""); break;
+        case "updatedAt": cmp = a.updatedAt.localeCompare(b.updatedAt); break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return result;
+  }, [cases, filterCaseNum, filterEdipi, filterName, filterStatus, filterPhase, filterArticle, sortField, sortDir]);
+
+  const totalPages = Math.ceil(filteredCases.length / pageSize);
+  const paginatedCases = filteredCases.slice((page - 1) * pageSize, page * pageSize);
+
+  function toggleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  }
+
+  function SortIcon({ field }: { field: SortField }) {
+    if (sortField !== field) return <ChevronDown size={12} className="text-neutral-mid/40" />;
+    return sortDir === "asc"
+      ? <ChevronUp size={12} className="text-primary" />
+      : <ChevronDown size={12} className="text-primary" />;
+  }
+
+  function exportCSV() {
+    const headers = ["Case #", "EDIPI", "Name", "Status", "Phase", "Articles", "Updated"];
+    const rows = filteredCases.map((c) => [
+      c.caseNumber,
+      c.accused.edipi,
+      `${c.accused.lastName} ${c.accused.firstName}`,
+      STATUS_LABEL[c.status] || c.status,
+      c.currentPhase.replace(/_/g, " "),
+      c.offenses.map((o) => `Art. ${o.ucmjArticle}`).join("; "),
+      c.updatedAt,
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cases-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   function daysOpen(createdAt: string): number {
     return Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24));
@@ -74,41 +171,68 @@ function CasesListContent() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-dark">
-            All Cases
-          </h1>
-          <div className="flex gap-2">
-            <Link href="/cases/new" className="btn-primary">
-              <FilePlus size={16} /> New Case
-            </Link>
+      <div className="space-y-4">
+        {/* Header bar — matches CLA "Available Packages" style */}
+        <div className="card px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-lg font-semibold text-neutral-dark">Available Packages</h1>
+            <button
+              onClick={() => {
+                setFilterCaseNum(""); setFilterEdipi(""); setFilterName("");
+                setFilterStatus(""); setFilterPhase(""); setFilterArticle("");
+              }}
+              className="btn-ghost text-xs"
+            >
+              Reset
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={exportCSV} className="btn-ghost text-xs flex items-center gap-1">
+              <Download size={14} /> Export CSV
+            </button>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="card p-4">
-          <div className="flex flex-wrap gap-3">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-mid" />
-              <input
-                type="text"
-                placeholder="Search by name or EDIPI..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="input-field pl-9"
-              />
-            </div>
+        {/* Results count + pagination controls */}
+        <div className="flex items-center justify-between text-xs text-neutral-mid">
+          <span>{filteredCases.length} results</span>
+          <div className="flex items-center gap-2">
+            {/* Page buttons */}
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button onClick={() => setPage(1)} disabled={page === 1} className="btn-ghost px-2 py-1 text-xs disabled:opacity-30">|&lt;</button>
+                <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="btn-ghost px-2 py-1 text-xs disabled:opacity-30">&lt;&lt;</button>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+                  const p = start + i;
+                  if (p > totalPages) return null;
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={cn(
+                        "px-2 py-1 text-xs border",
+                        p === page
+                          ? "bg-primary text-white border-primary"
+                          : "btn-ghost border-border"
+                      )}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+                <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="btn-ghost px-2 py-1 text-xs disabled:opacity-30">&gt;&gt;</button>
+                <button onClick={() => setPage(totalPages)} disabled={page === totalPages} className="btn-ghost px-2 py-1 text-xs disabled:opacity-30">&gt;|</button>
+              </div>
+            )}
             <select
-              value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="input-field w-auto"
+              value={pageSize}
+              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+              className="input-field text-xs w-16 py-1"
             >
-              <option value="">All Statuses</option>
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-              ))}
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
             </select>
           </div>
         </div>
@@ -116,102 +240,157 @@ function CasesListContent() {
         {/* Table */}
         <div className="card overflow-hidden">
           {loading ? (
-            <div className="px-5 py-12 text-center text-neutral-mid text-sm">Loading cases...</div>
-          ) : paginatedCases.length === 0 ? (
-            <div className="px-5 py-12 text-center">
-              <div className="text-4xl mb-2">&#128203;</div>
-              <p className="text-sm text-neutral-mid mb-3">No cases found.</p>
-              <Link href="/cases/new" className="btn-primary">+ New Case</Link>
-            </div>
+            <div className="px-5 py-12 text-center text-neutral-mid text-sm">Loading packages...</div>
           ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-surface">
-                      <th className="text-left px-5 py-3 font-medium text-neutral-mid">Case #</th>
-                      <th className="text-left px-5 py-3 font-medium text-neutral-mid">Marine</th>
-                      <th className="text-left px-5 py-3 font-medium text-neutral-mid">Article(s)</th>
-                      <th className="text-left px-5 py-3 font-medium text-neutral-mid">Status</th>
-                      <th className="text-left px-5 py-3 font-medium text-neutral-mid">Phase</th>
-                      <th className="text-left px-5 py-3 font-medium text-neutral-mid">Days</th>
-                      <th className="text-left px-5 py-3 font-medium text-neutral-mid">Flags</th>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  {/* Column headers with sort */}
+                  <tr className="border-b border-border bg-surface">
+                    <th className="text-left px-4 py-2">
+                      <button onClick={() => toggleSort("caseNumber")} className="flex items-center gap-1 font-medium text-neutral-dark text-xs">
+                        Pkg ID <SortIcon field="caseNumber" />
+                      </button>
+                    </th>
+                    <th className="text-left px-4 py-2">
+                      <button onClick={() => toggleSort("edipi")} className="flex items-center gap-1 font-medium text-neutral-dark text-xs">
+                        EDIPI <SortIcon field="edipi" />
+                      </button>
+                    </th>
+                    <th className="text-left px-4 py-2">
+                      <button onClick={() => toggleSort("name")} className="flex items-center gap-1 font-medium text-neutral-dark text-xs">
+                        Name <SortIcon field="name" />
+                      </button>
+                    </th>
+                    <th className="text-left px-4 py-2">
+                      <button onClick={() => toggleSort("status")} className="flex items-center gap-1 font-medium text-neutral-dark text-xs">
+                        Package Status <SortIcon field="status" />
+                      </button>
+                    </th>
+                    <th className="text-left px-4 py-2">
+                      <span className="font-medium text-neutral-dark text-xs">NJP Authority</span>
+                    </th>
+                    <th className="text-left px-4 py-2">
+                      <span className="font-medium text-neutral-dark text-xs">Articles</span>
+                    </th>
+                    <th className="text-left px-4 py-2">
+                      <button onClick={() => toggleSort("updatedAt")} className="flex items-center gap-1 font-medium text-neutral-dark text-xs">
+                        Updated <SortIcon field="updatedAt" />
+                      </button>
+                    </th>
+                  </tr>
+                  {/* Column filter inputs */}
+                  <tr className="border-b border-border bg-white">
+                    <td className="px-4 py-1.5">
+                      <input
+                        type="text"
+                        value={filterCaseNum}
+                        onChange={(e) => { setFilterCaseNum(e.target.value); setPage(1); }}
+                        className="input-field text-xs py-1 w-full"
+                        placeholder=""
+                      />
+                    </td>
+                    <td className="px-4 py-1.5">
+                      <input
+                        type="text"
+                        value={filterEdipi}
+                        onChange={(e) => { setFilterEdipi(e.target.value); setPage(1); }}
+                        className="input-field text-xs py-1 w-full"
+                        placeholder=""
+                      />
+                    </td>
+                    <td className="px-4 py-1.5">
+                      <input
+                        type="text"
+                        value={filterName}
+                        onChange={(e) => { setFilterName(e.target.value); setPage(1); }}
+                        className="input-field text-xs py-1 w-full"
+                        placeholder=""
+                      />
+                    </td>
+                    <td className="px-4 py-1.5">
+                      <select
+                        value={filterStatus}
+                        onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+                        className="input-field text-xs py-1 w-full"
+                      >
+                        <option value="">Package Statuses</option>
+                        {STATUS_OPTIONS.map((s) => (
+                          <option key={s} value={s}>{STATUS_LABEL[s] || s}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-1.5">
+                      <input
+                        type="text"
+                        value={filterPhase}
+                        onChange={(e) => { setFilterPhase(e.target.value); setPage(1); }}
+                        className="input-field text-xs py-1 w-full"
+                        placeholder=""
+                      />
+                    </td>
+                    <td className="px-4 py-1.5">
+                      <input
+                        type="text"
+                        value={filterArticle}
+                        onChange={(e) => { setFilterArticle(e.target.value); setPage(1); }}
+                        className="input-field text-xs py-1 w-full"
+                        placeholder=""
+                      />
+                    </td>
+                    <td className="px-4 py-1.5" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedCases.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-5 py-12 text-center text-sm text-neutral-mid">
+                        No packages found.
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedCases.map((c) => {
+                  ) : (
+                    paginatedCases.map((c) => {
                       const days = daysOpen(c.createdAt);
-                      const overdue = days > 14 && !c.status.startsWith("CLOSED");
-                      const hasSusp = c.punishmentRecord?.suspensionStatus === "ACTIVE";
+                      const overdue = days > 14 && !c.status.startsWith("CLOSED") && c.status !== "DESTROYED";
 
                       return (
                         <tr key={c.id} className="border-b border-border hover:bg-surface/50 transition-colors">
-                          <td className="px-5 py-3">
-                            <Link href={`/cases/view?id=${c.id}`} className="font-mono text-primary font-medium hover:underline">
+                          <td className="px-4 py-2.5">
+                            <Link
+                              href={`/cases/view?id=${c.id}`}
+                              className="font-mono text-primary font-medium hover:underline text-xs"
+                            >
                               {c.caseNumber}
                             </Link>
                           </td>
-                          <td className="px-5 py-3">
+                          <td className="px-4 py-2.5 font-mono text-xs text-neutral-mid">
+                            {c.accused.edipi}
+                          </td>
+                          <td className="px-4 py-2.5 text-xs">
                             <span className="font-medium">{c.accused.lastName}, {c.accused.firstName}</span>
                             <span className="text-neutral-mid ml-1">({c.accused.grade})</span>
                           </td>
-                          <td className="px-5 py-3 text-neutral-mid">
-                            {c.offenses.map((o) => `Art. ${o.ucmjArticle}`).join(", ")}
+                          <td className="px-4 py-2.5 text-xs">
+                            {STATUS_LABEL[c.status] || c.status.replace(/_/g, " ")}
                           </td>
-                          <td className="px-5 py-3">
-                            <span className={cn("badge", STATUS_BADGE[c.status] || "bg-gray-100")}>
-                              {c.status.replace(/_/g, " ")}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3 text-neutral-mid text-xs">
+                          <td className="px-4 py-2.5 text-xs text-neutral-mid">
                             {c.currentPhase.replace(/_/g, " ")}
                           </td>
-                          <td className="px-5 py-3">
-                            <span className={cn(overdue ? "text-error font-semibold" : "text-neutral-mid")}>
-                              {days}
-                            </span>
+                          <td className="px-4 py-2.5 text-xs text-neutral-mid">
+                            {c.offenses.map((o) => `Art. ${o.ucmjArticle}`).join(", ")}
                           </td>
-                          <td className="px-5 py-3">
-                            <div className="flex gap-1">
-                              {overdue && <span className="badge bg-error/10 text-error text-[10px]">!</span>}
-                              {hasSusp && <span className="badge bg-orange-100 text-orange-700 text-[10px]">SUSP</span>}
-                            </div>
+                          <td className="px-4 py-2.5 text-xs">
+                            <span className={cn(overdue ? "text-error font-bold" : "text-neutral-mid")}>
+                              {c.updatedAt?.slice(0, 10) || "—"}
+                            </span>
                           </td>
                         </tr>
                       );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-surface">
-                  <span className="text-xs text-neutral-mid">
-                    Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, cases.length)} of {cases.length}
-                  </span>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      disabled={page === 1}
-                      className="btn-ghost p-1.5"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    <span className="flex items-center px-3 text-sm text-neutral-mid">
-                      Page {page} of {totalPages}
-                    </span>
-                    <button
-                      onClick={() => setPage(Math.min(totalPages, page + 1))}
-                      disabled={page === totalPages}
-                      className="btn-ghost p-1.5"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
