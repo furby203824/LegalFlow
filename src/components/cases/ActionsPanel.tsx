@@ -115,16 +115,16 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
   let currentActionKey = "";
   let currentAction = "";
   if (!isClosed && !isReferred) {
-    if (!rightsAcked) { currentActionKey = "ACK_RIGHTS"; currentAction = "Acknowledge Rights — Member must be advised of rights"; }
-    else if (!hasSig("2")) { currentActionKey = "SIGN_ITEM_2"; currentAction = "Sign Item 2 — NJP Election (Accept or Demand Court-Martial)"; }
-    else if (!hasSig("3")) { currentActionKey = "SIGN_ITEM_3"; currentAction = "Sign Item 3 - CO Certification"; }
-    else if (!offenses.every((o: { finding: string | null }) => o.finding)) { currentActionKey = "ENTER_FINDINGS"; currentAction = "Enter Findings (Item 5)"; }
-    else if (!pr) { currentActionKey = "ENTER_PUNISHMENT"; currentAction = "Enter Punishment (Item 6)"; }
-    else if (!hasSig("9")) { currentActionKey = "SIGN_ITEM_9"; currentAction = "Sign Item 9 - NJP Authority"; }
-    else if (!hasSig("11")) { currentActionKey = "SIGN_ITEM_11"; currentAction = "Sign Item 11 - Notification"; }
-    else if (!hasSig("12")) { currentActionKey = "SIGN_ITEM_12"; currentAction = "Sign Item 12 - Appeal Election"; }
-    else if (appeal?.appealIntent === "INTENDS_TO_APPEAL" && !hasSig("14")) { currentActionKey = "SIGN_ITEM_14"; currentAction = "Process Appeal (Item 14)"; }
-    else if (!hasSig("16")) { currentActionKey = "SIGN_ITEM_16"; currentAction = "Sign Item 16 - Close Case"; }
+    if (!rightsAcked) { currentActionKey = "ACK_RIGHTS"; currentAction = "Notification & Election of Rights (A-1-c/A-1-d)"; }
+    else if (!hasSig("2")) { currentActionKey = "SIGN_ITEM_2"; currentAction = "Record NJP Election from signed form (Item 2)"; }
+    else if (!hasSig("3")) { currentActionKey = "SIGN_ITEM_3"; currentAction = "CO Certification (Item 3)"; }
+    else if (!offenses.every((o: { finding: string | null }) => o.finding)) { currentActionKey = "ENTER_FINDINGS"; currentAction = "Enter Findings at Hearing (Item 5)"; }
+    else if (!pr) { currentActionKey = "ENTER_PUNISHMENT"; currentAction = "Enter Punishment at Hearing (Item 6)"; }
+    else if (!hasSig("9")) { currentActionKey = "SIGN_ITEM_9"; currentAction = "NJP Authority Signature (Items 8-9)"; }
+    else if (!hasSig("11")) { currentActionKey = "SIGN_ITEM_11"; currentAction = "Notification to Accused (Items 10-11)"; }
+    else if (!hasSig("12")) { currentActionKey = "SIGN_ITEM_12"; currentAction = "Appeal Rights Acknowledgement — A-1-g (Item 12)"; }
+    else if (appeal?.appealIntent === "INTENDS_TO_APPEAL" && !hasSig("14")) { currentActionKey = "SIGN_ITEM_14"; currentAction = "Appeal Authority Decision (Item 14)"; }
+    else if (!hasSig("16")) { currentActionKey = "SIGN_ITEM_16"; currentAction = "Administrative Closure (Item 16)"; }
   }
 
   const canAct = currentActionKey ? canPerformAction(userRole, currentActionKey) : false;
@@ -204,23 +204,29 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
         </div>
       )}
 
-      {/* Action Forms - shown based on current state AND role permission */}
+      {/* Action Forms - structured by JAGINST 5800.7G CH-2 phases */}
       {!isClosed && !isReferred && (
         <div className="space-y-3">
-          {/* Step 1: Rights Acknowledgement */}
+
+          {/* ═══ PRE-PROCEEDING ═══ */}
+          {(!rightsAcked || !hasSig("2") || !hasSig("3")) && (
+            <PhaseHeader label="Pre-Proceeding" description="JAGMAN 0109a — Required before the hearing" />
+          )}
+
+          {/* 1. Accused's Notification and Election of Rights (A-1-c or A-1-d) */}
           {!rightsAcked && canPerformAction(userRole, "SIGN_ITEM_2") && (
             <RightsAckAction caseData={caseData} loading={loading} onAcknowledge={() => performAction("ACK_RIGHTS")} />
           )}
 
-          {/* Step 2: NJP Election (only after rights acknowledged) */}
+          {/* 2. Record NJP Election from signed form (Item 2) */}
           {rightsAcked && !hasSig("2") && canPerformAction(userRole, "SIGN_ITEM_2") && (
-            <ActionSection title="Step 2 — NJP Election (Item 2)">
+            <ActionSection title="Record NJP Election (Item 2)">
               <div className="flex items-center gap-2 p-2 mb-3 bg-green-50 border border-green-200 rounded-md">
                 <CheckCircle size={14} className="text-success shrink-0" />
-                <span className="text-xs text-success font-medium">Rights acknowledged — proceed to election</span>
+                <span className="text-xs text-success font-medium">Notification & Election form signed — record election</span>
               </div>
               <p className="text-xs text-neutral-mid mb-3">
-                Record the member&apos;s election. Select the appropriate option based on {caseData.accused.rank} {caseData.accused.lastName}&apos;s decision.
+                Record the member&apos;s election from the signed {caseData.vesselException ? "A-1-c" : "A-1-d"} form. Select the appropriate option based on {caseData.accused.rank} {caseData.accused.lastName}&apos;s decision.
               </p>
               <div className="flex flex-col gap-2">
                 <button onClick={() => performAction("SIGN_ITEM_2", { acceptsNjp: true, counselProvided: true, signerName: `${caseData.accused.lastName}, ${caseData.accused.firstName}` })} disabled={loading} className="btn-primary text-xs">
@@ -236,34 +242,50 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             </ActionSection>
           )}
 
-          {/* Item 3 */}
+          {/* 3. CO Certification (Item 3) */}
           {hasSig("2") && !hasSig("3") && canPerformAction(userRole, "SIGN_ITEM_3") && (
-            <ActionSection title="Item 3 - CO Certification">
+            <ActionSection title="CO Certification (Item 3)">
+              <p className="text-xs text-neutral-mid mb-3">
+                The commanding officer certifies the accused has been notified per JAGMAN 0109a and all pre-proceeding requirements are met.
+              </p>
               <button onClick={() => performAction("SIGN_ITEM_3", { signerName: "Commanding Officer" })} disabled={loading} className="btn-primary text-xs w-full">
                 Sign Item 3
               </button>
             </ActionSection>
           )}
 
-          {/* Findings */}
+          {/* ═══ THE PROCEEDING ═══ */}
+          {hasSig("3") && (!offenses.every((o: { finding: string | null }) => o.finding) || !pr || !hasSig("9")) && (
+            <PhaseHeader label="The Proceeding" description="JAGMAN A-1-f — NJP Hearing" />
+          )}
+
+          {/* 4. Findings (Item 5) */}
           {hasSig("3") && !offenses.every((o: { finding: string | null }) => o.finding) && caseData.status === "RIGHTS_ADVISED" && canPerformAction(userRole, "ENTER_FINDINGS") && (
             <FindingsAction offenses={offenses} loading={loading} onSubmit={(findings) => performAction("ENTER_FINDINGS", { findings })} />
           )}
 
-          {/* Punishment */}
+          {/* 5. Punishment (Item 6) */}
           {offenses.every((o: { finding: string | null }) => o.finding) && !pr && caseData.currentPhase === "HEARING" && canPerformAction(userRole, "ENTER_PUNISHMENT") && (
             <PunishmentAction caseData={caseData} loading={loading} onSubmit={(data) => performAction("ENTER_PUNISHMENT", data)} />
           )}
 
-          {/* Item 9 */}
+          {/* 6. NJP Authority Signature (Items 8-9) */}
           {pr && !hasSig("9") && canPerformAction(userRole, "SIGN_ITEM_9") && (
             <Item9Action caseData={caseData} loading={loading} onSubmit={(data) => performAction("SIGN_ITEM_9", data)} />
           )}
 
-          {/* Item 11 */}
+          {/* ═══ POST-PROCEEDING ═══ */}
+          {hasSig("9") && !hasSig("16") && (
+            <PhaseHeader label="Post-Proceeding" description="Required after punishment is imposed" />
+          )}
+
+          {/* 7. Notification to Accused (Items 10-11) */}
           {hasSig("9") && !hasSig("11") && canPerformAction(userRole, "SIGN_ITEM_11") && (
-            <ActionSection title="Items 10-11 - Notification">
-              <label className="block text-xs font-medium mb-1">Item 10 - Notice Date</label>
+            <ActionSection title="Notification to Accused (Items 10-11)">
+              <p className="text-xs text-neutral-mid mb-3">
+                The accused must be notified of the punishment imposed and their appeal rights per JAGMAN A-1-g.
+              </p>
+              <label className="block text-xs font-medium mb-1">Item 10 — Date of Notice to Accused</label>
               <input type="date" id="item10Date" defaultValue={caseData.njpDate || ""} className="input-field mb-2" />
               <button onClick={() => { const v = (document.getElementById("item10Date") as HTMLInputElement).value; performAction("SIGN_ITEM_11", { item10Date: v, signerName: "NJP Authority" }); }} disabled={loading} className="btn-primary text-xs w-full">
                 Sign Item 11
@@ -271,9 +293,12 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             </ActionSection>
           )}
 
-          {/* Item 12 */}
+          {/* 8. Appeal Election (Item 12) — Accused's Acknowledgment of Appeal Rights (A-1-g) */}
           {hasSig("11") && !hasSig("12") && canPerformAction(userRole, "SIGN_ITEM_12") && (
-            <ActionSection title="Item 12 - Appeal Election">
+            <ActionSection title="Appeal Rights Acknowledgement (Item 12)">
+              <p className="text-xs text-neutral-mid mb-3">
+                Per JAGMAN A-1-g, the accused must be advised of the right to appeal within 5 working days. Record the accused&apos;s appeal election.
+              </p>
               <div className="flex flex-col gap-2">
                 <button onClick={() => performAction("SIGN_ITEM_12", { appealIntent: "INTENDS_TO_APPEAL", signerName: caseData.accused.lastName })} disabled={loading} className="btn-warning text-xs">
                   Intend to Appeal
@@ -285,9 +310,9 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             </ActionSection>
           )}
 
-          {/* Appeal Date */}
+          {/* 9. Appeal Filed (Item 13) */}
           {appeal?.appealIntent === "INTENDS_TO_APPEAL" && !appeal?.appealFiledDate && canPerformAction(userRole, "ENTER_APPEAL_DATE") && (
-            <ActionSection title="Item 13 - Appeal Date">
+            <ActionSection title="Appeal Filed (Item 13)">
               <input type="date" id="appealDate" className="input-field mb-2" />
               <button onClick={() => { const v = (document.getElementById("appealDate") as HTMLInputElement).value; performAction("ENTER_APPEAL_DATE", { appealDate: v }); }} disabled={loading} className="btn-primary text-xs w-full">
                 Record Appeal
@@ -295,9 +320,9 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             </ActionSection>
           )}
 
-          {/* JA Review */}
+          {/* JA Review — required when punishment exceeds threshold (JAGMAN 0116) */}
           {caseData.jaReviewRequired && !caseData.jaReviewComplete && canPerformAction(userRole, "LOG_JA_REVIEW") && (
-            <ActionSection title="JA Review">
+            <ActionSection title="JA Legal Review (JAGMAN 0116)">
               <input type="text" id="jaName" placeholder="JA Name" className="input-field mb-2" />
               <input type="date" id="jaDate" className="input-field mb-2" />
               <textarea id="jaSummary" placeholder="Summary" className="input-field mb-2 h-16" />
@@ -310,9 +335,9 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             </ActionSection>
           )}
 
-          {/* Item 14 */}
+          {/* 10. Appeal Authority Decision (Item 14) */}
           {appeal?.appealFiledDate && !hasSig("14") && (!caseData.jaReviewRequired || caseData.jaReviewComplete) && canPerformAction(userRole, "SIGN_ITEM_14") && (
-            <ActionSection title="Item 14 - Appeal Decision">
+            <ActionSection title="Appeal Authority Decision (Item 14)">
               <select id="appealOutcome" className="input-field mb-2">
                 <option value="DENIED">Denied</option>
                 <option value="DENIED_UNTIMELY">Denied - Untimely</option>
@@ -331,17 +356,23 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             </ActionSection>
           )}
 
-          {/* OMPF + Item 16 */}
+          {/* UPB Completion & Administrative Closure (JAGMAN 0119a) */}
           {((hasSig("12") && appeal?.appealIntent !== "INTENDS_TO_APPEAL") || hasSig("14")) && !hasSig("16") && canPerformAction(userRole, "SIGN_ITEM_16") && (
             <>
               {!caseData.ompfScanConfirmed && (
-                <ActionSection title="OMPF Confirmation">
+                <ActionSection title="Service Record Entry (JAGMAN 0109d)">
+                  <p className="text-xs text-neutral-mid mb-3">
+                    Confirm the NAVMC 118-11 / NAVPERS 1070/613 service record entry has been filed confirming rights advisement and NJP acceptance.
+                  </p>
                   <button onClick={() => performAction("CONFIRM_OMPF")} disabled={loading} className="btn-secondary text-xs w-full">
-                    Confirm OMPF/ESR
+                    Confirm OMPF/ESR Filed
                   </button>
                 </ActionSection>
               )}
-              <ActionSection title="Item 16 - Close Case">
+              <ActionSection title="Administrative Closure (Item 16)">
+                <p className="text-xs text-neutral-mid mb-3">
+                  Complete the Unit Punishment Book (NAVMC 10132) entry and close the NJP record.
+                </p>
                 <input type="text" id="udNumber" placeholder="UD Number" className="input-field mb-2" />
                 <input type="date" id="udDate" className="input-field mb-2" />
                 <button onClick={() => {
@@ -362,6 +393,19 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
         <h3 className="text-xs font-medium text-neutral-mid uppercase tracking-wide mb-3">Documents</h3>
         <p className="text-xs text-neutral-mid">Use the Documents tab below to generate and download documents.</p>
       </div>
+    </div>
+  );
+}
+
+function PhaseHeader({ label, description }: { label: string; description: string }) {
+  return (
+    <div className="flex items-center gap-3 pt-2">
+      <div className="flex-1 border-t border-primary/30" />
+      <div className="text-center">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{label}</span>
+        <p className="text-[10px] text-neutral-mid">{description}</p>
+      </div>
+      <div className="flex-1 border-t border-primary/30" />
     </div>
   );
 }
@@ -526,7 +570,7 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
   async function handleGenerate() {
     setGenerating(true);
     try {
-      const result = await generatePdfDocument(caseData.id, "suspects_rights_ack");
+      const result = await generatePdfDocument(caseData.id, "notification_election_rights");
       setPdfBytes(result.pdfBytes);
       const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
@@ -564,10 +608,12 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
     }
   }
 
-  const formTitle = "Suspect's Rights Acknowledgement / Statement";
+  const formTitle = vesselException
+    ? "Notification & Election of Rights (Vessel Exception Applies)"
+    : "Notification & Election of Rights (Vessel Exception Does Not Apply)";
 
   return (
-    <ActionSection title="Step 1 — Rights Advisement">
+    <ActionSection title="Notification & Election of Rights (JAGMAN 0109a)">
       <div className="space-y-4">
         {/* Step indicator */}
         <div className="flex items-center gap-2 text-xs">
@@ -591,20 +637,22 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
         {step === "generate" && (
           <div className="space-y-3">
             <p className="text-xs text-neutral-mid">
-              Generate the Suspect&apos;s Rights Acknowledgement / Statement for {accused.rank} {accused.lastName}.
-              This form advises the accused of their rights before any questioning.
+              Generate the official JAGINST 5800.7G notification form for {accused.rank} {accused.lastName}.
+              {vesselException
+                ? " The vessel exception applies — the accused cannot refuse NJP."
+                : " The accused has the right to refuse NJP and demand trial by court-martial."}
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
               <p className="text-xs font-medium text-blue-800 flex items-center gap-1">
                 <FileText size={14} /> {formTitle}
               </p>
               <p className="text-[10px] text-blue-700 mt-1">
-                JAGMAN 0175 — Pre-filled with accused identification and suspected offenses
+                {vesselException ? "JAGMAN A-1-c" : "JAGMAN A-1-d"} — Pre-filled with case offenses and max punishments
               </p>
             </div>
             <button onClick={handleGenerate} disabled={generating} className="btn-primary text-xs w-full gap-1">
               <FileText size={14} />
-              {generating ? "Generating PDF..." : "Generate Rights Acknowledgement PDF"}
+              {generating ? "Generating PDF..." : "Generate Notification & Election PDF"}
             </button>
           </div>
         )}
@@ -634,8 +682,8 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
               <p className="font-medium flex items-center gap-1"><AlertTriangle size={12} /> Instructions:</p>
               <ol className="list-decimal ml-5 space-y-0.5">
                 <li>Download or print the PDF above</li>
-                <li>Read rights to the accused and have them complete the Acknowledgement section</li>
-                <li>Have the accused, witness, and interviewer sign the form</li>
+                <li>Read rights to the accused and have them complete the Election of Rights section</li>
+                <li>Have the accused and witness sign the form</li>
                 <li>Scan/photograph the signed form and upload below</li>
               </ol>
             </div>
@@ -643,7 +691,7 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
             {/* Upload signed copy */}
             <label className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-blue-50/30 transition-colors">
               <Upload size={20} className="text-neutral-mid" />
-              <span className="text-xs text-neutral-mid">Upload signed Rights Acknowledgement / Statement</span>
+              <span className="text-xs text-neutral-mid">Upload signed Notification &amp; Election of Rights</span>
               <span className="text-[10px] text-neutral-mid">PDF, JPG, or PNG</span>
               <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileUpload} className="hidden" />
             </label>
@@ -661,7 +709,7 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
               </div>
             </div>
             <p className="text-xs text-neutral-mid">
-              Confirm that {accused.rank} {accused.lastName} has been advised of their rights per JAGINST 5800.7G (JAGMAN 0175) and the signed acknowledgement / statement has been received.
+              Confirm that {accused.rank} {accused.lastName} has been advised of their rights per JAGINST 5800.7G and the signed notification &amp; election form has been received.
             </p>
             <button onClick={onAcknowledge} disabled={loading} className="btn-primary text-xs w-full gap-1">
               <CheckCircle size={14} />
