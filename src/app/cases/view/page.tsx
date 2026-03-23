@@ -32,7 +32,7 @@ function CaseViewContent() {
   const id = searchParams.get("id") || "";
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"remarks" | "evidence" | "hearing" | "chargesheet" | "documents" | "audit">("remarks");
+  const [activeTab, setActiveTab] = useState<"remarks" | "evidence" | "hearing" | "chargesheet" | "documents" | "audit">("chargesheet");
   const router = useRouter();
 
   function loadCase() {
@@ -123,10 +123,10 @@ function CaseViewContent() {
           <div className="border-b border-border">
             <nav className="flex overflow-x-auto scrollbar-hide -mb-px">
               {([
+                { key: "chargesheet" as const, label: "DD 458", minPhase: "INITIATION" },
                 { key: "remarks" as const, label: "Item 21 Remarks", minPhase: "INITIATION" },
                 { key: "evidence" as const, label: "Evidence", minPhase: "RIGHTS_ADVISEMENT" },
                 { key: "hearing" as const, label: "Mast Guide", minPhase: "HEARING" },
-                { key: "chargesheet" as const, label: "DD 458", minPhase: "HEARING" },
                 { key: "documents" as const, label: "Documents", minPhase: "INITIATION" },
                 { key: "audit" as const, label: "Audit Log", minPhase: "INITIATION" },
               ] as const).filter((tab) => {
