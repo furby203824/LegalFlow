@@ -1084,9 +1084,10 @@
       "appealIntent": "INTENDS_TO_APPEAL",
       "item12SignedDate": "2026-03-23",
       "item12SignedById": "user-1774232428029-skhw5",
-      "appealFiled": false,
+      "appealFiled": true,
       "appealNotFiled": false,
-      "jaReviewRequired": false
+      "jaReviewRequired": false,
+      "appealFiledDate": "2026-03-23"
     },
     "chargeSheet": null,
     "hearingRecord": {
