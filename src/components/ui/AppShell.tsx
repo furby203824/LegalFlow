@@ -39,48 +39,92 @@ function isSidebarSection(item: SidebarLink | SidebarSection): item is SidebarSe
   return "children" in item;
 }
 
-const SIDEBAR_MENU: SidebarSection[] = [
-  {
+/* ── Role-aware sidebar menu builder ── */
+
+function buildSidebarMenu(role: string): SidebarSection[] {
+  const isAdmin = role === "SUITE_ADMIN";
+  const isPreparer = role === "NJP_PREPARER";
+  const isReviewer = role === "CERTIFIER_REVIEWER";
+  const isCertifier = role === "CERTIFIER";
+
+  const menu: SidebarSection[] = [];
+
+  // NJP Menu — contents vary by role
+  const njpChildren: (SidebarLink | SidebarSection)[] = [];
+
+  if (isPreparer || isAdmin) {
+    njpChildren.push({
+      label: "NJP Preparer",
+      children: [
+        { label: "Initiate NJP Package", href: "/cases/new" },
+      ],
+    });
+  }
+
+  if (isReviewer) {
+    njpChildren.push({
+      label: "Certifier Reviewer",
+      children: [
+        { label: "Packages Pending Review", href: "/cases" },
+      ],
+    });
+  }
+
+  if (isCertifier) {
+    njpChildren.push({
+      label: "Certifier",
+      children: [
+        { label: "Packages Awaiting Action", href: "/cases" },
+      ],
+    });
+  }
+
+  // Everyone sees Available Packages
+  njpChildren.push({ label: "Available Packages", href: "/cases" });
+
+  menu.push({
     label: "NJP Menu",
     defaultOpen: true,
-    children: [
-      {
-        label: "NJP Preparer",
-        children: [
-          { label: "Initiate NJP Package", href: "/cases/new" },
-        ],
-      },
-      { label: "Available Packages", href: "/cases" },
-    ],
-  },
-  {
-    label: "ADSEP Menu",
-    defaultOpen: false,
-    children: [
-      {
-        label: "ADSEP Preparer",
-        children: [
-          { label: "Initiate ADSEP Package", href: "/adsep/new" },
-        ],
-      },
-      { label: "Available Packages", href: "/adsep" },
-    ],
-  },
-  {
-    label: "Admin Menu",
-    defaultOpen: false,
-    children: [
-      {
-        label: "User Guide",
-        children: [
-          { label: "CLA Training", href: "#", disabled: true },
-        ],
-      },
-      { label: "MISSO POCs", href: "#", disabled: true },
-      { label: "User Management", href: "/admin/users" },
-    ],
-  },
-  {
+    children: njpChildren,
+  });
+
+  // ADSEP Menu — only preparer and admin
+  if (isPreparer || isAdmin) {
+    menu.push({
+      label: "ADSEP Menu",
+      defaultOpen: false,
+      children: [
+        {
+          label: "ADSEP Preparer",
+          children: [
+            { label: "Initiate ADSEP Package", href: "/adsep/new" },
+          ],
+        },
+        { label: "Available Packages", href: "/adsep" },
+      ],
+    });
+  }
+
+  // Admin Menu — only preparer and admin
+  if (isPreparer || isAdmin) {
+    menu.push({
+      label: "Admin Menu",
+      defaultOpen: false,
+      children: [
+        {
+          label: "User Guide",
+          children: [
+            { label: "CLA Training", href: "#", disabled: true },
+          ],
+        },
+        { label: "MISSO POCs", href: "#", disabled: true },
+        ...(isAdmin ? [{ label: "User Management", href: "/admin/users" }] : []),
+      ],
+    });
+  }
+
+  // References — available to all
+  menu.push({
     label: "References",
     defaultOpen: false,
     children: [
@@ -94,8 +138,10 @@ const SIDEBAR_MENU: SidebarSection[] = [
         ],
       },
     ],
-  },
-  {
+  });
+
+  // Forms — available to all
+  menu.push({
     label: "Forms",
     defaultOpen: false,
     children: [
@@ -104,15 +150,19 @@ const SIDEBAR_MENU: SidebarSection[] = [
       { label: "Summarized Record of Board Hearing - Example", href: "#", disabled: true },
       { label: "RLS Form (NAVMC-11411)", href: "#", disabled: true },
     ],
-  },
-  {
+  });
+
+  // Utilities — available to all
+  menu.push({
     label: "Utilities",
     defaultOpen: false,
     children: [
       { label: "My Account", href: "#", disabled: true },
     ],
-  },
-];
+  });
+
+  return menu;
+}
 
 /* ── Collapsible sidebar section component ── */
 
@@ -263,11 +313,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     CERTIFIER: "Certifier",
   };
 
+  const sidebarMenu = buildSidebarMenu(user.role);
+
   const sidebarContent = (
     <>
       {/* Sidebar menu sections */}
       <nav className="flex-1 overflow-y-auto pt-1">
-        {SIDEBAR_MENU.map((section, i) => (
+        {sidebarMenu.map((section, i) => (
           <SidebarSectionItem
             key={i}
             section={section}
