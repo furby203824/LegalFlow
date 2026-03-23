@@ -22,7 +22,8 @@ interface DocDef {
 }
 
 const DOCS: DocDef[] = [
-  { key: "navmc_10132", label: "NAVMC 10132", desc: "Unit Punishment Book", hasVersions: true },
+  { key: "navmc_10132", label: "NAVMC 10132", desc: "Unit Punishment Book (PDF form-fill)", hasVersions: true, isPdf: true, pdfType: "navmc_10132_pdf" },
+  { key: "navmc_10132_text", label: "NAVMC 10132 (Text)", desc: "Unit Punishment Book (text export)", hasVersions: true },
   { key: "charge_sheet", label: "DD 458", desc: "Charge Sheet" },
   { key: "notification_election_rights", label: "A-1-c/d Rights", desc: "Notification & Election of Rights (PDF)", isPdf: true, pdfType: "notification_election_rights" },
   { key: "appeal_rights_ack", label: "A-1-g Appeal", desc: "Acknowledgement of Appeal Rights (PDF)", isPdf: true, pdfType: "appeal_rights_ack" },
@@ -105,7 +106,12 @@ export default function DocumentPanel({
   }
 
   function handleDocClick(doc: DocDef) {
-    if (doc.isPdf && doc.pdfType) {
+    if (doc.isPdf && doc.pdfType && !doc.hasVersions) {
+      generatePdf(doc.pdfType);
+      return;
+    }
+    if (doc.isPdf && doc.pdfType && doc.hasVersions) {
+      // NAVMC 10132 PDF — auto-detects version from case state
       generatePdf(doc.pdfType);
       return;
     }
@@ -150,10 +156,10 @@ export default function DocumentPanel({
         ))}
       </div>
 
-      {/* NAVMC 10132 version selector */}
-      {showVersionSelector && docType === "navmc_10132" && (
+      {/* NAVMC 10132 text version selector */}
+      {showVersionSelector && docType === "navmc_10132_text" && (
         <div className="card p-3">
-          <p className="text-xs font-medium mb-2">Select NAVMC 10132 version:</p>
+          <p className="text-xs font-medium mb-2">Select NAVMC 10132 text version:</p>
           <div className="flex gap-2">
             {VERSION_OPTIONS.map((v) => {
               const disabled =
@@ -187,7 +193,7 @@ export default function DocumentPanel({
             <div className="flex gap-2">
               <button
                 onClick={() => {
-                  const docDef = DOCS.find((d) => d.key === docType);
+                  const docDef = DOCS.find((d) => d.key === docType || d.pdfType === docType);
                   if (docDef?.pdfType) generatePdf(docDef.pdfType);
                 }}
                 className="btn-ghost text-xs gap-1"
