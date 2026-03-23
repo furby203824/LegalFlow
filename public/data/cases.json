@@ -1300,7 +1300,7 @@
       {
         "id": "doc-1774277528286-fvp4c",
         "documentVersion": 8,
-        "isCurrent": true,
+        "isCurrent": false,
         "createdAt": "2026-03-23T14:52:08.287Z",
         "documentType": "NAVMC_10132_PDF",
         "generatedById": "user-1774232428029-skhw5",
@@ -1308,7 +1308,8 @@
         "distributionEsrb": false,
         "distributionOmpf": false,
         "distributionFiles": false,
-        "distributionMember": false
+        "distributionMember": false,
+        "supersededById": "doc-1774277844678-lpekz"
       },
       {
         "id": "doc-1774277566058-6qn8h",
@@ -1318,6 +1319,19 @@
         "documentType": "APPEAL_RIGHTS_ACK",
         "generatedById": "user-1774232428029-skhw5",
         "generatedAt": "2026-03-23T14:52:46.057Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
+      },
+      {
+        "id": "doc-1774277844678-lpekz",
+        "documentVersion": 9,
+        "isCurrent": true,
+        "createdAt": "2026-03-23T14:57:24.678Z",
+        "documentType": "NAVMC_10132_PDF",
+        "generatedById": "user-1774232428029-skhw5",
+        "generatedAt": "2026-03-23T14:57:24.677Z",
         "distributionEsrb": false,
         "distributionOmpf": false,
         "distributionFiles": false,
