@@ -493,5 +493,16 @@
     "userName": "certifier",
     "action": "SIGN",
     "notes": "Item 9 signed - punishment imposed"
+  },
+  {
+    "id": "audit-1774247701455-zae3s",
+    "timestamp": "2026-03-23T06:35:01.455Z",
+    "caseId": "case-1774237256718-s3m2a",
+    "caseNumber": "CASE-2026-0003",
+    "userId": "user-1774232429695-5pl19",
+    "userRole": "CERTIFIER",
+    "userName": "certifier",
+    "action": "SIGN",
+    "notes": "Item 11 signed"
   }
 ]
