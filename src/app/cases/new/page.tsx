@@ -289,6 +289,8 @@ export default function NewCasePage() {
           ) : undefined}>
             <p className="text-xs text-neutral-mid mb-1 flex items-center gap-1">
               <Info size={12} /> Do not include victim PII in offense summaries.
+              {" | "}
+              <a href="https://www.jagcnet.army.mil/EBB/#" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">Electronic Benchbook ↗</a>
             </p>
             {offenses.map((o, oi) => (
               <div key={oi} className="border border-border rounded-lg p-4 mb-4">
