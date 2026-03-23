@@ -179,7 +179,7 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
       {!isCourtMartial && (
         <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-sm flex items-start gap-2">
           <AlertTriangle size={16} className="text-warning shrink-0 mt-0.5" />
-          <span>This case has not been referred to court-martial. The charge sheet can still be prepared in advance.</span>
+          <span>This case has not been referred to court-martial. The DD 458 can still be prepared in advance.</span>
         </div>
       )}
 
@@ -190,7 +190,7 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         </button>
         {!locked && (
           <button onClick={saveAll} disabled={saving} className="btn-primary text-xs gap-1">
-            <Save size={14} /> {saving ? "Saving..." : "Save Charge Sheet"}
+            <Save size={14} /> {saving ? "Saving..." : "Save DD 458"}
           </button>
         )}
       </div>
@@ -516,7 +516,7 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         </button>
         {!locked && (
           <button onClick={saveAll} disabled={saving} className="btn-primary text-xs gap-1">
-            <Save size={14} /> {saving ? "Saving..." : "Save Charge Sheet"}
+            <Save size={14} /> {saving ? "Saving..." : "Save DD 458"}
           </button>
         )}
       </div>

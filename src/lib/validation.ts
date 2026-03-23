@@ -985,7 +985,7 @@ export function vrSys008(
         ruleId: "VR-SYS-008",
         type: "HARD_BLOCK",
         field: "document",
-        message: `This document is not yet available. ${documentType === "CHARGE_SHEET" ? "Charge Sheet" : "Office Hours Script"} becomes available after Phase 1 completion.`,
+        message: `This document is not yet available. ${documentType === "CHARGE_SHEET" ? "DD 458" : "Office Hours Script"} becomes available after Phase 1 completion.`,
       };
     }
   }
