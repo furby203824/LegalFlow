@@ -277,14 +277,16 @@ function PersonnelDataTab({ caseData }: { caseData: CaseDetail }) {
       <fieldset className="border border-border rounded-md px-4 py-3">
         <legend className="text-sm font-semibold text-neutral-dark px-2">UCMJ Offenses Alleged</legend>
         <div className="space-y-2">
-          {(caseData.offenses || []).map((o: { offenseLetter: string; ucmjArticle: string; offenseType: string; offenseSummary: string; fromDate?: string; fromTime?: string; toDate?: string; toTime?: string; offenseDate?: string; offensePlace: string; finding?: string }) => (
+          {(caseData.offenses || []).map((o: { offenseLetter: string; ucmjArticle: string; offenseType: string; offenseSummary: string; offenseDate: string; offenseTime?: string; fromDate?: string; fromTime?: string; toDate?: string; toTime?: string; offensePlace: string; finding?: string }) => (
             <div key={o.offenseLetter} className="text-sm border-b border-border last:border-0 pb-2 last:pb-0">
               <div className="font-medium text-neutral-dark">
                 {o.offenseLetter}. Art. {o.ucmjArticle} — {o.offenseType}
               </div>
               <div className="text-neutral-mid text-xs mt-0.5">{o.offenseSummary}</div>
               <div className="text-neutral-mid text-xs">
-                {o.fromDate ? `${o.fromTime || ""}, ${o.fromDate} through ${o.toTime || ""}, ${o.toDate}` : o.offenseDate} at {o.offensePlace}
+                {(o.ucmjArticle === "85" || o.ucmjArticle === "86") && o.fromDate
+                  ? `${o.fromTime || ""}, ${o.fromDate} through ${o.toTime || ""}, ${o.toDate}`
+                  : `${o.offenseDate}${o.offenseTime ? ` at ${o.offenseTime}` : ""}`} at {o.offensePlace}
               </div>
               {o.finding && (
                 <div className={cn(
