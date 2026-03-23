@@ -574,6 +574,18 @@
         "signatureMethod": "ELECTRONIC",
         "refusalNoted": false,
         "coSignedInstead": false
+      },
+      {
+        "id": "sig-1774247667248-c2fil",
+        "createdAt": "2026-03-23T06:34:27.248Z",
+        "itemNumber": "9",
+        "signerRole": "CERTIFIER",
+        "signerUserId": "user-1774232429695-5pl19",
+        "signerName": "Chen, Michael",
+        "signedDate": "2026-03-23",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
       }
     ],
     "evidence": [],
