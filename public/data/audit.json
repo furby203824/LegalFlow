@@ -867,5 +867,16 @@
     "userName": "admin",
     "action": "UPDATE",
     "notes": "Appeal filed on 2026-03-23"
+  },
+  {
+    "id": "audit-1774277845454-yfxih",
+    "timestamp": "2026-03-23T14:57:25.454Z",
+    "caseId": "case-1774273010844-6nplg",
+    "caseNumber": "CASE-2026-0004",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated PDF: navmc_10132_pdf"
   }
 ]
