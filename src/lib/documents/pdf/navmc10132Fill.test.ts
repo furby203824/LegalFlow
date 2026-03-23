@@ -54,6 +54,7 @@ function makeCaseData(overrides: Partial<CaseData> = {}): CaseData {
         offenseType: "Absence without leave",
         summary: "Did without authority absent himself from his unit",
         offenseDate: "2026-01-15",
+        offenseTime: "0800",
         offensePlace: "Camp Lejeune, NC",
         finding: "G",
         victims: [],
@@ -329,9 +330,9 @@ describe("fillNavmc10132Pdf", () => {
       const fill = await getFill();
       const data = makeCaseData({
         offenses: [
-          { letter: "A", ucmjArticle: "86", offenseType: "AWOL", summary: "Offense A", offenseDate: "2026-01-01", offensePlace: "Place A", victims: [] },
-          { letter: "B", ucmjArticle: "92", offenseType: "Failure to obey", summary: "Offense B", offenseDate: "2026-01-02", offensePlace: "Place B", victims: [] },
-          { letter: "C", ucmjArticle: "134", offenseType: "Drunk on duty", summary: "Offense C", offenseDate: "2026-01-03", offensePlace: "Place C", victims: [] },
+          { letter: "A", ucmjArticle: "86", offenseType: "AWOL", summary: "Offense A", offenseDate: "2026-01-01", offenseTime: "0800", offensePlace: "Place A", victims: [] },
+          { letter: "B", ucmjArticle: "92", offenseType: "Failure to obey", summary: "Offense B", offenseDate: "2026-01-02", offenseTime: "0900", offensePlace: "Place B", victims: [] },
+          { letter: "C", ucmjArticle: "134", offenseType: "Drunk on duty", summary: "Offense C", offenseDate: "2026-01-03", offenseTime: "2200", offensePlace: "Place C", victims: [] },
         ],
       });
       const bytes = await fill(data, "PARTIAL");
@@ -576,6 +577,7 @@ describe("fillNavmc10132Pdf", () => {
             offenseType: "Assault",
             summary: "Did assault PFC Smith",
             offenseDate: "2026-01-15",
+            offenseTime: "1430",
             offensePlace: "Camp Lejeune",
             victims: [
               { letter: "1", status: "Military", sex: "Male", race: "White", ethnicity: "Not Hispanic" },
@@ -611,14 +613,14 @@ describe("fillNavmc10132Pdf", () => {
           {
             letter: "A", ucmjArticle: "86", offenseType: "Absence without leave",
             summary: "Did without authority absent himself from his unit",
-            offenseDate: "2026-01-15", offensePlace: "Camp Pendleton, CA",
+            offenseDate: "2026-01-15", offenseTime: "0800", offensePlace: "Camp Pendleton, CA",
             finding: "G",
             victims: [],
           },
           {
             letter: "B", ucmjArticle: "92", offenseType: "Failure to obey",
             summary: "Failed to obey a lawful general order",
-            offenseDate: "2026-01-20", offensePlace: "Camp Pendleton, CA",
+            offenseDate: "2026-01-20", offenseTime: "0630", offensePlace: "Camp Pendleton, CA",
             finding: "G",
             victims: [
               { letter: "1", status: "Military", sex: "Male", race: "White", ethnicity: "Not Hispanic or Latino" },
@@ -627,7 +629,7 @@ describe("fillNavmc10132Pdf", () => {
           {
             letter: "C", ucmjArticle: "134", offenseType: "Drunk on duty",
             summary: "Was drunk on duty while serving as duty NCO",
-            offenseDate: "2026-01-25", offensePlace: "Camp Pendleton, CA",
+            offenseDate: "2026-01-25", offenseTime: "2200", offensePlace: "Camp Pendleton, CA",
             finding: "NG",
             victims: [],
           },

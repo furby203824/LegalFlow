@@ -111,6 +111,7 @@ interface OffenseInput {
   offenseType: string;
   summary: string;
   offenseDate: string;
+  offenseTime: string;
   offensePlace: string;
   victims: { status: string; sex: string; race: string; ethnicity: string }[];
 }
@@ -153,7 +154,7 @@ export default function NewCasePage() {
   }
 
   const [offenses, setOffenses] = useState<OffenseInput[]>([{
-    ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offensePlace: "",
+    ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", offensePlace: "",
     victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }],
   }]);
 
@@ -218,6 +219,7 @@ export default function NewCasePage() {
         offenseType: o.offenseType,
         offenseSummary: o.summary,
         offenseDate: o.offenseDate,
+        offenseTime: o.offenseTime,
         offensePlace: o.offensePlace,
         finding: null,
         locked: false,
@@ -392,7 +394,7 @@ export default function NewCasePage() {
 
           {/* Offenses */}
           <Section title="Offenses" action={offenses.length < 5 ? (
-            <button type="button" onClick={() => setOffenses([...offenses, { ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offensePlace: "", victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }] }])} className="btn-ghost text-xs gap-1">
+            <button type="button" onClick={() => setOffenses([...offenses, { ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", offensePlace: "", victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }] }])} className="btn-ghost text-xs gap-1">
               <Plus size={14} /> Add Offense
             </button>
           ) : undefined}>
@@ -457,6 +459,9 @@ export default function NewCasePage() {
                   </Field>
                   <Field label="Date" required>
                     <input type="date" className="input-field" value={o.offenseDate} onChange={(e) => updateOffense(oi, "offenseDate", e.target.value)} required />
+                  </Field>
+                  <Field label="Time" required>
+                    <input type="time" className="input-field" value={o.offenseTime} onChange={(e) => updateOffense(oi, "offenseTime", e.target.value)} required />
                   </Field>
                   <Field label="Place" required>
                     <input className="input-field" value={o.offensePlace} onChange={(e) => updateOffense(oi, "offensePlace", e.target.value)} required />

@@ -71,7 +71,7 @@ export async function generateDocumentContent(
     vesselException: rawCase.vesselException,
     offenses: (njpCase.offenses || []).map((o: Rec) => ({
       letter: o.offenseLetter, ucmjArticle: o.ucmjArticle, offenseType: o.offenseType,
-      summary: o.offenseSummary, offenseDate: o.offenseDate, offensePlace: o.offensePlace,
+      summary: o.offenseSummary, offenseDate: o.offenseDate, offenseTime: o.offenseTime || "", offensePlace: o.offensePlace,
       finding: o.finding || undefined,
       victims: ((o.victims || []) as Rec[]).map((v) => ({
         letter: v.victimLetter || "", status: v.victimStatus || "Unknown",
@@ -199,7 +199,7 @@ export async function generatePdfDocument(
     vesselException: rawCase.vesselException,
     offenses: (njpCase.offenses || []).map((o: Rec) => ({
       letter: o.offenseLetter, ucmjArticle: o.ucmjArticle, offenseType: o.offenseType,
-      summary: o.offenseSummary, offenseDate: o.offenseDate, offensePlace: o.offensePlace,
+      summary: o.offenseSummary, offenseDate: o.offenseDate, offenseTime: o.offenseTime || "", offensePlace: o.offensePlace,
       finding: o.finding || undefined,
       victims: ((o.victims || []) as Rec[]).map((v) => ({
         letter: v.victimLetter || "", status: v.victimStatus || "Unknown",

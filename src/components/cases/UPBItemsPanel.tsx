@@ -119,11 +119,11 @@ export default function UPBItemsPanel({ caseData, onUpdate }: { caseData: CaseDa
 
   allItems["1"] = (
     <ItemCard key="1" number="1" title="UCMJ Offenses Alleged" state={hasSig("2") ? "LOCKED" : "COMPLETE"} defaultOpen>
-      {offenses.map((o: { offenseLetter: string; ucmjArticle: string; offenseType: string; offenseSummary: string; offenseDate: string; offensePlace: string }) => (
+      {offenses.map((o: { offenseLetter: string; ucmjArticle: string; offenseType: string; offenseSummary: string; offenseDate: string; offenseTime?: string; offensePlace: string }) => (
         <div key={o.offenseLetter} className="mb-2 last:mb-0">
           <div className="font-medium">{o.offenseLetter}. Art. {o.ucmjArticle} - {o.offenseType}</div>
           <div className="text-neutral-mid text-xs mt-0.5">{o.offenseSummary}</div>
-          <div className="text-neutral-mid text-xs">{o.offenseDate} at {o.offensePlace}</div>
+          <div className="text-neutral-mid text-xs">{o.offenseDate}{o.offenseTime ? ` at ${o.offenseTime}` : ""} at {o.offensePlace}</div>
         </div>
       ))}
     </ItemCard>
