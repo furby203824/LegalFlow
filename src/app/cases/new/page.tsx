@@ -43,7 +43,6 @@ export default function NewCasePage() {
   const [middleName, setMiddleName] = useState("");
   const [rankGrade, setRankGrade] = useState(""); // combined "E3/LCpl" value
   const [edipi, setEdipi] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
   const [serviceBranch, setServiceBranch] = useState("USMC");
   const [component, setComponent] = useState("ACTIVE");
   const [commanderGrade, setCommanderGrade] = useState("");
@@ -74,6 +73,23 @@ export default function NewCasePage() {
   // Parse rank and grade from combined value like "E3/LCpl"
   const rank = rankGrade ? rankGrade.split("/")[1] : "";
   const grade = rankGrade ? rankGrade.split("/")[0] : "";
+
+  // Simulate MCTFS DOB lookup — generate realistic DOB based on grade
+  function generateDOB(g: string): string {
+    const ageRanges: Record<string, [number, number]> = {
+      E1: [18, 21], E2: [18, 22], E3: [18, 23], E4: [20, 27], E5: [22, 30],
+      E6: [26, 35], E7: [30, 40], E8: [34, 45], E9: [38, 50],
+      W1: [26, 35], W2: [28, 38], W3: [32, 42], W4: [36, 48], W5: [40, 52],
+      O1: [22, 28], O2: [24, 30], O3: [26, 34], O4: [30, 40], O5: [34, 45], O6: [38, 50],
+    };
+    const [minAge, maxAge] = ageRanges[g] || [20, 30];
+    const age = minAge + Math.floor(Math.random() * (maxAge - minAge + 1));
+    const now = new Date();
+    const year = now.getFullYear() - age;
+    const month = Math.floor(Math.random() * 12) + 1;
+    const day = Math.floor(Math.random() * 28) + 1;
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
 
   function updateOffense(idx: number, field: keyof OffenseInput, value: string) {
     const updated = [...offenses];
@@ -132,7 +148,7 @@ export default function NewCasePage() {
         accusedName: `${lastName}, ${firstName}${middleName ? " " + middleName : ""}`,
         accusedLastName: lastName, accusedFirstName: firstName, accusedMiddleName: middleName || null,
         accusedRank: rank, accusedGrade: grade, accusedEdipi: edipi,
-        accusedDateOfBirth: dateOfBirth || null,
+        accusedDateOfBirth: generateDOB(grade),
         accusedServiceBranch: serviceBranch,
         component: component || "ACTIVE",
         vesselException: vesselException || false,
@@ -218,9 +234,6 @@ export default function NewCasePage() {
               </Field>
               <Field label="EDIPI (10 digits)" required>
                 <input className="input-field font-mono" value={edipi} onChange={(e) => setEdipi(e.target.value)} pattern="\d{10}" maxLength={10} required />
-              </Field>
-              <Field label="Date of Birth">
-                <input type="date" className="input-field" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
               </Field>
               <Field label="Service Branch" required>
                 <select className="input-field" value={serviceBranch} onChange={(e) => setServiceBranch(e.target.value)} required>
