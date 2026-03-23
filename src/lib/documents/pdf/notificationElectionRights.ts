@@ -4,6 +4,7 @@
  * Two variants: A-1-d (vessel exception does NOT apply) and A-1-c (vessel exception DOES apply)
  */
 
+import { rgb } from "pdf-lib";
 import type { CaseData } from "../types";
 import { maxPunishmentByGrade } from "../punishmentText";
 import {
@@ -245,7 +246,7 @@ function electionSection(ctx: PDFContext, data: CaseData, vesselApplies: boolean
     y: ctx.y,
     size: 10,
     font: ctx.font,
-    color: { type: 0, red: 0, green: 0, blue: 0 } as any, // rgb(0,0,0)
+    color: rgb(0, 0, 0),
   });
   ctx.y -= LINE_HEIGHT;
 
