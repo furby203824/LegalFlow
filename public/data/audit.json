@@ -724,5 +724,16 @@
     "userName": "admin",
     "action": "UPDATE",
     "notes": "Punishment entered"
+  },
+  {
+    "id": "audit-1774273761252-dsb57",
+    "timestamp": "2026-03-23T13:49:21.252Z",
+    "caseId": "case-1774273010844-6nplg",
+    "caseNumber": "CASE-2026-0004",
+    "userId": "user-1774232429695-5pl19",
+    "userRole": "CERTIFIER",
+    "userName": "certifier",
+    "action": "SIGN",
+    "notes": "Item 9 signed - punishment imposed"
   }
 ]
