@@ -931,7 +931,8 @@ function Item9Action({ caseData, loading, onSubmit }: { caseData: CaseData; load
   const rankLabel = session?.rank && session?.grade ? `${session.grade}/${session.rank}` : "";
 
   const [name] = useState(fullName);
-  const [title, setTitle] = useState("Commanding Officer");
+  const defaultTitle = caseData.commanderGradeLevel === "COMPANY_GRADE" ? "Company Commander" : "Commanding Officer";
+  const [title, setTitle] = useState(defaultTitle);
   const [unit] = useState(unitName);
   const [rankGrade] = useState(rankLabel);
   const [edipi] = useState(session?.edipi || "");
