@@ -1063,7 +1063,21 @@
     "item21Entries": [],
     "signatures": [],
     "evidence": [],
-    "documents": [],
+    "documents": [
+      {
+        "id": "doc-1774273021278-2uyri",
+        "documentVersion": 1,
+        "isCurrent": true,
+        "createdAt": "2026-03-23T13:37:01.278Z",
+        "documentType": "NOTIFICATION_ELECTION_RIGHTS",
+        "generatedById": "user-1774232428029-skhw5",
+        "generatedAt": "2026-03-23T13:37:01.278Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
+      }
+    ],
     "remedialActions": [],
     "vacationRecordsAsParent": [],
     "flags": [],
