@@ -16,5 +16,23 @@
     "rank": "",
     "grade": "",
     "edipi": ""
+  },
+  {
+    "id": "user-1774232428618-42zo5",
+    "createdAt": "2026-03-23T02:20:28.618Z",
+    "updatedAt": "2026-03-23T02:20:28.618Z",
+    "isActive": true,
+    "lastLogin": null,
+    "username": "preparer",
+    "passwordHash": "preparer",
+    "firstName": "James",
+    "lastName": "Rodriguez",
+    "email": "james.rodriguez@usmc.mil",
+    "role": "NJP_PREPARER",
+    "unitId": "unit-1bn5mar",
+    "unitName": "1st Bn, 5th Marines",
+    "rank": "Sgt",
+    "grade": "E5",
+    "edipi": "1234567890"
   }
 ]
