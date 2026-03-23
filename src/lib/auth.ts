@@ -125,19 +125,68 @@ export async function autoLogin(): Promise<SessionUser | null> {
   return session;
 }
 
-// Seed default admin if users.json is empty
+// Demo user profiles for different CLA roles
+const DEMO_USERS = [
+  {
+    username: "admin",
+    passwordHash: "admin",
+    firstName: "System",
+    lastName: "Admin",
+    email: "admin@legalflow.local",
+    role: "SUITE_ADMIN",
+    unitId: "unit-hq",
+    unitName: "Headquarters, LegalFlow",
+    rank: "",
+    grade: "",
+    edipi: "",
+  },
+  {
+    username: "preparer",
+    passwordHash: "preparer",
+    firstName: "James",
+    lastName: "Rodriguez",
+    email: "james.rodriguez@usmc.mil",
+    role: "NJP_PREPARER",
+    unitId: "unit-1bn5mar",
+    unitName: "1st Bn, 5th Marines",
+    rank: "Sgt",
+    grade: "E5",
+    edipi: "1234567890",
+  },
+  {
+    username: "reviewer",
+    passwordHash: "reviewer",
+    firstName: "Sarah",
+    lastName: "Mitchell",
+    email: "sarah.mitchell@usmc.mil",
+    role: "CERTIFIER_REVIEWER",
+    unitId: "unit-1bn5mar",
+    unitName: "1st Bn, 5th Marines",
+    rank: "GySgt",
+    grade: "E7",
+    edipi: "2345678901",
+  },
+  {
+    username: "certifier",
+    passwordHash: "certifier",
+    firstName: "Michael",
+    lastName: "Chen",
+    email: "michael.chen@usmc.mil",
+    role: "CERTIFIER",
+    unitId: "unit-1bn5mar",
+    unitName: "1st Bn, 5th Marines",
+    rank: "LtCol",
+    grade: "O5",
+    edipi: "3456789012",
+  },
+];
+
+// Seed default users if users.json is empty
 export async function seedDefaultUser(): Promise<void> {
   const users = await usersStore.findAll();
   if (users.length === 0) {
-    await usersStore.create({
-      username: "admin",
-      passwordHash: "admin",
-      firstName: "System",
-      lastName: "Admin",
-      email: "admin@legalflow.local",
-      role: "SUITE_ADMIN",
-      unitId: "unit-hq",
-      unitName: "Headquarters, LegalFlow",
-    });
+    for (const u of DEMO_USERS) {
+      await usersStore.create(u);
+    }
   }
 }

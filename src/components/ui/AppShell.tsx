@@ -248,6 +248,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     APPEAL_AUTHORITY: "Appeal Authority",
     IPAC_ADMIN: "IPAC Admin",
     SUITE_ADMIN: "System Admin",
+    NJP_PREPARER: "NJP Preparer",
+    CERTIFIER_REVIEWER: "Certifier Reviewer",
+    CERTIFIER: "Certifier",
   };
 
   const sidebarContent = (
