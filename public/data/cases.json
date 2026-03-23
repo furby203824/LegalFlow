@@ -1111,7 +1111,7 @@
     "nextActionOwner": "ACCUSED",
     "isOverdue": false,
     "caseNumber": "CASE-2026-0004",
-    "status": "INITIATED",
+    "status": "RIGHTS_ADVISED",
     "currentPhase": "RIGHTS_ADVISEMENT",
     "unitId": "unit-hq",
     "unitFullString": "Headquarters, LegalFlow",
