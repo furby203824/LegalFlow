@@ -549,7 +549,7 @@
       {
         "id": "doc-1774240446168-j1bbm",
         "documentVersion": 3,
-        "isCurrent": true,
+        "isCurrent": false,
         "createdAt": "2026-03-23T04:34:06.168Z",
         "documentType": "APPEAL_RIGHTS_ACK",
         "generatedById": "user-1774232428029-skhw5",
@@ -557,7 +557,8 @@
         "distributionEsrb": false,
         "distributionOmpf": false,
         "distributionFiles": false,
-        "distributionMember": false
+        "distributionMember": false,
+        "supersededById": "doc-1774240807323-cx7b7"
       },
       {
         "id": "doc-1774240462317-cxog9",
@@ -594,6 +595,19 @@
         "documentType": "NOTIFICATION_ELECTION_RIGHTS",
         "generatedById": "user-1774232428029-skhw5",
         "generatedAt": "2026-03-23T04:37:41.784Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
+      },
+      {
+        "id": "doc-1774240807323-cx7b7",
+        "documentVersion": 4,
+        "isCurrent": true,
+        "createdAt": "2026-03-23T04:40:07.323Z",
+        "documentType": "APPEAL_RIGHTS_ACK",
+        "generatedById": "user-1774232428029-skhw5",
+        "generatedAt": "2026-03-23T04:40:07.323Z",
         "distributionEsrb": false,
         "distributionOmpf": false,
         "distributionFiles": false,
