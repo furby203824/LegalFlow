@@ -1175,7 +1175,7 @@
     "nextActionOwner": "ACCUSED",
     "isOverdue": false,
     "caseNumber": "CASE-2026-0004",
-    "status": "RIGHTS_ADVISED",
+    "status": "PUNISHMENT_IMPOSED",
     "currentPhase": "HEARING",
     "unitId": "unit-hq",
     "unitFullString": "Headquarters, LegalFlow",
@@ -1206,6 +1206,12 @@
       "id": "ra-1774273071041-0f8cj",
       "acknowledged": true,
       "acknowledgedAt": "2026-03-23T13:37:51.041Z"
-    }
+    },
+    "njpAuthorityName": "Chen, Michael",
+    "njpAuthorityTitle": "Company Commander",
+    "njpAuthorityUnit": "1st Bn, 5th Marines",
+    "njpAuthorityRank": "LtCol",
+    "njpAuthorityGrade": "O5",
+    "njpAuthorityEdipi": "3456789012"
   }
 ]
