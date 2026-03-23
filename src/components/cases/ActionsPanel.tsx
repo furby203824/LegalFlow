@@ -195,14 +195,32 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
         </div>
       )}
 
-      {/* Certifier Reviewer note */}
+      {/* Certifier Reviewer panel */}
       {userRole === "CERTIFIER_REVIEWER" && !isClosed && !isReferred && (
-        <div className="card p-4 border-info/30 bg-blue-50/50">
-          <h3 className="text-xs font-semibold text-info mb-1">Certifier Reviewer</h3>
-          <p className="text-xs text-neutral-mid">
-            Review this package for completeness and accuracy before it is routed to the Certifier (Commander).
-            You may add remarks or flag issues but cannot perform case actions directly.
+        <ReviewerPanel caseData={caseData} loading={loading} onAction={performAction} />
+      )}
+
+      {/* Show returned-by-reviewer notice to preparers */}
+      {userRole === "NJP_PREPARER" && caseData.reviewStatus === "RETURNED" && !isClosed && !isReferred && (
+        <div className="rounded-md bg-amber-50 border border-amber-300 px-4 py-3">
+          <div className="flex items-center gap-2 text-amber-800 font-semibold text-sm mb-1">
+            <AlertTriangle size={14} /> Package Returned by Reviewer
+          </div>
+          <p className="text-xs text-amber-700">
+            The certifier reviewer has returned this package for corrections. Review comments below and resubmit when ready.
           </p>
+          {(caseData.reviewComments || []).length > 0 && (
+            <div className="mt-2 space-y-1">
+              {(caseData.reviewComments as { id: string; userName: string; text: string; createdAt: string; action?: string }[])
+                .slice(-3).map((c) => (
+                <div key={c.id} className="text-xs bg-white/60 rounded px-2 py-1 border border-amber-200">
+                  <span className="font-medium text-amber-800">{c.userName}</span>
+                  {c.action && <span className="ml-1 text-[10px] text-amber-600 font-semibold uppercase">[{c.action}]</span>}
+                  <span className="text-amber-700 ml-1">{c.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -397,6 +415,114 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
         </div>
       )}
 
+    </div>
+  );
+}
+
+function ReviewerPanel({ caseData, loading, onAction }: { caseData: CaseData; loading: boolean; onAction: (action: string, data?: Record<string, unknown>) => Promise<void> }) {
+  const [comment, setComment] = useState("");
+  const [showReturn, setShowReturn] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
+  const comments = (caseData.reviewComments || []) as { id: string; userName: string; text: string; createdAt: string; action?: string }[];
+  const reviewStatus = caseData.reviewStatus as string | undefined;
+
+  return (
+    <div className="card border-info/40">
+      <div className="px-4 py-3 bg-blue-50/70 border-b border-info/20">
+        <h3 className="text-sm font-semibold text-info">Certifier Reviewer</h3>
+        <p className="text-xs text-neutral-mid mt-0.5">
+          Review this package for completeness and accuracy, then forward to the Certifier or return to the preparer.
+        </p>
+        {reviewStatus && (
+          <span className={cn("inline-block mt-1 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded",
+            reviewStatus === "FORWARDED" ? "bg-green-100 text-green-700" : reviewStatus === "RETURNED" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"
+          )}>
+            {reviewStatus}
+          </span>
+        )}
+      </div>
+
+      {/* Comment history */}
+      {comments.length > 0 && (
+        <div className="px-4 py-2 border-b border-border max-h-48 overflow-y-auto space-y-1.5">
+          <div className="text-[10px] font-semibold text-neutral-mid uppercase tracking-wide">Review Comments</div>
+          {comments.map((c) => (
+            <div key={c.id} className="text-xs bg-surface rounded px-2.5 py-1.5 border border-border">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="font-medium text-neutral-dark">{c.userName}</span>
+                {c.action && (
+                  <span className={cn("text-[9px] font-bold uppercase px-1 py-px rounded",
+                    c.action === "RETURNED" ? "bg-amber-100 text-amber-700" : c.action === "FORWARDED" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                  )}>{c.action}</span>
+                )}
+                <span className="text-[10px] text-neutral-mid ml-auto">{new Date(c.createdAt).toLocaleDateString()}</span>
+              </div>
+              <p className="text-neutral-dark">{c.text}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add comment */}
+      <div className="px-4 py-3 space-y-2">
+        <label className="text-xs font-medium text-neutral-dark">Add Comment</label>
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Note an issue, flag a correction, or add a remark..."
+          className="input-field text-sm"
+          rows={2}
+        />
+        <button
+          disabled={loading || !comment.trim()}
+          onClick={async () => { await onAction("REVIEWER_COMMENT", { comment: comment.trim() }); setComment(""); }}
+          className="btn-ghost text-xs"
+        >
+          Add Comment
+        </button>
+      </div>
+
+      {/* Return to preparer (expandable) */}
+      {showReturn ? (
+        <div className="px-4 py-3 border-t border-border bg-amber-50/40 space-y-2">
+          <label className="text-xs font-semibold text-amber-800">Reason for Return *</label>
+          <textarea
+            value={returnReason}
+            onChange={(e) => setReturnReason(e.target.value)}
+            placeholder="Describe what needs to be corrected..."
+            className="input-field text-sm border-amber-300"
+            rows={2}
+          />
+          <div className="flex gap-2">
+            <button
+              disabled={loading || !returnReason.trim()}
+              onClick={async () => { await onAction("REVIEWER_RETURN", { comment: returnReason.trim() }); setReturnReason(""); setShowReturn(false); }}
+              className="btn-ghost text-xs text-amber-700 border-amber-300 hover:bg-amber-100"
+            >
+              Confirm Return to Preparer
+            </button>
+            <button onClick={() => setShowReturn(false)} className="btn-ghost text-xs">Cancel</button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Action buttons */}
+      <div className="px-4 py-3 border-t border-border flex gap-2">
+        <button
+          disabled={loading}
+          onClick={() => setShowReturn(true)}
+          className="btn-ghost text-xs text-amber-700 border-amber-300 hover:bg-amber-50"
+        >
+          Return to Preparer
+        </button>
+        <button
+          disabled={loading}
+          onClick={() => onAction("REVIEWER_FORWARD", { comment: comment.trim() || undefined })}
+          className="btn-primary text-xs"
+        >
+          Forward to Certifier
+        </button>
+      </div>
     </div>
   );
 }
