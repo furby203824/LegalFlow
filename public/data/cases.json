@@ -392,6 +392,15 @@
         "documentType": "NAVMC_10132_E-SRB",
         "generatedById": "user-1774218618690-02z7m",
         "generatedAt": "2026-03-23T02:08:35.006Z"
+      },
+      {
+        "id": "doc-1774231715600-cltxu",
+        "documentVersion": 1,
+        "isCurrent": true,
+        "createdAt": "2026-03-23T02:08:35.600Z",
+        "documentType": "NAVMC_10132_OMPF",
+        "generatedById": "user-1774218618690-02z7m",
+        "generatedAt": "2026-03-23T02:08:35.600Z"
       }
     ],
     "remedialActions": [],
