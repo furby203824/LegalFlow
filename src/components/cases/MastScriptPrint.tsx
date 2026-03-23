@@ -185,7 +185,7 @@ export default function MastScriptPrint({
           <p>CO: &nbsp;&nbsp;You are dismissed.</p>
         </div>
 
-        <div className="text-right" style={{ marginTop: "300px" }}>Enclosure (4)</div>
+
       </div>
     </div>
   );
