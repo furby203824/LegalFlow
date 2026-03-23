@@ -34,5 +34,23 @@
     "rank": "Sgt",
     "grade": "E5",
     "edipi": "1234567890"
+  },
+  {
+    "id": "user-1774232429183-iwncd",
+    "createdAt": "2026-03-23T02:20:29.183Z",
+    "updatedAt": "2026-03-23T02:20:29.183Z",
+    "isActive": true,
+    "lastLogin": null,
+    "username": "reviewer",
+    "passwordHash": "reviewer",
+    "firstName": "Sarah",
+    "lastName": "Mitchell",
+    "email": "sarah.mitchell@usmc.mil",
+    "role": "CERTIFIER_REVIEWER",
+    "unitId": "unit-1bn5mar",
+    "unitName": "1st Bn, 5th Marines",
+    "rank": "GySgt",
+    "grade": "E7",
+    "edipi": "2345678901"
   }
 ]
