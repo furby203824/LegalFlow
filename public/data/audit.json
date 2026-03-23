@@ -537,5 +537,16 @@
     "userName": "admin",
     "action": "SIGN",
     "notes": "Item 12 - no appeal"
+  },
+  {
+    "id": "audit-1774249472140-3szo4",
+    "timestamp": "2026-03-23T07:04:32.140Z",
+    "caseId": "case-1774237256718-s3m2a",
+    "caseNumber": "CASE-2026-0003",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated PDF: navmc_10132_pdf"
   }
 ]
