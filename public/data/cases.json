@@ -1161,6 +1161,18 @@
         "signatureMethod": "ELECTRONIC",
         "refusalNoted": false,
         "coSignedInstead": false
+      },
+      {
+        "id": "sig-1774277594312-ightx",
+        "createdAt": "2026-03-23T14:53:14.312Z",
+        "itemNumber": "12",
+        "signerRole": "SUITE_ADMIN",
+        "signerUserId": "user-1774232428029-skhw5",
+        "signerName": "Sanchez",
+        "signedDate": "2026-03-23",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
       }
     ],
     "evidence": [],
