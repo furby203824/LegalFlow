@@ -12,7 +12,7 @@ import { punishmentFull } from "../punishmentText";
 import { fmtStandard } from "../dateFormatters";
 
 // Template PDF path — served from public/ directory
-const TEMPLATE_PATH = "/forms/NAVMC 10132.pdf";
+const TEMPLATE_PATH = "/forms/NAVMC_10132.pdf";
 
 /**
  * Map a UCMJ article string (e.g. "86") to the closest dropdown option
