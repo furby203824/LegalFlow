@@ -45,7 +45,6 @@ export default function NewCasePage() {
   const [edipi, setEdipi] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [serviceBranch, setServiceBranch] = useState("USMC");
-  const [unit, setUnit] = useState("");
   const [component, setComponent] = useState("ACTIVE");
   const [commanderGrade, setCommanderGrade] = useState("");
   const [vesselException, setVesselException] = useState(false);
@@ -129,7 +128,7 @@ export default function NewCasePage() {
         status: "INITIATED",
         currentPhase: "INITIATION",
         unitId: session.unitId,
-        unitFullString: unit,
+        unitFullString: session.unitName || "",
         accusedName: `${lastName}, ${firstName}${middleName ? " " + middleName : ""}`,
         accusedLastName: lastName, accusedFirstName: firstName, accusedMiddleName: middleName || null,
         accusedRank: rank, accusedGrade: grade, accusedEdipi: edipi,
@@ -246,13 +245,6 @@ export default function NewCasePage() {
                 </Field>
               </div>
             </div>
-          </Section>
-
-          {/* Unit */}
-          <Section title="Unit">
-            <Field label="Unit (company-sized up to first GCMCA command)" required>
-              <input className="input-field" value={unit} onChange={(e) => setUnit(e.target.value)} required placeholder="e.g., A Co., 1st Bn, 7th Mar, 1st MARDIV" />
-            </Field>
           </Section>
 
           {/* NJP Authority */}
