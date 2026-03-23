@@ -387,6 +387,33 @@ export async function confirmRemark(caseId: string, remarkId: string) {
 }
 
 // =============================================================================
+// Hearing Record (Captain's Mast Guide)
+// =============================================================================
+
+export async function updateHearingRecord(caseId: string, data: Rec) {
+  const u = user();
+  const c = await casesStore.findById(caseId);
+  if (!c) throw new Error("Case not found");
+  await casesStore.upsertHearingRecord(caseId, {
+    ...data,
+    lastUpdatedBy: u.userId,
+    lastUpdatedByName: u.username,
+    lastUpdatedAt: new Date().toISOString(),
+  });
+  await auditStore.append({
+    caseId,
+    caseNumber: c.caseNumber,
+    userId: u.userId,
+    userRole: u.role,
+    userName: u.username,
+    action: "UPDATE",
+    notes: `Hearing record updated: step ${data.currentStep || "unknown"}`,
+  });
+  const updated = await casesStore.findById(caseId);
+  return { hearingRecord: updated?.hearingRecord };
+}
+
+// =============================================================================
 // Charge Sheet (DD Form 458)
 // =============================================================================
 

@@ -9,6 +9,7 @@ import ActionsPanel from "@/components/cases/ActionsPanel";
 import RemarksPanel from "@/components/cases/RemarksPanel";
 import EvidencePanel from "@/components/cases/EvidencePanel";
 import ChargeSheetPanel from "@/components/cases/ChargeSheetPanel";
+import HearingGuidePanel from "@/components/cases/HearingGuidePanel";
 import DocumentPanel from "@/components/documents/DocumentPanel";
 import AuditLogPanel from "@/components/cases/AuditLogPanel";
 import { cn } from "@/lib/utils";
@@ -31,7 +32,7 @@ function CaseViewContent() {
   const id = searchParams.get("id") || "";
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"remarks" | "evidence" | "chargesheet" | "documents" | "audit">("remarks");
+  const [activeTab, setActiveTab] = useState<"remarks" | "evidence" | "hearing" | "chargesheet" | "documents" | "audit">("remarks");
   const router = useRouter();
 
   function loadCase() {
@@ -124,7 +125,8 @@ function CaseViewContent() {
               {([
                 { key: "remarks" as const, label: "Item 21 Remarks" },
                 { key: "evidence" as const, label: "Evidence" },
-                { key: "chargesheet" as const, label: "DD 458 Charge Sheet" },
+                { key: "hearing" as const, label: "Mast Guide" },
+                { key: "chargesheet" as const, label: "DD 458" },
                 { key: "documents" as const, label: "Documents" },
                 { key: "audit" as const, label: "Audit Log" },
               ]).map((tab) => (
@@ -162,6 +164,13 @@ function CaseViewContent() {
                 onUpdate={loadCase}
                 locked={caseData.formLocked}
                 currentPhase={caseData.currentPhase}
+              />
+            )}
+            {activeTab === "hearing" && (
+              <HearingGuidePanel
+                caseId={caseData.id}
+                caseData={caseData}
+                onUpdate={loadCase}
               />
             )}
             {activeTab === "chargesheet" && (

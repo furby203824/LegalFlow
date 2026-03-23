@@ -81,6 +81,7 @@ export const casesStore = {
       punishment: null,
       appeal: null,
       chargeSheet: null,
+      hearingRecord: null,
       item21Entries: [],
       signatures: [],
       evidence: [],
@@ -150,6 +151,20 @@ export const casesStore = {
       cases[idx].chargeSheet = { ...cases[idx].chargeSheet, ...chargeSheet };
     } else {
       cases[idx].chargeSheet = { id: generateId("cs"), ...chargeSheet };
+    }
+    cases[idx].updatedAt = new Date().toISOString().split("T")[0];
+    casesCache = cases;
+    await this.save();
+  },
+
+  async upsertHearingRecord(caseId: string, hearingRecord: Rec): Promise<void> {
+    const cases = await this.load();
+    const idx = cases.findIndex((c) => c.id === caseId);
+    if (idx === -1) return;
+    if (cases[idx].hearingRecord) {
+      cases[idx].hearingRecord = { ...cases[idx].hearingRecord, ...hearingRecord };
+    } else {
+      cases[idx].hearingRecord = { id: generateId("hr"), ...hearingRecord };
     }
     cases[idx].updatedAt = new Date().toISOString().split("T")[0];
     casesCache = cases;
@@ -408,6 +423,7 @@ export function caseWithIncludes(c: Rec): Rec {
     punishmentRecord: c.punishment || null,
     appealRecord: c.appeal || null,
     chargeSheet: c.chargeSheet || null,
+    hearingRecord: c.hearingRecord || null,
     signatures: c.signatures || [],
     offenses: (c.offenses || []).map((o: Rec) => ({
       ...o,
