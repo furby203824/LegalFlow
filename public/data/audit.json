@@ -966,5 +966,16 @@
     "userName": "co-certifier",
     "action": "SIGN",
     "notes": "Item 3 signed - rights advisement complete"
+  },
+  {
+    "id": "audit-1774295629345-k46h8",
+    "timestamp": "2026-03-23T19:53:49.345Z",
+    "caseId": "case-1774294101445-2c51m",
+    "caseNumber": "CASE-2026-0005",
+    "userId": "user-co-certifier",
+    "userRole": "CERTIFIER",
+    "userName": "co-certifier",
+    "action": "GENERATE",
+    "notes": "Generated PDF: navmc_10132_pdf"
   }
 ]
