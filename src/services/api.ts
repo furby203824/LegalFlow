@@ -347,6 +347,20 @@ export async function performPhaseAction(caseId: string, action: string, data: R
       return { message: "Appeal decision entered" };
     }
 
+    case "ENTER_APPEAL_DATE": {
+      if (!njpCase.appeal?.appealIntent || njpCase.appeal.appealIntent !== "INTENDS_TO_APPEAL") {
+        throw new Error("No pending appeal");
+      }
+      const { appealDate } = data;
+      await casesStore.upsertAppeal(caseId, {
+        appealFiled: true,
+        appealFiledDate: appealDate,
+      });
+      await casesStore.update(caseId, { appealFiledDate: appealDate });
+      await audit("UPDATE", `Appeal filed on ${appealDate}`);
+      return { message: "Appeal date recorded" };
+    }
+
     case "CONFIRM_OMPF": {
       await casesStore.update(caseId, {
         ompfScanConfirmed: true,
