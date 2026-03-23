@@ -416,5 +416,16 @@
     "userName": "admin",
     "action": "SIGN",
     "notes": "Item 2 signed - NJP accepted"
+  },
+  {
+    "id": "audit-1774242881927-6viqr",
+    "timestamp": "2026-03-23T05:14:41.927Z",
+    "caseId": "case-1774237256718-s3m2a",
+    "caseNumber": "CASE-2026-0003",
+    "userId": "user-1774232429695-5pl19",
+    "userRole": "CERTIFIER",
+    "userName": "certifier",
+    "action": "SIGN",
+    "notes": "Item 3 signed - rights advisement complete"
   }
 ]
