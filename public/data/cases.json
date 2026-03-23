@@ -393,8 +393,8 @@
     "nextActionOwner": "ACCUSED",
     "isOverdue": false,
     "caseNumber": "CASE-2026-0001",
-    "status": "NOTIFICATION_COMPLETE",
-    "currentPhase": "NOTIFICATION",
+    "status": "CLOSED",
+    "currentPhase": "CLOSED",
     "unitId": "unit-hq",
     "unitFullString": "Test, test",
     "accusedName": "Test, Test T",
@@ -410,7 +410,7 @@
     "jurisdictionConfirmed": true,
     "uaApplicable": false,
     "offenseDateEarliest": "2026-03-05",
-    "formLocked": false,
+    "formLocked": true,
     "jaReviewRequired": false,
     "jaReviewComplete": false,
     "njpDate": "2026-03-22",
@@ -426,6 +426,10 @@
     "dateNoticeToAccused": "2026-03-22",
     "ompfScanConfirmed": true,
     "ompfConfirmedBy": "user-1774218618690-02z7m",
-    "ompfConfirmedDate": "2026-03-23T02:08:30.580Z"
+    "ompfConfirmedDate": "2026-03-23T02:08:30.580Z",
+    "item16SignedDate": "2026-03-23",
+    "item16UdNumber": "02312",
+    "item16Dtd": "2026-03-05",
+    "caseFinalDate": "2026-03-23"
   }
 ]
