@@ -703,6 +703,11 @@
     "njpDate": null,
     "appealNotFiled": false,
     "accusedTransferred": false,
-    "initiatedById": "user-1774232428618-42zo5"
+    "initiatedById": "user-1774232428618-42zo5",
+    "rightsAcknowledgement": {
+      "id": "ra-1774242427196-yf3o6",
+      "acknowledged": true,
+      "acknowledgedAt": "2026-03-23T05:07:07.196Z"
+    }
   }
 ]
