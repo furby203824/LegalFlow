@@ -834,5 +834,16 @@
     "userName": "admin",
     "action": "SIGN",
     "notes": "Item 11 signed"
+  },
+  {
+    "id": "audit-1774277567024-ryhv1",
+    "timestamp": "2026-03-23T14:52:47.024Z",
+    "caseId": "case-1774273010844-6nplg",
+    "caseNumber": "CASE-2026-0004",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated PDF: appeal_rights_ack"
   }
 ]
