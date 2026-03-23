@@ -229,5 +229,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated charge_sheet"
+  },
+  {
+    "id": "audit-1774231711206-xm44h",
+    "timestamp": "2026-03-23T02:08:31.206Z",
+    "caseId": "case-1774220758799-tm18d",
+    "caseNumber": "CASE-2026-0001",
+    "userId": "user-1774218618690-02z7m",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "UPDATE",
+    "notes": "OMPF/ESR confirmation logged"
   }
 ]
