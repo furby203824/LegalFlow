@@ -1519,6 +1519,20 @@
       "id": "ra-1774294141385-pmwkc",
       "acknowledged": true,
       "acknowledgedAt": "2026-03-23T19:29:01.384Z"
-    }
+    },
+    "reviewStatus": "FORWARDED",
+    "reviewComments": [
+      {
+        "id": "rc-1774295554948",
+        "userId": "user-co-reviewer",
+        "userName": "GySgt Mitchell",
+        "role": "CERTIFIER_REVIEWER",
+        "text": "Looks good.",
+        "createdAt": "2026-03-23T19:52:34.948Z",
+        "action": "FORWARDED"
+      }
+    ],
+    "reviewForwardedAt": "2026-03-23T19:52:34.948Z",
+    "reviewForwardedBy": "user-co-reviewer"
   }
 ]
