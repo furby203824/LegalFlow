@@ -328,5 +328,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated office_hours_script"
+  },
+  {
+    "id": "audit-1774240662654-d0v1b",
+    "timestamp": "2026-03-23T04:37:42.654Z",
+    "caseId": "case-1774237256718-s3m2a",
+    "caseNumber": "CASE-2026-0003",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated PDF: notification_election_rights"
   }
 ]
