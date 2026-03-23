@@ -1061,7 +1061,20 @@
     "chargeSheet": null,
     "hearingRecord": null,
     "item21Entries": [],
-    "signatures": [],
+    "signatures": [
+      {
+        "id": "sig-1774273078955-bp7ho",
+        "createdAt": "2026-03-23T13:37:58.955Z",
+        "itemNumber": "2",
+        "signerRole": "SUITE_ADMIN",
+        "signerUserId": "user-1774232428029-skhw5",
+        "signerName": "Sanchez, Samantha",
+        "signedDate": "2026-03-23",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
+      }
+    ],
     "evidence": [],
     "documents": [
       {
