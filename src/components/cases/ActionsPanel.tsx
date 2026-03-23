@@ -10,6 +10,8 @@ import {
 import { performPhaseAction } from "@/services/api";
 import { generatePdfDocument } from "@/services/documents";
 import PdfViewer from "@/components/documents/PdfViewer";
+import RightsAcknowledgementPanel from "@/components/cases/RightsAcknowledgementPanel";
+import HearingGuidePanel from "@/components/cases/HearingGuidePanel";
 import { getSession } from "@/lib/auth";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -266,6 +268,20 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
                   description="Pre-filled UPB with offenses for the NJP Authority"
                 />
               )}
+
+              {/* Mast Guide — contextual during the hearing */}
+              <div className="space-y-4">
+                <RightsAcknowledgementPanel
+                  caseId={caseData.id}
+                  caseData={caseData}
+                  onUpdate={onUpdate}
+                />
+                <HearingGuidePanel
+                  caseId={caseData.id}
+                  caseData={caseData}
+                  onUpdate={onUpdate}
+                />
+              </div>
             </>
           )}
 
