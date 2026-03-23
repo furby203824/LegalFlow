@@ -587,6 +587,18 @@
         "signatureMethod": "ELECTRONIC",
         "refusalNoted": false,
         "coSignedInstead": false
+      },
+      {
+        "id": "sig-1774247699960-y0uf4",
+        "createdAt": "2026-03-23T06:34:59.960Z",
+        "itemNumber": "11",
+        "signerRole": "CERTIFIER",
+        "signerUserId": "user-1774232429695-5pl19",
+        "signerName": "NJP Authority",
+        "signedDate": "2026-03-23",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
       }
     ],
     "evidence": [],
