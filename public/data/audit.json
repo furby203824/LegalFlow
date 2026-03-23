@@ -647,5 +647,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated PDF: notification_election_rights"
+  },
+  {
+    "id": "audit-1774273072398-wqsfj",
+    "timestamp": "2026-03-23T13:37:52.398Z",
+    "caseId": "case-1774273010844-6nplg",
+    "caseNumber": "CASE-2026-0004",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "UPDATE",
+    "notes": "Member rights acknowledged"
   }
 ]
