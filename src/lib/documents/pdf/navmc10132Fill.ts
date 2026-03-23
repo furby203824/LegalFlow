@@ -322,9 +322,6 @@ export async function fillNavmc10132Pdf(
     } else {
       setText(form, "6 PUNISHMENT IMPOSED", item6Full);
     }
-    if (data.item6Date) {
-      setText(form, "6 PUNISHMENT IMPOSITION DATE", fmtStandard(data.item6Date));
-    }
   }
 
   if (version !== "PARTIAL") {

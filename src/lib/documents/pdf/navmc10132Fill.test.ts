@@ -808,7 +808,8 @@ describe("fillNavmc10132Pdf", () => {
       expect(punishment).toContain("Extra duties for 45 days");
       expect(punishment).toContain("Restriction for 60 days");
       expect(punishment).toContain("Reduction to Cpl");
-      expect(getTextValue(form, "6 PUNISHMENT IMPOSITION DATE")).toBe("10 Feb 26");
+      // Date is now inline in the punishment text, not in the separate date field
+      expect(punishment).toContain("10 Feb 26");
     });
 
     it("Item 6: empty when no punishments", async () => {
