@@ -47,8 +47,8 @@ const DEMO_ACCOUNTS = [
   {
     username: "appeal",
     password: "appeal",
-    label: "Appeal Authority",
-    description: "Reviews and decides appeals from subordinate units",
+    label: "Certifier (Regt)",
+    description: "Regimental CO — certifier and appeal authority for subordinate units",
     icon: <Gavel size={16} />,
     rank: "Col Hayes",
     color: "text-purple-600",

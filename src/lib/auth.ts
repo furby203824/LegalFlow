@@ -188,7 +188,7 @@ const DEMO_USERS = [
     firstName: "Robert",
     lastName: "Hayes",
     email: "robert.hayes@usmc.mil",
-    role: "APPEAL_AUTHORITY",
+    role: "CERTIFIER",
     unitId: "unit-5mar",
     unitName: "5th Marine Regiment",
     rank: "Col",
