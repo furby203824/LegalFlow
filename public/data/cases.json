@@ -874,6 +874,9 @@
     "njpAuthorityRank": "LtCol",
     "njpAuthorityGrade": "O5",
     "njpAuthorityEdipi": "3456789012",
-    "dateNoticeToAccused": "2026-03-23"
+    "dateNoticeToAccused": "2026-03-23",
+    "ompfScanConfirmed": true,
+    "ompfConfirmedBy": "user-1774232428029-skhw5",
+    "ompfConfirmedDate": "2026-03-23T07:13:12.821Z"
   }
 ]
