@@ -481,7 +481,7 @@
         "offenseSummary": "Found positive use of a controlled substance. ",
         "offenseDate": "2026-03-03",
         "offensePlace": "MCBH",
-        "finding": null,
+        "finding": "GUILTY",
         "locked": true
       }
     ],
@@ -729,7 +729,7 @@
     "isOverdue": false,
     "caseNumber": "CASE-2026-0003",
     "status": "RIGHTS_ADVISED",
-    "currentPhase": "RIGHTS_ADVISEMENT",
+    "currentPhase": "HEARING",
     "unitId": "unit-1bn5mar",
     "unitFullString": "1st Bn, 5th Marines",
     "accusedName": "Sanchez, Thomas D",
