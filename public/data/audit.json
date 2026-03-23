@@ -152,5 +152,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated charge_sheet"
+  },
+  {
+    "id": "audit-1774228006440-fsbx6",
+    "timestamp": "2026-03-23T01:06:46.440Z",
+    "caseId": "case-1774223160076-5vamv",
+    "caseNumber": "CASE-2026-0002",
+    "userId": "user-1774218618690-02z7m",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated charge_sheet"
   }
 ]
