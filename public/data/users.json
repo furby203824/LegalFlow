@@ -2,9 +2,9 @@
   {
     "id": "user-1774232428029-skhw5",
     "createdAt": "2026-03-23T02:20:28.029Z",
-    "updatedAt": "2026-03-23T02:20:28.029Z",
+    "updatedAt": "2026-03-23T03:02:38.663Z",
     "isActive": true,
-    "lastLogin": null,
+    "lastLogin": "2026-03-23T03:02:38.662Z",
     "username": "admin",
     "passwordHash": "admin",
     "firstName": "System",
