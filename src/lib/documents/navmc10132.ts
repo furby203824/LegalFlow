@@ -47,7 +47,7 @@ export function generateNavmc10132(
     lines.push(offenseLine);
     lines.push(`     ${offense.summary}`);
     lines.push(
-      `     Date: ${fmtFull(offense.offenseDate)} | Place: ${offense.offensePlace}`
+      `     Date: ${fmtFull(offense.offenseDate)}${offense.offenseTime ? ` | Time: ${offense.offenseTime}` : ""} | Place: ${offense.offensePlace}`
     );
   }
   lines.push("");

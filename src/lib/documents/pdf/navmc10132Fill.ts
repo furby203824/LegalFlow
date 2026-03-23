@@ -255,7 +255,7 @@ export async function fillNavmc10132Pdf(
 
     // Summary text
     const summaryParts = [o.summary];
-    if (o.offenseDate) summaryParts.push(`On or about ${o.offenseDate}`);
+    if (o.offenseDate) summaryParts.push(`On or about ${o.offenseDate}${o.offenseTime ? ` at ${o.offenseTime}` : ""}`);
     if (o.offensePlace) summaryParts.push(`at ${o.offensePlace}`);
     setText(form, `1${letter} SUMMARY`, summaryParts.join(". "));
 

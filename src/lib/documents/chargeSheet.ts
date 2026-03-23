@@ -53,6 +53,7 @@ export function generateChargeSheet(data: CaseData): string {
     );
     lines.push(`    Offense Type: ${offense.offenseType}`);
     lines.push(`    Date: ${fmtFull(offense.offenseDate)}`);
+    if (offense.offenseTime) lines.push(`    Time: ${offense.offenseTime}`);
     lines.push(`    Place: ${offense.offensePlace}`);
     lines.push(`    Summary: ${offense.summary}`);
     lines.push("");

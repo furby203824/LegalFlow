@@ -40,6 +40,7 @@ export interface CaseData {
     offenseType: string;
     summary: string;
     offenseDate: string;
+    offenseTime: string;
     offensePlace: string;
     finding?: string;
     victims: {
