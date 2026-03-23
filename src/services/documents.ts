@@ -30,10 +30,18 @@ function buildPunishmentList(pr: Rec): CaseData["item6Punishments"] {
   if (pr.restrictionDays) list.push({ type: "RESTRICTION", duration: pr.restrictionDays, suspended: false });
   if (pr.arrestQuartersDays) list.push({ type: "ARREST_IN_QUARTERS", duration: pr.arrestQuartersDays, suspended: false });
   if (pr.detentionDays) list.push({ type: "DETENTION_OF_PAY", duration: pr.detentionDays, suspended: false });
+  if (pr.reprimandType || pr.admonitionReprimand === "reprimand") list.push({ type: "REPRIMAND", suspended: false });
+  if (pr.admonitionType || pr.admonitionReprimand === "admonition") list.push({ type: "ADMONITION", suspended: false });
   if (pr.suspensionImposed && pr.suspensionPunishment) {
     const sp = (pr.suspensionPunishment as string).toLowerCase();
-    const idx = list.findIndex((p) => sp.includes(p.type.toLowerCase().replace(/_/g, " ")));
-    if (idx >= 0) { list[idx].suspended = true; list[idx].suspensionMonths = pr.suspensionMonths || undefined; }
+    for (let i = 0; i < list.length; i++) {
+      const typeKey = list[i].type.toLowerCase().replace(/_/g, " ");
+      // Match full type name or abbreviated key (e.g. "forfeiture", "extra", "restriction", "custody")
+      if (sp.includes(typeKey) || sp.split(",").some((s) => typeKey.includes(s.trim()))) {
+        list[i].suspended = true;
+        list[i].suspensionMonths = pr.suspensionMonths || undefined;
+      }
+    }
   }
   return list;
 }
