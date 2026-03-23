@@ -36,13 +36,7 @@ export default function MastScriptPrint({
 
       {/* ── PAGE 1 ── */}
       <div className="p-8 print:p-[0.75in]">
-        {/* Header */}
-        <div className="text-right mb-6">
-          <div>NAPSINST 1626.1B</div>
-          <div>15 May 14</div>
-        </div>
-
-        <div className="text-center font-bold mb-8">CAPTAIN&apos;S MAST GUIDE</div>
+        <div className="text-center font-bold mb-8">OFFICE HOURS GUIDE</div>
 
         {/* Read charges */}
         <div className="mb-6">
@@ -106,17 +100,10 @@ export default function MastScriptPrint({
           <ResponseLine value={responses.witnessTestimony} />
         </div>
 
-        <div className="text-right mt-8">Enclosure (4)</div>
       </div>
 
       {/* ── PAGE 2 ── */}
       <div className="p-8 print:p-[0.75in] print:break-before-page">
-        {/* Header */}
-        <div className="text-right mb-6">
-          <div>NAPSINST 1626.1B</div>
-          <div>15 May 14</div>
-        </div>
-
         {/* Witness statement change */}
         <div className="mb-2">
           <p>CO: &nbsp;&nbsp;If you previously provided a written statement, do you have anything to add or change in your statement?</p>
@@ -170,17 +157,10 @@ export default function MastScriptPrint({
           <ResponseLine value={responses.accusedFinalStatement} />
         </div>
 
-        <div className="text-right mt-8">Enclosure (4)</div>
       </div>
 
       {/* ── PAGE 3 ── */}
       <div className="p-8 print:p-[0.75in] print:break-before-page">
-        {/* Header */}
-        <div className="text-right mb-6">
-          <div>NAPSINST 1626.1B</div>
-          <div>15 May 14</div>
-        </div>
-
         {/* Findings */}
         <div className="mb-2">
           <p>CO: &nbsp;&nbsp;I find that you have committed the following offense(s):</p>
