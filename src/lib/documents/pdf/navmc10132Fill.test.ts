@@ -644,6 +644,37 @@ describe("fillNavmc10132Pdf", () => {
       );
     });
 
+    it("should use 'See supplemental page' for long punishment text and put full text in Item 21", async () => {
+      const fill = await getFill();
+      const longPunishment = "Forfeiture of $500 pay per month for 2 months; Extra duties for 45 days; Restriction for 60 days; Reduction to Private (E-1)";
+      const data = makeCaseData({
+        punishmentText: longPunishment,
+        item6Date: "2026-03-01",
+      });
+      const bytes = await fill(data, "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "6 PUNISHMENT IMPOSED")).toBe("See supplemental page");
+      const remarks = getTextValue(form, "21 REMARKS");
+      expect(remarks).toContain("Item 6 - Punishment Imposed:");
+      expect(remarks).toContain(longPunishment);
+    });
+
+    it("should use 'See supplemental page' for long suspension text and put full text in Item 21", async () => {
+      const fill = await getFill();
+      const data = makeCaseData({
+        item7SuspensionDetails: "Reduction to PFC (E-2) suspended for 6 months; Forfeiture of $500 pay per month for 2 months suspended for 3 months (01 MAR 26 to 01 JUN 26). Remission terms: good conduct",
+        item6Date: "2026-03-01",
+        item6Punishments: [{ type: "EXTRA_DUTIES", duration: 14, suspended: false }],
+      });
+      const bytes = await fill(data, "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "7 SUSPENSION IF ANY")).toBe("See supplemental page");
+      const remarks = getTextValue(form, "21 REMARKS");
+      expect(remarks).toContain("Item 7 - Suspension:");
+    });
+
     it("should handle UA applicable with period dates", async () => {
       const fill = await getFill();
       const data = makeCaseData({

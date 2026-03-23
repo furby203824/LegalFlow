@@ -302,16 +302,39 @@ export async function fillNavmc10132Pdf(
   }
 
   // ═══ Item 6: Punishment (HEARING and FINAL) ═══
+  // ═══ Item 7: Suspension (HEARING and FINAL) ═══
+  // If either text overflows the form field, use "See supplemental page"
+  // and append the full text to Item 21 remarks.
+  const FIELD_MAX_LENGTH = 90;
+  const supplementalEntries: { entryDate: string; entryText: string }[] = [];
+
   if (version !== "PARTIAL") {
-    setText(form, "6 PUNISHMENT IMPOSED", buildPunishmentText(data));
+    const punishmentText = buildPunishmentText(data);
+    if (punishmentText.length > FIELD_MAX_LENGTH) {
+      setText(form, "6 PUNISHMENT IMPOSED", "See supplemental page");
+      supplementalEntries.push({
+        entryDate: data.item6Date || data.njpDate || new Date().toISOString().split("T")[0],
+        entryText: `Item 6 - Punishment Imposed: ${punishmentText}`,
+      });
+    } else {
+      setText(form, "6 PUNISHMENT IMPOSED", punishmentText);
+    }
     if (data.item6Date) {
       setText(form, "6 PUNISHMENT IMPOSITION DATE", fmtStandard(data.item6Date));
     }
   }
 
-  // ═══ Item 7: Suspension (HEARING and FINAL) ═══
   if (version !== "PARTIAL") {
-    setText(form, "7 SUSPENSION IF ANY", buildSuspensionText(data));
+    const suspensionText = buildSuspensionText(data);
+    if (suspensionText.length > FIELD_MAX_LENGTH) {
+      setText(form, "7 SUSPENSION IF ANY", "See supplemental page");
+      supplementalEntries.push({
+        entryDate: data.item6Date || data.njpDate || new Date().toISOString().split("T")[0],
+        entryText: `Item 7 - Suspension: ${suspensionText}`,
+      });
+    } else {
+      setText(form, "7 SUSPENSION IF ANY", suspensionText);
+    }
   }
 
   // ═══ Items 8-8B: NJP Authority (HEARING and FINAL) ═══
@@ -378,8 +401,9 @@ export async function fillNavmc10132Pdf(
   // The "21 REMARKS" field is a rich text field in the template;
   // strip the /RV flag so pdf-lib can set text and flatten without error.
   stripRichText(form, "21 REMARKS");
-  if (data.item21Entries && data.item21Entries.length > 0) {
-    const remarks = data.item21Entries
+  const allItem21Entries = [...(data.item21Entries || []), ...supplementalEntries];
+  if (allItem21Entries.length > 0) {
+    const remarks = allItem21Entries
       .map((e) => `${fmtStandard(e.entryDate)} - ${e.entryText}`)
       .join("\n");
     setText(form, "21 REMARKS", remarks);

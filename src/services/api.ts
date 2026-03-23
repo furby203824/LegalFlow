@@ -317,7 +317,7 @@ export async function performPhaseAction(caseId: string, action: string, data: R
         item12SignedDate: new Date().toISOString().split("T")[0],
         item12SignedById: u.userId,
         appealFiled: false,
-        appealNotFiled: false,
+        appealNotFiled: !intendsToAppeal,
         jaReviewRequired: njpCase.jaReviewRequired || false,
       });
       const newStatus = intendsToAppeal ? "APPEAL_PENDING" : "NOTIFICATION_COMPLETE";
