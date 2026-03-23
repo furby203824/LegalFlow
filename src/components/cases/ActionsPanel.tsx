@@ -925,30 +925,50 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
 }
 
 function Item9Action({ caseData, loading, onSubmit }: { caseData: CaseData; loading: boolean; onSubmit: (d: Record<string, unknown>) => void }) {
-  const [name, setName] = useState("");
-  const [title, setTitle] = useState("");
-  const [unit, setUnit] = useState(caseData?.accused?.unitFullString || caseData?.unit?.unitFullString || "");
-  const [rankGrade, setRankGrade] = useState("");
-  const [edipi, setEdipi] = useState("");
+  const session = getSession();
+  const fullName = session ? `${session.lastName}, ${session.firstName}` : "";
+  const unitName = session?.unitName || caseData?.accused?.unitFullString || caseData?.unit?.unitFullString || "";
+  const rankLabel = session?.rank && session?.grade ? `${session.grade}/${session.rank}` : "";
+
+  const [name] = useState(fullName);
+  const [title, setTitle] = useState("Commanding Officer");
+  const [unit] = useState(unitName);
+  const [rankGrade] = useState(rankLabel);
+  const [edipi] = useState(session?.edipi || "");
 
   const rank = rankGrade ? rankGrade.split("/")[1] : "";
   const grade = rankGrade ? rankGrade.split("/")[0] : "";
 
   return (
-    <ActionSection title="Items 8-9 - NJP Authority">
+    <ActionSection title="Items 8-9 — NJP Authority">
       <div className="space-y-2">
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full Name" className="input-field text-xs" />
-        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="input-field text-xs" />
-        <input type="text" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="Unit" className="input-field text-xs" />
-        <select value={rankGrade} onChange={(e) => setRankGrade(e.target.value)} className="input-field text-xs">
-          <option value="">Select rank/grade</option>
-          {RANK_GRADE_OPTIONS.map((o) => <option key={o.label} value={o.label}>{o.label}</option>)}
-        </select>
-        <input type="text" value={edipi} onChange={(e) => setEdipi(e.target.value)} placeholder="EDIPI" className="input-field text-xs" maxLength={10} />
+        <div>
+          <label className="block text-xs font-medium text-neutral-mid mb-1">Name</label>
+          <input type="text" value={name} disabled className="input-field text-xs bg-gray-50" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-mid mb-1">Rank/Grade</label>
+          <input type="text" value={rankGrade} disabled className="input-field text-xs bg-gray-50" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-mid mb-1">EDIPI</label>
+          <input type="text" value={edipi} disabled className="input-field text-xs bg-gray-50 font-mono" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-mid mb-1">Unit</label>
+          <input type="text" value={unit} disabled className="input-field text-xs bg-gray-50" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-mid mb-1">Title</label>
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input-field text-xs" />
+        </div>
       </div>
+      <p className="text-xs text-neutral-mid mt-2 italic">
+        NJP Authority information pulled from your profile.
+      </p>
       <button onClick={() => {
         onSubmit({ authorityName: name, authorityTitle: title, authorityUnit: unit, authorityRank: rank, authorityGrade: grade, authorityEdipi: edipi });
-      }} disabled={loading} className="btn-primary text-xs w-full mt-3">
+      }} disabled={loading || !name} className="btn-primary text-xs w-full mt-3">
         Sign Item 9
       </button>
     </ActionSection>
