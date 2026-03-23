@@ -42,7 +42,7 @@ export function generateOfficeHoursScript(data: CaseData): string {
   lines.push("");
   for (const offense of data.offenses) {
     lines.push(
-      `  Charge ${offense.letter}: "In that you did, on or about ${fmtFull(offense.fromDate)},${offense.fromTime ? ` at approximately ${offense.fromTime},` : ""}`
+      `  Charge ${offense.letter}: "In that you did, on or about ${fmtFull(offense.offenseDate)},${offense.offenseTime ? ` at approximately ${offense.offenseTime},` : ""}`
     );
     lines.push(`  at ${offense.offensePlace}, ${offense.summary}.`);
     lines.push(`  In violation of Article ${offense.ucmjArticle}, UCMJ."`);

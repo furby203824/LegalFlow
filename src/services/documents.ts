@@ -72,13 +72,11 @@ export async function generateDocumentContent(
     offenses: (njpCase.offenses || []).map((o: Rec) => ({
       letter: o.offenseLetter, ucmjArticle: o.ucmjArticle, offenseType: o.offenseType,
       summary: o.offenseSummary,
-      fromDate: o.fromDate || o.offenseDate || "", fromTime: o.fromTime || o.offenseTime || "",
-      toDate: o.toDate || o.offenseDate || "", toTime: o.toTime || o.offenseTime || "",
+      offenseDate: o.offenseDate || o.fromDate || "", offenseTime: o.offenseTime || o.fromTime || "",
+      fromDate: o.fromDate || "", fromTime: o.fromTime || "",
+      toDate: o.toDate || "", toTime: o.toTime || "",
       offensePlace: o.offensePlace,
       finding: o.finding || undefined,
-      desertionMarksApplied: o.desertionMarksApplied, dfrDate: o.dfrDate,
-      terminationMethod: o.terminationMethod, terminationDate: o.terminationDate,
-      terminationLocation: o.terminationLocation, intent: o.intent,
       victims: ((o.victims || []) as Rec[]).map((v) => ({
         letter: v.victimLetter || "", status: v.victimStatus || "Unknown",
         sex: v.victimSex || "Unknown", race: v.victimRace || "Unknown", ethnicity: v.victimEthnicity || "Unknown",
@@ -206,13 +204,11 @@ export async function generatePdfDocument(
     offenses: (njpCase.offenses || []).map((o: Rec) => ({
       letter: o.offenseLetter, ucmjArticle: o.ucmjArticle, offenseType: o.offenseType,
       summary: o.offenseSummary,
-      fromDate: o.fromDate || o.offenseDate || "", fromTime: o.fromTime || o.offenseTime || "",
-      toDate: o.toDate || o.offenseDate || "", toTime: o.toTime || o.offenseTime || "",
+      offenseDate: o.offenseDate || o.fromDate || "", offenseTime: o.offenseTime || o.fromTime || "",
+      fromDate: o.fromDate || "", fromTime: o.fromTime || "",
+      toDate: o.toDate || "", toTime: o.toTime || "",
       offensePlace: o.offensePlace,
       finding: o.finding || undefined,
-      desertionMarksApplied: o.desertionMarksApplied, dfrDate: o.dfrDate,
-      terminationMethod: o.terminationMethod, terminationDate: o.terminationDate,
-      terminationLocation: o.terminationLocation, intent: o.intent,
       victims: ((o.victims || []) as Rec[]).map((v) => ({
         letter: v.victimLetter || "", status: v.victimStatus || "Unknown",
         sex: v.victimSex || "Unknown", race: v.victimRace || "Unknown", ethnicity: v.victimEthnicity || "Unknown",
