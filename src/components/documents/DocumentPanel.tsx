@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { FileText, Download, RefreshCw } from "lucide-react";
+import PdfViewer from "@/components/documents/PdfViewer";
 import { generateDocumentContent, generatePdfDocument } from "@/services/documents";
 import type { PdfDocType } from "@/services/documents";
 
@@ -57,6 +58,7 @@ export default function DocumentPanel({
   const [loading, setLoading] = useState(false);
   const [caseNumber, setCaseNumber] = useState("");
   const [showVersionSelector, setShowVersionSelector] = useState(false);
+  const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfFilename, setPdfFilename] = useState("");
 
@@ -66,6 +68,7 @@ export default function DocumentPanel({
     setDocVersion(version || null);
     setShowVersionSelector(false);
     setPdfUrl(null);
+    setPdfBytes(null);
     try {
       const data = await generateDocumentContent(caseId, type, version);
       setDocument(data.document);
@@ -85,6 +88,7 @@ export default function DocumentPanel({
     setDocument("");
     try {
       const result = await generatePdfDocument(caseId, pdfType);
+      setPdfBytes(result.pdfBytes);
       const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
       const url = URL.createObjectURL(blob);
@@ -93,6 +97,7 @@ export default function DocumentPanel({
       if (result.caseNumber) setCaseNumber(result.caseNumber);
     } catch (err) {
       setDocument(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+      setPdfBytes(null);
       setPdfUrl(null);
     } finally {
       setLoading(false);
@@ -202,7 +207,7 @@ export default function DocumentPanel({
               </button>
             </div>
           </div>
-          <iframe src={pdfUrl} className="w-full h-[600px] bg-white" title="PDF Preview" />
+          {pdfBytes && <PdfViewer pdfBytes={pdfBytes} className="h-[600px]" />}
         </div>
       )}
 
