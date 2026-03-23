@@ -10,7 +10,6 @@ import RemarksPanel from "@/components/cases/RemarksPanel";
 import EvidencePanel from "@/components/cases/EvidencePanel";
 import RightsAcknowledgementPanel from "@/components/cases/RightsAcknowledgementPanel";
 import HearingGuidePanel from "@/components/cases/HearingGuidePanel";
-import DocumentPanel from "@/components/documents/DocumentPanel";
 import AuditLogPanel from "@/components/cases/AuditLogPanel";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, AlertOctagon, Info } from "lucide-react";
@@ -80,7 +79,6 @@ function CaseViewContent() {
     { key: "upb", label: "UPB Form Items" },
     { key: "evidence", label: "Evidence" },
     { key: "hearing", label: "Mast Guide" },
-    { key: "documents", label: "Documents" },
     { key: "tracking", label: "Tracking History" },
   ];
 
@@ -185,7 +183,18 @@ function CaseViewContent() {
 
             {/* UPB Form Items Tab — existing NJP functionality */}
             {activeTab === "upb" && (
-              <UPBItemsPanel caseData={caseData} onUpdate={loadCase} />
+              <div className="space-y-4">
+                <UPBItemsPanel caseData={caseData} onUpdate={loadCase} />
+                <RemarksPanel
+                  caseId={caseData.id}
+                  remarks={(caseData.item21Entries || []).map((e: { id: string; entryDate: string; entryType: string; entryText: string; confirmedAt: string | null; systemGenerated: boolean }) => ({
+                    id: e.id, date: e.entryDate, itemReference: e.entryType,
+                    text: e.entryText, confirmed: !!e.confirmedAt, systemGenerated: e.systemGenerated,
+                  }))}
+                  onUpdate={loadCase}
+                  locked={caseData.formLocked}
+                />
+              </div>
             )}
 
             {/* Evidence Tab */}
@@ -211,32 +220,6 @@ function CaseViewContent() {
                   caseId={caseData.id}
                   caseData={caseData}
                   onUpdate={loadCase}
-                />
-              </div>
-            )}
-
-            {/* Documents Tab */}
-            {activeTab === "documents" && (
-              <div className="space-y-4">
-                <DocumentPanel
-                  caseId={caseData.id}
-                  component={caseData.component}
-                  commanderGradeCategory={caseData.commanderGradeLevel}
-                  currentPhase={caseData.currentPhase}
-                  hasVacationRecords={caseData.vacationRecordsAsParent?.length > 0}
-                  hasMmrpPending={caseData.remedialActions?.some(
-                    (ra: { mmrpNotificationRequired: boolean; mmrpNotificationSent: boolean }) =>
-                      ra.mmrpNotificationRequired && !ra.mmrpNotificationSent
-                  )}
-                />
-                <RemarksPanel
-                  caseId={caseData.id}
-                  remarks={(caseData.item21Entries || []).map((e: { id: string; entryDate: string; entryType: string; entryText: string; confirmedAt: string | null; systemGenerated: boolean }) => ({
-                    id: e.id, date: e.entryDate, itemReference: e.entryType,
-                    text: e.entryText, confirmed: !!e.confirmedAt, systemGenerated: e.systemGenerated,
-                  }))}
-                  onUpdate={loadCase}
-                  locked={caseData.formLocked}
                 />
               </div>
             )}
