@@ -502,7 +502,20 @@
     "chargeSheet": null,
     "hearingRecord": null,
     "item21Entries": [],
-    "signatures": [],
+    "signatures": [
+      {
+        "id": "sig-1774242439555-6j6an",
+        "createdAt": "2026-03-23T05:07:19.555Z",
+        "itemNumber": "2",
+        "signerRole": "SUITE_ADMIN",
+        "signerUserId": "user-1774232428029-skhw5",
+        "signerName": "Sanchez, Thomas",
+        "signedDate": "2026-03-23",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
+      }
+    ],
     "evidence": [],
     "documents": [
       {
