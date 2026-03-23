@@ -1079,7 +1079,15 @@
       "accusedRank": "SSgt",
       "locked": true
     },
-    "appeal": null,
+    "appeal": {
+      "id": "app-1774277595390-s156a",
+      "appealIntent": "INTENDS_TO_APPEAL",
+      "item12SignedDate": "2026-03-23",
+      "item12SignedById": "user-1774232428029-skhw5",
+      "appealFiled": false,
+      "appealNotFiled": false,
+      "jaReviewRequired": false
+    },
     "chargeSheet": null,
     "hearingRecord": {
       "id": "hr-1774273705243-73qgm",
