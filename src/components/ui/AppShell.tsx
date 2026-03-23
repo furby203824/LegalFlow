@@ -425,6 +425,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             CONTROLLED UNCLASSIFIED INFORMATION - PRIVACY SENSITIVE
           </div>
 
+          {/* Role indicator bar */}
+          <div className={cn(
+            "h-7 flex items-center justify-between px-4 text-[11px] font-medium shrink-0 border-b",
+            user.role === "NJP_PREPARER" && "bg-info/10 text-info border-info/20",
+            user.role === "CERTIFIER_REVIEWER" && "bg-warning/10 text-warning border-warning/20",
+            user.role === "CERTIFIER" && "bg-success/10 text-success border-success/20",
+            user.role === "SUITE_ADMIN" && "bg-primary/5 text-primary border-primary/10",
+            !["NJP_PREPARER", "CERTIFIER_REVIEWER", "CERTIFIER", "SUITE_ADMIN"].includes(user.role) && "bg-neutral-light text-neutral-mid border-border",
+          )}>
+            <span>
+              Logged in as: <strong>{roleLabels[user.role] || user.role}</strong>
+              {user.rank && <span className="ml-1">({user.rank} {user.lastName})</span>}
+            </span>
+            <span className="text-[10px] opacity-70">
+              {user.role === "NJP_PREPARER" && "Create cases, admin closure, OMPF"}
+              {user.role === "CERTIFIER_REVIEWER" && "Review packages before routing to Commander"}
+              {user.role === "CERTIFIER" && "CO Cert, Findings, Punishment, Notification"}
+              {user.role === "SUITE_ADMIN" && "Full system access"}
+            </span>
+          </div>
+
           {/* Main Content */}
           <main className="flex-1 overflow-auto bg-surface">
             <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-5">
