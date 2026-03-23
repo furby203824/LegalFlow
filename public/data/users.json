@@ -38,9 +38,9 @@
   {
     "id": "user-co-reviewer",
     "createdAt": "2026-03-23T00:00:00.000Z",
-    "updatedAt": "2026-03-23T00:00:00.000Z",
+    "updatedAt": "2026-03-23T19:29:31.760Z",
     "isActive": true,
-    "lastLogin": null,
+    "lastLogin": "2026-03-23T19:29:31.759Z",
     "username": "co-reviewer",
     "passwordHash": "co-reviewer",
     "firstName": "Sarah",
