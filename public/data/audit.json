@@ -559,5 +559,16 @@
     "userName": "admin",
     "action": "UPDATE",
     "notes": "OMPF/ESR confirmation logged"
+  },
+  {
+    "id": "audit-1774250008832-3v1h2",
+    "timestamp": "2026-03-23T07:13:28.832Z",
+    "caseId": "case-1774237256718-s3m2a",
+    "caseNumber": "CASE-2026-0003",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "SIGN",
+    "notes": "Item 16 signed - case closed"
   }
 ]
