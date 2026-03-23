@@ -3,20 +3,84 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { RANK_GRADE_OPTIONS, getMaxForfeiture } from "@/types";
-import type { CommanderGradeLevel } from "@/types";
+import type { CommanderGradeLevel, UserRole } from "@/types";
 import {
-  AlertTriangle, AlertOctagon, Info, Clock, FileText,
-  ChevronDown, ChevronRight,
+  AlertTriangle, AlertOctagon, Info, Clock, Lock,
 } from "lucide-react";
 import { performPhaseAction } from "@/services/api";
+import { getSession } from "@/lib/auth";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CaseData = any;
+
+/* ── Role-to-action mapping ── */
+
+const ROLE_LABELS: Record<string, string> = {
+  NJP_PREPARER: "NJP Preparer",
+  CERTIFIER_REVIEWER: "Certifier Reviewer",
+  CERTIFIER: "Certifier",
+  SUITE_ADMIN: "System Admin",
+  ADMIN: "Admin",
+  INITIATOR: "Initiator",
+  NJP_AUTHORITY: "NJP Authority",
+  ACCUSED: "Accused",
+  APPEAL_AUTHORITY: "Appeal Authority",
+  IPAC_ADMIN: "IPAC Admin",
+};
+
+// Which roles can perform which actions
+function canPerformAction(role: UserRole, action: string): boolean {
+  const permissions: Record<string, UserRole[]> = {
+    // NJP Preparer: create case, admin closure
+    SIGN_ITEM_16: ["NJP_PREPARER", "ADMIN", "IPAC_ADMIN", "SUITE_ADMIN"],
+    CONFIRM_OMPF: ["NJP_PREPARER", "ADMIN", "IPAC_ADMIN", "SUITE_ADMIN"],
+
+    // Accused: rights, appeal election
+    SIGN_ITEM_2: ["ACCUSED", "NJP_PREPARER", "SUITE_ADMIN"],
+    SIGN_ITEM_12: ["ACCUSED", "NJP_PREPARER", "SUITE_ADMIN"],
+
+    // Certifier (Commander): CO cert, findings, punishment, sign item 9, notification
+    SIGN_ITEM_3: ["CERTIFIER", "NJP_AUTHORITY", "SUITE_ADMIN"],
+    ENTER_FINDINGS: ["CERTIFIER", "NJP_AUTHORITY", "SUITE_ADMIN"],
+    ENTER_PUNISHMENT: ["CERTIFIER", "NJP_AUTHORITY", "SUITE_ADMIN"],
+    SIGN_ITEM_9: ["CERTIFIER", "NJP_AUTHORITY", "SUITE_ADMIN"],
+    SIGN_ITEM_11: ["CERTIFIER", "NJP_AUTHORITY", "SUITE_ADMIN"],
+
+    // Appeal authority
+    SIGN_ITEM_14: ["APPEAL_AUTHORITY", "SUITE_ADMIN"],
+    ENTER_APPEAL_DATE: ["NJP_PREPARER", "ADMIN", "SUITE_ADMIN"],
+    LOG_JA_REVIEW: ["NJP_PREPARER", "ADMIN", "SUITE_ADMIN"],
+  };
+
+  const allowed = permissions[action];
+  if (!allowed) return true; // Unknown action = allow
+  return allowed.includes(role);
+}
+
+// Map action to the role label that should perform it
+function actionOwnerLabel(action: string): string {
+  const ownerMap: Record<string, string> = {
+    SIGN_ITEM_2: "Accused Marine",
+    SIGN_ITEM_3: "Certifier (Commander)",
+    ENTER_FINDINGS: "Certifier (Commander)",
+    ENTER_PUNISHMENT: "Certifier (Commander)",
+    SIGN_ITEM_9: "Certifier (Commander)",
+    SIGN_ITEM_11: "Certifier (Commander)",
+    SIGN_ITEM_12: "Accused Marine",
+    SIGN_ITEM_14: "Appeal Authority",
+    SIGN_ITEM_16: "NJP Preparer",
+    CONFIRM_OMPF: "NJP Preparer",
+  };
+  return ownerMap[action] || "—";
+}
 
 export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseData; onUpdate: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const session = getSession();
+  const userRole = (session?.role || "SUITE_ADMIN") as UserRole;
 
   async function performAction(action: string, data: Record<string, unknown> = {}) {
     setLoading(true);
@@ -42,19 +106,21 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
   const appeal = caseData.appealRecord;
 
   // Determine current action
+  let currentActionKey = "";
   let currentAction = "";
-  let currentOwner = "";
   if (!isClosed && !isReferred) {
-    if (!hasSig("2")) { currentAction = "Sign Item 2 - Rights Advisement"; currentOwner = "ACCUSED"; }
-    else if (!hasSig("3")) { currentAction = "Sign Item 3 - CO Certification"; currentOwner = "NJP_AUTHORITY"; }
-    else if (!offenses.every((o: { finding: string | null }) => o.finding)) { currentAction = "Enter Findings (Item 5)"; currentOwner = "NJP_AUTHORITY"; }
-    else if (!pr) { currentAction = "Enter Punishment (Item 6)"; currentOwner = "NJP_AUTHORITY"; }
-    else if (!hasSig("9")) { currentAction = "Sign Item 9 - NJP Authority"; currentOwner = "NJP_AUTHORITY"; }
-    else if (!hasSig("11")) { currentAction = "Sign Item 11 - Notification"; currentOwner = "NJP_AUTHORITY"; }
-    else if (!hasSig("12")) { currentAction = "Sign Item 12 - Appeal Election"; currentOwner = "ACCUSED"; }
-    else if (appeal?.appealIntent === "INTENDS_TO_APPEAL" && !hasSig("14")) { currentAction = "Process Appeal (Item 14)"; currentOwner = "APPEAL_AUTHORITY"; }
-    else if (!hasSig("16")) { currentAction = "Sign Item 16 - Close Case"; currentOwner = "ADMIN"; }
+    if (!hasSig("2")) { currentActionKey = "SIGN_ITEM_2"; currentAction = "Sign Item 2 - Rights Advisement"; }
+    else if (!hasSig("3")) { currentActionKey = "SIGN_ITEM_3"; currentAction = "Sign Item 3 - CO Certification"; }
+    else if (!offenses.every((o: { finding: string | null }) => o.finding)) { currentActionKey = "ENTER_FINDINGS"; currentAction = "Enter Findings (Item 5)"; }
+    else if (!pr) { currentActionKey = "ENTER_PUNISHMENT"; currentAction = "Enter Punishment (Item 6)"; }
+    else if (!hasSig("9")) { currentActionKey = "SIGN_ITEM_9"; currentAction = "Sign Item 9 - NJP Authority"; }
+    else if (!hasSig("11")) { currentActionKey = "SIGN_ITEM_11"; currentAction = "Sign Item 11 - Notification"; }
+    else if (!hasSig("12")) { currentActionKey = "SIGN_ITEM_12"; currentAction = "Sign Item 12 - Appeal Election"; }
+    else if (appeal?.appealIntent === "INTENDS_TO_APPEAL" && !hasSig("14")) { currentActionKey = "SIGN_ITEM_14"; currentAction = "Process Appeal (Item 14)"; }
+    else if (!hasSig("16")) { currentActionKey = "SIGN_ITEM_16"; currentAction = "Sign Item 16 - Close Case"; }
   }
+
+  const canAct = currentActionKey ? canPerformAction(userRole, currentActionKey) : false;
 
   return (
     <div className="space-y-4">
@@ -84,7 +150,14 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
               Next Required Action
             </h3>
             <div className="text-sm text-neutral-dark">{currentAction}</div>
-            <div className="text-xs text-neutral-mid">Required by: {currentOwner}</div>
+            <div className="text-xs text-neutral-mid">Required by: {actionOwnerLabel(currentActionKey)}</div>
+            {!canAct && (
+              <div className="mt-2 flex items-center gap-1.5 text-xs text-warning bg-warning/10 rounded px-2 py-1.5">
+                <Lock size={12} />
+                This action requires the <strong>{actionOwnerLabel(currentActionKey)}</strong> role.
+                You are logged in as <strong>{ROLE_LABELS[userRole] || userRole}</strong>.
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -113,11 +186,22 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
         </div>
       )}
 
-      {/* Action Forms - shown based on current state */}
+      {/* Certifier Reviewer note */}
+      {userRole === "CERTIFIER_REVIEWER" && !isClosed && !isReferred && (
+        <div className="card p-4 border-info/30 bg-blue-50/50">
+          <h3 className="text-xs font-semibold text-info mb-1">Certifier Reviewer</h3>
+          <p className="text-xs text-neutral-mid">
+            Review this package for completeness and accuracy before it is routed to the Certifier (Commander).
+            You may add remarks or flag issues but cannot perform case actions directly.
+          </p>
+        </div>
+      )}
+
+      {/* Action Forms - shown based on current state AND role permission */}
       {!isClosed && !isReferred && (
         <div className="space-y-3">
-          {/* Phase 2 Actions */}
-          {!hasSig("2") && (
+          {/* Item 2 */}
+          {!hasSig("2") && canPerformAction(userRole, "SIGN_ITEM_2") && (
             <ActionSection title="Item 2 - Rights Advisement">
               <p className="text-xs text-neutral-mid mb-3">
                 Accused must accept NJP or demand court-martial.
@@ -136,7 +220,8 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             </ActionSection>
           )}
 
-          {hasSig("2") && !hasSig("3") && (
+          {/* Item 3 */}
+          {hasSig("2") && !hasSig("3") && canPerformAction(userRole, "SIGN_ITEM_3") && (
             <ActionSection title="Item 3 - CO Certification">
               <button onClick={() => performAction("SIGN_ITEM_3", { signerName: "Commanding Officer" })} disabled={loading} className="btn-primary text-xs w-full">
                 Sign Item 3
@@ -145,22 +230,22 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
           )}
 
           {/* Findings */}
-          {hasSig("3") && !offenses.every((o: { finding: string | null }) => o.finding) && caseData.status === "RIGHTS_ADVISED" && (
+          {hasSig("3") && !offenses.every((o: { finding: string | null }) => o.finding) && caseData.status === "RIGHTS_ADVISED" && canPerformAction(userRole, "ENTER_FINDINGS") && (
             <FindingsAction offenses={offenses} loading={loading} onSubmit={(findings) => performAction("ENTER_FINDINGS", { findings })} />
           )}
 
           {/* Punishment */}
-          {offenses.every((o: { finding: string | null }) => o.finding) && !pr && caseData.currentPhase === "HEARING" && (
+          {offenses.every((o: { finding: string | null }) => o.finding) && !pr && caseData.currentPhase === "HEARING" && canPerformAction(userRole, "ENTER_PUNISHMENT") && (
             <PunishmentAction caseData={caseData} loading={loading} onSubmit={(data) => performAction("ENTER_PUNISHMENT", data)} />
           )}
 
           {/* Item 9 */}
-          {pr && !hasSig("9") && (
+          {pr && !hasSig("9") && canPerformAction(userRole, "SIGN_ITEM_9") && (
             <Item9Action caseData={caseData} loading={loading} onSubmit={(data) => performAction("SIGN_ITEM_9", data)} />
           )}
 
           {/* Item 11 */}
-          {hasSig("9") && !hasSig("11") && (
+          {hasSig("9") && !hasSig("11") && canPerformAction(userRole, "SIGN_ITEM_11") && (
             <ActionSection title="Items 10-11 - Notification">
               <label className="block text-xs font-medium mb-1">Item 10 - Notice Date</label>
               <input type="date" id="item10Date" defaultValue={caseData.njpDate || ""} className="input-field mb-2" />
@@ -171,7 +256,7 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
           )}
 
           {/* Item 12 */}
-          {hasSig("11") && !hasSig("12") && (
+          {hasSig("11") && !hasSig("12") && canPerformAction(userRole, "SIGN_ITEM_12") && (
             <ActionSection title="Item 12 - Appeal Election">
               <div className="flex flex-col gap-2">
                 <button onClick={() => performAction("SIGN_ITEM_12", { appealIntent: "INTENDS_TO_APPEAL", signerName: caseData.accused.lastName })} disabled={loading} className="btn-warning text-xs">
@@ -184,8 +269,8 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             </ActionSection>
           )}
 
-          {/* Appeal */}
-          {appeal?.appealIntent === "INTENDS_TO_APPEAL" && !appeal?.appealFiledDate && (
+          {/* Appeal Date */}
+          {appeal?.appealIntent === "INTENDS_TO_APPEAL" && !appeal?.appealFiledDate && canPerformAction(userRole, "ENTER_APPEAL_DATE") && (
             <ActionSection title="Item 13 - Appeal Date">
               <input type="date" id="appealDate" className="input-field mb-2" />
               <button onClick={() => { const v = (document.getElementById("appealDate") as HTMLInputElement).value; performAction("ENTER_APPEAL_DATE", { appealDate: v }); }} disabled={loading} className="btn-primary text-xs w-full">
@@ -194,7 +279,8 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             </ActionSection>
           )}
 
-          {caseData.jaReviewRequired && !caseData.jaReviewComplete && (
+          {/* JA Review */}
+          {caseData.jaReviewRequired && !caseData.jaReviewComplete && canPerformAction(userRole, "LOG_JA_REVIEW") && (
             <ActionSection title="JA Review">
               <input type="text" id="jaName" placeholder="JA Name" className="input-field mb-2" />
               <input type="date" id="jaDate" className="input-field mb-2" />
@@ -208,7 +294,8 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             </ActionSection>
           )}
 
-          {appeal?.appealFiledDate && !hasSig("14") && (!caseData.jaReviewRequired || caseData.jaReviewComplete) && (
+          {/* Item 14 */}
+          {appeal?.appealFiledDate && !hasSig("14") && (!caseData.jaReviewRequired || caseData.jaReviewComplete) && canPerformAction(userRole, "SIGN_ITEM_14") && (
             <ActionSection title="Item 14 - Appeal Decision">
               <select id="appealOutcome" className="input-field mb-2">
                 <option value="DENIED">Denied</option>
@@ -229,7 +316,7 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
           )}
 
           {/* OMPF + Item 16 */}
-          {((hasSig("12") && appeal?.appealIntent !== "INTENDS_TO_APPEAL") || hasSig("14")) && !hasSig("16") && (
+          {((hasSig("12") && appeal?.appealIntent !== "INTENDS_TO_APPEAL") || hasSig("14")) && !hasSig("16") && canPerformAction(userRole, "SIGN_ITEM_16") && (
             <>
               {!caseData.ompfScanConfirmed && (
                 <ActionSection title="OMPF Confirmation">
@@ -310,20 +397,17 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
   const isVessel = !!caseData.vesselException;
   const hasPun = corrDays || forfAmt || reduction || extraDays || restrDays;
 
-  // Determine the accused's current grade number and the one-grade-down target
   const accusedGrade: string = caseData.accusedGrade || "";
   const gradeNum = accusedGrade.startsWith("E") ? parseInt(accusedGrade.replace("E", ""), 10) : 0;
-  const canReduce = gradeNum >= 2 && gradeNum <= 5; // E-6+ cannot be reduced at NJP
+  const canReduce = gradeNum >= 2 && gradeNum <= 5;
   const reducedGrade = canReduce ? `E${gradeNum - 1}` : "";
 
-  // Auto-set the reduction grade when checkbox is toggled
   const handleReductionToggle = (checked: boolean) => {
     setReduction(checked);
     if (checked && reducedGrade) setRedGrade(reducedGrade);
     else setRedGrade("");
   };
 
-  // Calculate max forfeiture — if reduction is imposed, use reduced grade pay
   const effectiveGrade = reduction && redGrade ? redGrade : accusedGrade;
   const maxForf = getMaxForfeiture(effectiveGrade, caseData.commanderGradeLevel as CommanderGradeLevel);
 
@@ -370,36 +454,11 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
           {suspImposed && (
             <div className="ml-6 mb-2 space-y-1.5">
               <p className="text-xs text-neutral-mid mb-1">Select punishments to suspend:</p>
-              {corrDays && (
-                <label className="flex items-center gap-2 text-xs">
-                  <input type="checkbox" checked={!!suspItems["custody"]} onChange={(e) => setSuspItems({ ...suspItems, custody: e.target.checked })} />
-                  Correctional custody ({corrDays}d)
-                </label>
-              )}
-              {forfAmt && (
-                <label className="flex items-center gap-2 text-xs">
-                  <input type="checkbox" checked={!!suspItems["forfeiture"]} onChange={(e) => setSuspItems({ ...suspItems, forfeiture: e.target.checked })} />
-                  Forfeiture (${forfAmt}{isField ? "/mo" : ""})
-                </label>
-              )}
-              {reduction && (
-                <label className="flex items-center gap-2 text-xs">
-                  <input type="checkbox" checked={!!suspItems["reduction"]} onChange={(e) => setSuspItems({ ...suspItems, reduction: e.target.checked })} />
-                  Reduction to {redGrade}
-                </label>
-              )}
-              {extraDays && (
-                <label className="flex items-center gap-2 text-xs">
-                  <input type="checkbox" checked={!!suspItems["extra"]} onChange={(e) => setSuspItems({ ...suspItems, extra: e.target.checked })} />
-                  Extra duties ({extraDays}d)
-                </label>
-              )}
-              {restrDays && (
-                <label className="flex items-center gap-2 text-xs">
-                  <input type="checkbox" checked={!!suspItems["restriction"]} onChange={(e) => setSuspItems({ ...suspItems, restriction: e.target.checked })} />
-                  Restriction ({restrDays}d)
-                </label>
-              )}
+              {corrDays && <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!suspItems["custody"]} onChange={(e) => setSuspItems({ ...suspItems, custody: e.target.checked })} /> Correctional custody ({corrDays}d)</label>}
+              {forfAmt && <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!suspItems["forfeiture"]} onChange={(e) => setSuspItems({ ...suspItems, forfeiture: e.target.checked })} /> Forfeiture (${forfAmt}{isField ? "/mo" : ""})</label>}
+              {reduction && <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!suspItems["reduction"]} onChange={(e) => setSuspItems({ ...suspItems, reduction: e.target.checked })} /> Reduction to {redGrade}</label>}
+              {extraDays && <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!suspItems["extra"]} onChange={(e) => setSuspItems({ ...suspItems, extra: e.target.checked })} /> Extra duties ({extraDays}d)</label>}
+              {restrDays && <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!suspItems["restriction"]} onChange={(e) => setSuspItems({ ...suspItems, restriction: e.target.checked })} /> Restriction ({restrDays}d)</label>}
               <div className="pt-1">
                 <select value={suspMo} onChange={(e) => setSuspMo(e.target.value)} className="input-field text-xs w-32">
                   <option value="">Months</option>
