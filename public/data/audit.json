@@ -262,5 +262,16 @@
     "userName": "preparer",
     "action": "INSERT",
     "notes": "Case CASE-2026-0003 initiated"
+  },
+  {
+    "id": "audit-1774238326344-2l9bl",
+    "timestamp": "2026-03-23T03:58:46.344Z",
+    "caseId": "case-1774237256718-s3m2a",
+    "caseNumber": "CASE-2026-0003",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated rights_ack"
   }
 ]
