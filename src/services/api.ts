@@ -275,6 +275,10 @@ export async function performPhaseAction(caseId: string, action: string, data: R
         await audit("UPDATE", "Case destroyed - no punishment imposed");
         return { message: "Case destroyed - no punishment imposed" };
       }
+      // Set suspensionStatus when suspension is imposed
+      if (punishment.suspensionImposed) {
+        punishment.suspensionStatus = "ACTIVE";
+      }
       // Simplified punishment storage (validation happens in UI)
       await casesStore.upsertPunishment(caseId, punishment);
       await casesStore.update(caseId, { njpDate: punishment.punishmentDate });

@@ -210,7 +210,7 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
       {isClosed && (
         <div className="space-y-3">
           <ClosedCaseDocumentsPanel caseData={caseData} />
-          {caseData.status === "CLOSED_SUSPENSION_ACTIVE" && pr?.suspensionStatus === "ACTIVE" && (
+          {caseData.status === "CLOSED_SUSPENSION_ACTIVE" && (
             <VacateSuspensionAction caseData={caseData} loading={loading} onSubmit={(data) => performAction("VACATE_SUSPENSION", data)} />
           )}
         </div>
