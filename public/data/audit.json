@@ -636,5 +636,16 @@
     "userName": "admin",
     "action": "INSERT",
     "notes": "Case CASE-2026-0004 initiated"
+  },
+  {
+    "id": "audit-1774273022342-2n5pp",
+    "timestamp": "2026-03-23T13:37:02.343Z",
+    "caseId": "case-1774273010844-6nplg",
+    "caseNumber": "CASE-2026-0004",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated PDF: notification_election_rights"
   }
 ]
