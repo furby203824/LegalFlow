@@ -217,11 +217,8 @@ function buildSteps(rateName: string, charges: string[], appealAuthority: string
       id: "suspension_announcement",
       phase: "findings",
       speaker: "CO",
-      text: "The following portion of the punishment is suspended for a period of (months), at which time, unless the suspension is sooner vacated, the suspended portion of the punishment will be remitted without further action.",
-      responseType: "freetext",
-      responseKey: "suspensionAnnouncement",
-      placeholder: "Specify suspended punishments, duration, and conditions (or enter N/A if no suspension)...",
-      note: "Per JAGMAN 0109c, any or all of the punishment may be suspended. The suspension period should not exceed the maximum period of punishment that can be imposed. Conditions of the suspension may be stated.",
+      text: "suspension_auto",
+      responseType: "none",
     },
     {
       id: "appeal_advisement",
@@ -250,6 +247,40 @@ const PHASE_LABELS: Record<string, string> = {
 };
 
 const PHASE_ORDER = ["opening", "examination", "evidence_review", "mitigation", "findings"];
+
+function SuspensionAnnouncement({ responses }: { responses: Record<string, string> }) {
+  const suspendedItems = [
+    { key: "pun_reduction", label: "reduction in grade" },
+    { key: "pun_forfeiture", label: "forfeiture of pay" },
+    { key: "pun_extra_duties", label: "extra duties" },
+    { key: "pun_restriction", label: "restriction" },
+    { key: "pun_corr_custody", label: "correctional custody" },
+    { key: "pun_reprimand", label: "letter of reprimand" },
+    { key: "pun_admonition", label: "admonition" },
+  ].filter((item) => responses[`${item.key}_susp`] === "yes");
+
+  const months = responses["susp_months"] || "___";
+
+  if (suspendedItems.length === 0) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm leading-relaxed font-mono text-neutral-mid italic">
+          No punishments were suspended. You may skip this step.
+        </p>
+      </div>
+    );
+  }
+
+  const suspList = suspendedItems.map((s) => s.label).join(", ");
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm leading-relaxed whitespace-pre-line font-mono">
+        {`The following portion of the punishment is suspended for a period of ${months} months, at which time, unless the suspension is sooner vacated, the suspended portion of the punishment will be remitted without further action:\n\n${suspList.charAt(0).toUpperCase() + suspList.slice(1)}.`}
+      </p>
+    </div>
+  );
+}
 
 // Enlisted grade ordering for reduction calculation
 const ENLISTED_GRADES = ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9"];
@@ -369,10 +400,7 @@ function PunishmentChecklist({
                 checked={checked}
                 onChange={(e) => {
                   setResponse(p.key, e.target.checked ? "imposed" : "");
-                  if (!e.target.checked) {
-                    setResponse(`${p.key}_susp`, "");
-                    setResponse(`${p.key}_susp_months`, "");
-                  }
+                  if (!e.target.checked) setResponse(`${p.key}_susp`, "");
                 }}
                 className="mt-0.5 accent-primary"
               />
@@ -397,36 +425,42 @@ function PunishmentChecklist({
                   <input
                     type="checkbox"
                     checked={suspended}
-                    onChange={(e) => {
-                      setResponse(`${p.key}_susp`, e.target.checked ? "yes" : "");
-                      if (!e.target.checked) setResponse(`${p.key}_susp_months`, "");
-                    }}
+                    onChange={(e) => setResponse(`${p.key}_susp`, e.target.checked ? "yes" : "")}
                     className="accent-amber-600"
                   />
-                  <span className="font-medium">Suspend this punishment</span>
-                  {suspended && (
-                    <div className="flex items-center gap-1 ml-auto" onClick={(e) => e.stopPropagation()}>
-                      <span>for</span>
-                      <select
-                        className="input-field text-xs w-20 text-center"
-                        value={responses[`${p.key}_susp_months`] || ""}
-                        onChange={(e) => setResponse(`${p.key}_susp_months`, e.target.value)}
-                      >
-                        <option value="">--</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                      </select>
-                      <span>months</span>
-                    </div>
-                  )}
+                  <span className="font-medium">Suspend</span>
                 </label>
               </div>
             )}
           </div>
         );
       })}
+
+      {/* Shared suspension period — only shown if any punishment is suspended */}
+      {punishments.some((p) => responses[`${p.key}_susp`] === "yes") && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium text-amber-800">Suspension period:</span>
+            <select
+              className="input-field text-sm w-24 text-center"
+              value={responses["susp_months"] || ""}
+              onChange={(e) => setResponse("susp_months", e.target.value)}
+            >
+              <option value="">--</option>
+              <option value="3">3 mos</option>
+              <option value="4">4 mos</option>
+              <option value="5">5 mos</option>
+              <option value="6">6 mos</option>
+            </select>
+          </div>
+          <p className="text-xs text-amber-700 mt-1">
+            Suspended: {punishments
+              .filter((p) => responses[`${p.key}_susp`] === "yes")
+              .map((p) => p.label.toLowerCase())
+              .join(", ")}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -570,7 +604,11 @@ export default function HearingGuidePanel({ caseId, caseData, onUpdate }: { case
 
           {/* Script text */}
           <div className="p-5">
-            <p className="text-sm leading-relaxed whitespace-pre-line font-mono">{step.text}</p>
+            {step.text === "suspension_auto" ? (
+              <SuspensionAnnouncement responses={responses} />
+            ) : (
+              <p className="text-sm leading-relaxed whitespace-pre-line font-mono">{step.text}</p>
+            )}
 
             {step.note && (
               <div className="mt-3 rounded bg-amber-50 border border-amber-200 p-2 text-xs text-amber-700 flex items-start gap-2">
