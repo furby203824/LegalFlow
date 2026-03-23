@@ -735,5 +735,16 @@
     "userName": "certifier",
     "action": "SIGN",
     "notes": "Item 9 signed - punishment imposed"
+  },
+  {
+    "id": "audit-1774273773540-252xo",
+    "timestamp": "2026-03-23T13:49:33.540Z",
+    "caseId": "case-1774273010844-6nplg",
+    "caseNumber": "CASE-2026-0004",
+    "userId": "user-1774232429695-5pl19",
+    "userRole": "CERTIFIER",
+    "userName": "certifier",
+    "action": "GENERATE",
+    "notes": "Generated PDF: navmc_10132_pdf"
   }
 ]
