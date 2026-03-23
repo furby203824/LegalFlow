@@ -1061,7 +1061,7 @@
     "chargeSheet": null,
     "hearingRecord": {
       "id": "hr-1774273705243-73qgm",
-      "currentStep": 17,
+      "currentStep": 20,
       "responses": {
         "accusedExaminedEvidence": "no",
         "finding_A": "GUILTY",
@@ -1079,14 +1079,16 @@
         "pun_reprimand_susp": "",
         "pun_admonition": "",
         "pun_admonition_susp": "",
-        "susp_months": "6"
+        "susp_months": "6",
+        "accusedUnderstandsAppeal": "yes"
       },
       "appealAuthority": "",
       "appellateRightsReader": "",
-      "completed": false,
+      "completed": true,
+      "completedAt": "2026-03-23T13:48:44.811Z",
       "lastUpdatedBy": "user-1774232428029-skhw5",
       "lastUpdatedByName": "admin",
-      "lastUpdatedAt": "2026-03-23T13:48:25.243Z"
+      "lastUpdatedAt": "2026-03-23T13:48:44.812Z"
     },
     "item21Entries": [],
     "signatures": [
