@@ -9,7 +9,7 @@
 import { PDFDocument, PDFName, PDFDict, PDFNumber } from "pdf-lib";
 import type { CaseData, Navmc10132Version } from "../types";
 import { punishmentFull } from "../punishmentText";
-import { fmtStandard } from "../dateFormatters";
+import { fmtStandard, fmtTitleCase } from "../dateFormatters";
 
 /**
  * Strip the rich text (/RV) flag from a text field so pdf-lib can
@@ -310,14 +310,17 @@ export async function fillNavmc10132Pdf(
 
   if (version !== "PARTIAL") {
     const punishmentText = buildPunishmentText(data);
-    if (punishmentText.length > FIELD_MAX_LENGTH) {
+    const dateStr = data.item6Date ? fmtTitleCase(data.item6Date) : (data.njpDate ? fmtTitleCase(data.njpDate) : "");
+    // Item 6: "23 Mar 26. Extra duties for 14 days; Restriction for 14 days"
+    const item6Full = dateStr && punishmentText ? `${dateStr}. ${punishmentText}` : punishmentText;
+    if (item6Full.length > FIELD_MAX_LENGTH) {
       setText(form, "6 PUNISHMENT IMPOSED", "See supplemental page");
       supplementalEntries.push({
         entryDate: data.item6Date || data.njpDate || new Date().toISOString().split("T")[0],
-        entryText: `Item 6 - Punishment Imposed: ${punishmentText}`,
+        entryText: `Item 6 - Punishment Imposed: ${item6Full}`,
       });
     } else {
-      setText(form, "6 PUNISHMENT IMPOSED", punishmentText);
+      setText(form, "6 PUNISHMENT IMPOSED", item6Full);
     }
     if (data.item6Date) {
       setText(form, "6 PUNISHMENT IMPOSITION DATE", fmtStandard(data.item6Date));
@@ -326,14 +329,22 @@ export async function fillNavmc10132Pdf(
 
   if (version !== "PARTIAL") {
     const suspensionText = buildSuspensionText(data);
-    if (suspensionText.length > FIELD_MAX_LENGTH) {
+    const suspDateStr = data.item6Date ? fmtTitleCase(data.item6Date) : (data.njpDate ? fmtTitleCase(data.njpDate) : "");
+    // Item 7: "Extra duties suspended for 6 months. 23 Mar 26" or "NONE"
+    let item7Full: string;
+    if (!suspensionText) {
+      item7Full = "NONE";
+    } else {
+      item7Full = suspDateStr ? `${suspensionText}. ${suspDateStr}` : suspensionText;
+    }
+    if (item7Full.length > FIELD_MAX_LENGTH) {
       setText(form, "7 SUSPENSION IF ANY", "See supplemental page");
       supplementalEntries.push({
         entryDate: data.item6Date || data.njpDate || new Date().toISOString().split("T")[0],
-        entryText: `Item 7 - Suspension: ${suspensionText}`,
+        entryText: `Item 7 - Suspension: ${item7Full}`,
       });
     } else {
-      setText(form, "7 SUSPENSION IF ANY", suspensionText);
+      setText(form, "7 SUSPENSION IF ANY", item7Full);
     }
   }
 

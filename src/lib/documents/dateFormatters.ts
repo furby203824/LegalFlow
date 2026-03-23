@@ -1,23 +1,25 @@
 import { format, parseISO } from "date-fns";
 
-// SHORT: "D Mmm YY" -- Items 6, 7 in UPB
+// SHORT: "3 Mar 26" -- compact dates
 export function fmtShort(date: string): string {
   try {
-    const d = parseISO(date);
-    return `${d.getDate()} ${format(d, "MMM yy")}`.toUpperCase();
+    return format(parseISO(date), "d MMM yy");
   } catch {
     return date;
   }
 }
 
-// STANDARD: "DD Mmm YY" -- form date fields
+// STANDARD: "23 Mar 26" -- all form date fields
 export function fmtStandard(date: string): string {
   try {
-    return format(parseISO(date), "dd MMM yy").toUpperCase();
+    return format(parseISO(date), "d MMM yy");
   } catch {
     return date;
   }
 }
+
+// Alias for fmtStandard — kept for explicit use in Items 6/7
+export const fmtTitleCase = fmtStandard;
 
 // ISO: "YYYY-MM-DD" -- Item 21 entries
 export function fmtISO(date: string): string {
