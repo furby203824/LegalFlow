@@ -256,7 +256,13 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         open={openSections.charges}
         onToggle={() => toggleSection("charges")}
       >
-        <p className="text-xs text-neutral-mid mb-3 italic">Charges are populated from case offenses. Edit offenses on the case to update.</p>
+        <p className="text-xs text-neutral-mid mb-3 italic">
+          Charges are populated from case offenses. Edit offenses on the case to update.
+          {" "}
+          <a href="https://www.jagcnet.army.mil/EBB/#" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">
+            Electronic Benchbook ↗
+          </a>
+        </p>
         {charges.map((c: { article: string; specification: string }, i: number) => (
           <div key={i} className="border border-border rounded-lg p-4 mb-3">
             <div className="flex items-center justify-between mb-2">
