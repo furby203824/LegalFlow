@@ -11,8 +11,9 @@ import type { CaseData, Navmc10132Version } from "../types";
 import { punishmentFull } from "../punishmentText";
 import { fmtStandard } from "../dateFormatters";
 
-// Template PDF path — served from public/ directory
-const TEMPLATE_PATH = "/forms/NAVMC_10132.pdf";
+// Template PDF path — served from public/ directory (must include basePath for static export)
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/LegalFlow";
+const TEMPLATE_PATH = `${BASE_PATH}/forms/NAVMC_10132.pdf`;
 
 /**
  * Map a UCMJ article string (e.g. "86") to the closest dropdown option
