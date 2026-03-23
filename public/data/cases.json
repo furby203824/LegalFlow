@@ -1501,6 +1501,11 @@
     "njpDate": null,
     "appealNotFiled": false,
     "accusedTransferred": false,
-    "initiatedById": "user-co-preparer"
+    "initiatedById": "user-co-preparer",
+    "rightsAcknowledgement": {
+      "id": "ra-1774294141385-pmwkc",
+      "acknowledged": true,
+      "acknowledgedAt": "2026-03-23T19:29:01.384Z"
+    }
   }
 ]
