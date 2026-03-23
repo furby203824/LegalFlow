@@ -340,11 +340,12 @@ function PunishmentChecklist({
   const effectiveGradeForForf = reductionImposed ? reducedGrade : accusedGrade;
   const maxForfeit = getMaxForfeiture(effectiveGradeForForf, commanderGradeLevel, yearsOfService);
 
-  const punishments = [
+  const punishments: { key: string; label: string; limit: string; fieldType: "currency" | "days" | "choice" | "grade"; max?: number; choices?: string[] }[] = [
     ...(reduction.available ? [{
       key: "pun_reduction",
       label: "Reduction in Grade",
       limit: reduction.label,
+      fieldType: "grade" as const,
     }] : []),
     {
       key: "pun_forfeiture",
@@ -352,31 +353,43 @@ function PunishmentChecklist({
       limit: isField
         ? `Up to 1/2 of 1 month's pay per month for ${(limits as typeof PUNISHMENT_LIMITS.FIELD_GRADE_AND_ABOVE).forfeitureMonths} months${maxForfeit ? ` (max $${maxForfeit.toLocaleString()}/mo — CY26${reductionImposed ? `, based on ${effectiveGradeForForf}` : ""})` : ""}`
         : `${(limits as typeof PUNISHMENT_LIMITS.COMPANY_GRADE).forfeitureDays} days' pay${maxForfeit ? ` (max $${maxForfeit.toLocaleString()} — CY26${reductionImposed ? `, based on ${effectiveGradeForForf}` : ""})` : ""}`,
+      fieldType: "currency",
+      max: maxForfeit || undefined,
     },
     {
       key: "pun_extra_duties",
       label: "Extra Duties",
       limit: `Up to ${limits.extraDutiesDays} days`,
+      fieldType: "days",
+      max: limits.extraDutiesDays,
     },
     {
       key: "pun_restriction",
       label: "Restriction",
       limit: `Up to ${limits.restrictionDays} days`,
+      fieldType: "days",
+      max: limits.restrictionDays,
     },
     {
       key: "pun_corr_custody",
       label: "Correctional Custody",
       limit: `Up to ${limits.corrCustodyDays} days`,
+      fieldType: "days",
+      max: limits.corrCustodyDays,
     },
     {
       key: "pun_reprimand",
       label: "Letter of Reprimand",
       limit: "Written or oral",
+      fieldType: "choice",
+      choices: ["Written", "Oral"],
     },
     {
       key: "pun_admonition",
       label: "Admonition",
       limit: "Written or oral",
+      fieldType: "choice",
+      choices: ["Written", "Oral"],
     },
   ];
 
@@ -411,13 +424,86 @@ function PunishmentChecklist({
             </label>
             {checked && (
               <div className="px-3 pb-3 pl-9 space-y-2">
-                <input
-                  type="text"
-                  className="input-field text-xs"
-                  value={responses[`${p.key}_detail`] || ""}
-                  onChange={(e) => setResponse(`${p.key}_detail`, e.target.value)}
-                  placeholder={`Specify ${p.label.toLowerCase()} details...`}
-                />
+                {p.fieldType === "currency" && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-neutral-mid">$</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max={p.max}
+                      step="1"
+                      className="input-field text-xs w-28"
+                      value={responses[`${p.key}_detail`] || ""}
+                      onChange={(e) => setResponse(`${p.key}_detail`, e.target.value)}
+                      placeholder="Amount"
+                    />
+                    {isField && (
+                      <>
+                        <span className="text-xs text-neutral-mid">per month for</span>
+                        <select
+                          className="input-field text-xs w-20"
+                          value={responses[`${p.key}_months`] || "1"}
+                          onChange={(e) => setResponse(`${p.key}_months`, e.target.value)}
+                        >
+                          {Array.from({ length: (limits as typeof PUNISHMENT_LIMITS.FIELD_GRADE_AND_ABOVE).forfeitureMonths }, (_, i) => i + 1).map((m) => (
+                            <option key={m} value={m}>{m} mo{m > 1 ? "s" : ""}</option>
+                          ))}
+                        </select>
+                      </>
+                    )}
+                    {p.max && responses[`${p.key}_detail`] && Number(responses[`${p.key}_detail`]) > p.max && (
+                      <span className="text-xs text-error">Exceeds max ${p.max.toLocaleString()}</span>
+                    )}
+                  </div>
+                )}
+                {p.fieldType === "days" && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max={p.max}
+                      className="input-field text-xs w-20"
+                      value={responses[`${p.key}_detail`] || ""}
+                      onChange={(e) => setResponse(`${p.key}_detail`, e.target.value)}
+                      placeholder="Days"
+                    />
+                    <span className="text-xs text-neutral-mid">days</span>
+                    {p.max && responses[`${p.key}_detail`] && Number(responses[`${p.key}_detail`]) > p.max && (
+                      <span className="text-xs text-error">Exceeds {p.max} day limit</span>
+                    )}
+                  </div>
+                )}
+                {p.fieldType === "choice" && (
+                  <div className="flex items-center gap-3">
+                    {p.choices!.map((c) => (
+                      <label key={c} className="flex items-center gap-1.5 cursor-pointer text-xs">
+                        <input
+                          type="radio"
+                          name={`${p.key}_detail`}
+                          checked={responses[`${p.key}_detail`] === c}
+                          onChange={() => setResponse(`${p.key}_detail`, c)}
+                          className="accent-primary"
+                        />
+                        {c}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {p.fieldType === "grade" && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-mid">Reduce to</span>
+                    <select
+                      className="input-field text-xs w-28"
+                      value={responses[`${p.key}_detail`] || ""}
+                      onChange={(e) => setResponse(`${p.key}_detail`, e.target.value)}
+                    >
+                      <option value="">Select grade</option>
+                      {ENLISTED_GRADES.slice(0, ENLISTED_GRADES.indexOf(accusedGrade)).reverse().map((g) => (
+                        <option key={g} value={g}>{GRADE_TO_RANK_ABBR[g]}/{g}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <label className={cn(
                   "flex items-center gap-2 p-2 rounded border cursor-pointer text-xs transition-colors",
                   suspended ? "border-amber-300 bg-amber-50 text-amber-800" : "border-dashed border-border text-neutral-mid"
