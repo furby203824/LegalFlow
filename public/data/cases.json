@@ -849,8 +849,8 @@
     "nextActionOwner": "ACCUSED",
     "isOverdue": false,
     "caseNumber": "CASE-2026-0003",
-    "status": "NOTIFICATION_COMPLETE",
-    "currentPhase": "NOTIFICATION",
+    "status": "CLOSED",
+    "currentPhase": "CLOSED",
     "unitId": "unit-1bn5mar",
     "unitFullString": "1st Bn, 5th Marines",
     "accusedName": "Sanchez, Thomas D",
@@ -868,7 +868,7 @@
     "jurisdictionConfirmed": true,
     "uaApplicable": false,
     "offenseDateEarliest": "2026-03-03",
-    "formLocked": false,
+    "formLocked": true,
     "jaReviewRequired": false,
     "jaReviewComplete": false,
     "njpDate": "2026-03-23",
@@ -889,6 +889,10 @@
     "dateNoticeToAccused": "2026-03-23",
     "ompfScanConfirmed": true,
     "ompfConfirmedBy": "user-1774232428029-skhw5",
-    "ompfConfirmedDate": "2026-03-23T07:13:12.821Z"
+    "ompfConfirmedDate": "2026-03-23T07:13:12.821Z",
+    "item16SignedDate": "2026-03-23",
+    "item16UdNumber": "63940",
+    "item16Dtd": "2026-03-24",
+    "caseFinalDate": "2026-03-23"
   }
 ]
