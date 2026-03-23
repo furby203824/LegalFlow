@@ -9,7 +9,40 @@ import MastScriptPrint from "./MastScriptPrint";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Rec = Record<string, any>;
 
-// ── Hearing steps derived from NAPSINST 1626.1B Enclosure (4) ──
+// ── Grade code to full rank name ──
+
+const GRADE_TO_FULL_RANK: Record<string, string> = {
+  // USMC Enlisted
+  Pvt: "Private", PFC: "Private First Class", LCpl: "Lance Corporal",
+  Cpl: "Corporal", Sgt: "Sergeant", SSgt: "Staff Sergeant",
+  GySgt: "Gunnery Sergeant", MSgt: "Master Sergeant", "1stSgt": "First Sergeant",
+  MGySgt: "Master Gunnery Sergeant", SgtMaj: "Sergeant Major",
+  // USN Enlisted
+  SR: "Seaman Recruit", SA: "Seaman Apprentice", SN: "Seaman",
+  PO3: "Petty Officer Third Class", PO2: "Petty Officer Second Class",
+  PO1: "Petty Officer First Class", CPO: "Chief Petty Officer",
+  SCPO: "Senior Chief Petty Officer", MCPO: "Master Chief Petty Officer",
+  // Warrant Officers
+  WO: "Warrant Officer", WO1: "Warrant Officer One",
+  CWO2: "Chief Warrant Officer Two", CWO3: "Chief Warrant Officer Three",
+  CWO4: "Chief Warrant Officer Four", CWO5: "Chief Warrant Officer Five",
+  // USMC Officers
+  "2ndLt": "Second Lieutenant", "1stLt": "First Lieutenant",
+  Capt: "Captain", Maj: "Major", LtCol: "Lieutenant Colonel",
+  Col: "Colonel", BGen: "Brigadier General", MajGen: "Major General",
+  LtGen: "Lieutenant General", Gen: "General",
+  // USN Officers
+  ENS: "Ensign", LTJG: "Lieutenant Junior Grade", LT: "Lieutenant",
+  LCDR: "Lieutenant Commander", CDR: "Commander", CAPT: "Captain",
+  RDML: "Rear Admiral (Lower Half)", RADM: "Rear Admiral",
+  VADM: "Vice Admiral", ADM: "Admiral",
+};
+
+function getFullRankName(rank: string): string {
+  return GRADE_TO_FULL_RANK[rank] || rank;
+}
+
+// ── Hearing steps derived from Office Hours Guide ──
 
 interface HearingStep {
   id: string;
@@ -213,7 +246,8 @@ export default function HearingGuidePanel({ caseId, caseData, onUpdate }: { case
   const offenses = caseData.offenses || [];
   const hr = caseData.hearingRecord || {};
 
-  const rateName = `${accused.grade || ""} ${accused.lastName || ""}`.trim() || "RATE NAME";
+  const fullRank = accused.rank ? getFullRankName(accused.rank) : "";
+  const rateName = `${fullRank} ${accused.lastName || ""}`.trim() || "RATE NAME";
   const articles = offenses.map((o: Rec) => o.ucmjArticle).filter(Boolean);
 
   const [appealAuthority, setAppealAuthority] = useState(hr.appealAuthority || "");
