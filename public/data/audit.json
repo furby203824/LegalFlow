@@ -361,5 +361,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated PDF: appeal_rights_ack"
+  },
+  {
+    "id": "audit-1774241225404-eumud",
+    "timestamp": "2026-03-23T04:47:05.404Z",
+    "caseId": "case-1774237256718-s3m2a",
+    "caseNumber": "CASE-2026-0003",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated PDF: notification_election_rights"
   }
 ]
