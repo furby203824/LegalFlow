@@ -21,7 +21,7 @@ import type { Rank, Grade, CommanderGradeLevel } from "@/types";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Rec = Record<string, any>;
 
-function buildPunishmentList(pr: Rec): CaseData["item6Punishments"] {
+export function buildPunishmentList(pr: Rec): CaseData["item6Punishments"] {
   const list: CaseData["item6Punishments"] = [];
   if (pr.corrCustodyDays) list.push({ type: "CORRECTIONAL_CUSTODY", duration: pr.corrCustodyDays, suspended: false });
   if (pr.forfeitureAmount) list.push({ type: "FORFEITURE", amount: pr.forfeitureAmount, months: pr.forfeitureMonths || undefined, suspended: false });
