@@ -243,6 +243,8 @@ function PersonnelDataTab({ caseData }: { caseData: CaseDetail }) {
           <FieldRow label="Grade" value={accused.grade} />
           <FieldRow label="EDIPI" value={accused.edipi} mono />
           <FieldRow label="Date of Birth" value={accused.dateOfBirth || "—"} />
+          <FieldRow label="AFADBD" value={accused.afadbd || "—"} />
+          <FieldRow label="YOS" value={accused.yearsOfService != null ? `${accused.yearsOfService} yr${accused.yearsOfService !== 1 ? "s" : ""}` : "—"} />
           <FieldRow label="Commander Grade" value={(caseData.commanderGradeLevel || "").replace(/_/g, " ")} />
         </div>
       </fieldset>
