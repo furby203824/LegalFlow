@@ -153,6 +153,9 @@ function CaseViewContent() {
         {/* Phase Tracker */}
         <PhaseTracker currentPhase={caseData.currentPhase} status={caseData.status} />
 
+        {/* Phase Actions — always visible */}
+        <ActionsPanel caseData={caseData} onUpdate={loadCase} />
+
         {/* Tab navigation — CLA style */}
         <div className="card overflow-hidden">
           <div className="border-b border-border bg-surface">
@@ -182,14 +185,7 @@ function CaseViewContent() {
 
             {/* UPB Form Items Tab — existing NJP functionality */}
             {activeTab === "upb" && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-2">
-                  <UPBItemsPanel caseData={caseData} onUpdate={loadCase} />
-                </div>
-                <div>
-                  <ActionsPanel caseData={caseData} onUpdate={loadCase} />
-                </div>
-              </div>
+              <UPBItemsPanel caseData={caseData} onUpdate={loadCase} />
             )}
 
             {/* Evidence Tab */}
