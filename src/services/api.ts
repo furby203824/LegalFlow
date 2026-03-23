@@ -55,7 +55,9 @@ export async function getDashboard() {
   } else if (u.role === "IPAC_ADMIN") {
     cases = cases.filter((c) => c.item16SignedDate);
   } else if (u.role !== "SUITE_ADMIN") {
-    cases = cases.filter((c) => c.unitId === u.unitId);
+    // Show own unit's cases + appeal cases visible to certifiers/appeal authorities
+    cases = cases.filter((c) => c.unitId === u.unitId
+      || ((u.role === "CERTIFIER" || u.role === "APPEAL_AUTHORITY") && (c.status === "APPEAL_PENDING" || c.status === "APPEAL_COMPLETE")));
   }
 
   const dashboardCases = cases.map((c) => {
@@ -130,7 +132,8 @@ export async function getCases(filters?: { status?: string; name?: string; pendi
       (c) => c.status?.startsWith("CLOSED") || c.item16SignedDate
     );
   } else if (u.role !== "SUITE_ADMIN") {
-    cases = cases.filter((c) => c.unitId === u.unitId);
+    cases = cases.filter((c) => c.unitId === u.unitId
+      || ((u.role === "CERTIFIER" || u.role === "APPEAL_AUTHORITY") && (c.status === "APPEAL_PENDING" || c.status === "APPEAL_COMPLETE")));
   }
 
   if (filters?.status) cases = cases.filter((c) => c.status === filters.status);

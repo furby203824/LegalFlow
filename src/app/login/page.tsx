@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Scale, User, Shield, FileCheck, Eye } from "lucide-react";
+import { Scale, User, Shield, FileCheck, Eye, Gavel } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { setGitHubConfig, isGitHubConfigured } from "@/lib/github";
 import { login, seedDefaultUser, autoLogin } from "@/lib/auth";
@@ -43,6 +43,15 @@ const DEMO_ACCOUNTS = [
     icon: <FileCheck size={16} />,
     rank: "LtCol Chen",
     color: "text-success",
+  },
+  {
+    username: "appeal",
+    password: "appeal",
+    label: "Certifier (Regt)",
+    description: "Regimental CO — certifier and appeal authority for subordinate units",
+    icon: <Gavel size={16} />,
+    rank: "Col Hayes",
+    color: "text-purple-600",
   },
 ];
 

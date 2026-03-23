@@ -107,7 +107,7 @@ export async function generateDocumentContent(
     component: rawCase.component,
     njpAuthorityName: rawCase.njpAuthorityName || undefined, njpAuthorityTitle: rawCase.njpAuthorityTitle || undefined,
     njpAuthorityUnit: rawCase.njpAuthorityUnit || undefined, njpAuthorityRank: rawCase.njpAuthorityRank || undefined,
-    njpAuthorityGrade: rawCase.njpAuthorityGrade || undefined,
+    njpAuthorityGrade: rawCase.njpAuthorityGrade || undefined, njpAuthorityEdipi: rawCase.njpAuthorityEdipi || undefined,
     commanderGradeLevel: rawCase.commanderGradeLevel as CommanderGradeLevel,
     vesselException: rawCase.vesselException,
     offenses: (njpCase.offenses || []).map((o: Rec) => ({
@@ -239,7 +239,7 @@ export async function generatePdfDocument(
     component: rawCase.component,
     njpAuthorityName: rawCase.njpAuthorityName || undefined, njpAuthorityTitle: rawCase.njpAuthorityTitle || undefined,
     njpAuthorityUnit: rawCase.njpAuthorityUnit || undefined, njpAuthorityRank: rawCase.njpAuthorityRank || undefined,
-    njpAuthorityGrade: rawCase.njpAuthorityGrade || undefined,
+    njpAuthorityGrade: rawCase.njpAuthorityGrade || undefined, njpAuthorityEdipi: rawCase.njpAuthorityEdipi || undefined,
     commanderGradeLevel: rawCase.commanderGradeLevel as CommanderGradeLevel,
     vesselException: rawCase.vesselException,
     offenses: (njpCase.offenses || []).map((o: Rec) => ({

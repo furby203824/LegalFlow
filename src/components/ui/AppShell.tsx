@@ -16,6 +16,7 @@ const DEMO_ACCOUNTS = [
   { username: "preparer", password: "preparer", label: "NJP Preparer", rank: "Sgt Rodriguez" },
   { username: "reviewer", password: "reviewer", label: "Certifier Reviewer", rank: "GySgt Mitchell" },
   { username: "certifier", password: "certifier", label: "Certifier", rank: "LtCol Chen" },
+  { username: "appeal", password: "appeal", label: "Certifier (Regt)", rank: "Col Hayes" },
 ];
 
 type User = SessionUser;
