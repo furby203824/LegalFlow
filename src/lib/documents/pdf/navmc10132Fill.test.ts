@@ -406,7 +406,7 @@ describe("fillNavmc10132Pdf", () => {
       const bytes = await fill(hearingData(), "HEARING");
       const { form } = await loadGeneratedForm(bytes);
 
-      expect(getTextValue(form, "3 RIGHTS ATTEST DATE_af_date")).toBe("02 FEB 26");
+      expect(getTextValue(form, "3 RIGHTS ATTEST DATE_af_date")).toBe("2 Feb 26");
     });
 
     it("should fill date of notice to accused (Item 10)", async () => {
@@ -414,7 +414,7 @@ describe("fillNavmc10132Pdf", () => {
       const bytes = await fill(hearingData(), "HEARING");
       const { form } = await loadGeneratedForm(bytes);
 
-      expect(getTextValue(form, "10 DATE OF DISPOSITION NOTICE")).toBe("10 FEB 26");
+      expect(getTextValue(form, "10 DATE OF DISPOSITION NOTICE")).toBe("10 Feb 26");
     });
 
     it("should fill appeal advisement date (Item 11)", async () => {
@@ -422,7 +422,7 @@ describe("fillNavmc10132Pdf", () => {
       const bytes = await fill(hearingData(), "HEARING");
       const { form } = await loadGeneratedForm(bytes);
 
-      expect(getTextValue(form, "11 APPEAL ADVISEMENT DATE_af_date")).toBe("10 FEB 26");
+      expect(getTextValue(form, "11 APPEAL ADVISEMENT DATE_af_date")).toBe("10 Feb 26");
     });
 
     it("should fill suspension text (Item 7) when punishment is suspended", async () => {
@@ -448,7 +448,7 @@ describe("fillNavmc10132Pdf", () => {
       const { form } = await loadGeneratedForm(bytes);
 
       expect(getDropdownValue(form, "12 INTEND APPEAL")).toBe("I do intend to appeal.");
-      expect(getTextValue(form, "12 APPEAL INTENT DATE_af_date")).toBe("11 FEB 26");
+      expect(getTextValue(form, "12 APPEAL INTENT DATE_af_date")).toBe("11 Feb 26");
     });
   });
 
@@ -733,7 +733,7 @@ describe("fillNavmc10132Pdf", () => {
       expect(getDropdownValue(form, "2 COUNSELOPP")).toBe("   have");
       // Checkbox should be unchecked (refusal not noted)
       expect(form.getCheckBox("2 ACC REFUSE TO SIGN").isChecked()).toBe(false);
-      expect(getTextValue(form, "2 ACC ELECTION AND RIGHTS DATE_af_date")).toBe("01 FEB 26");
+      expect(getTextValue(form, "2 ACC ELECTION AND RIGHTS DATE_af_date")).toBe("1 Feb 26");
     });
 
     it("Item 2: refusal checkbox checked when refusalNoted", async () => {
@@ -775,7 +775,7 @@ describe("fillNavmc10132Pdf", () => {
       const bytes = await fill(fullData(), "HEARING");
       const { form } = await loadGeneratedForm(bytes);
 
-      expect(getTextValue(form, "3 RIGHTS ATTEST DATE_af_date")).toBe("01 FEB 26");
+      expect(getTextValue(form, "3 RIGHTS ATTEST DATE_af_date")).toBe("1 Feb 26");
     });
 
     it("Item 4: UA/desertion text", async () => {
@@ -784,8 +784,8 @@ describe("fillNavmc10132Pdf", () => {
       const { form } = await loadGeneratedForm(bytes);
 
       const uaText = getTextValue(form, "4 CURRENT UAS OVER 24 HRS AND MARKS OF DESERTION");
-      expect(uaText).toContain("15 JAN 26");
-      expect(uaText).toContain("20 JAN 26");
+      expect(uaText).toContain("15 Jan 26");
+      expect(uaText).toContain("20 Jan 26");
       expect(uaText).toContain("Desertion marks: None");
     });
 
@@ -808,7 +808,7 @@ describe("fillNavmc10132Pdf", () => {
       expect(punishment).toContain("Extra duties for 45 days");
       expect(punishment).toContain("Restriction for 60 days");
       expect(punishment).toContain("Reduction to Cpl");
-      expect(getTextValue(form, "6 PUNISHMENT IMPOSITION DATE")).toBe("10 FEB 26");
+      expect(getTextValue(form, "6 PUNISHMENT IMPOSITION DATE")).toBe("10 Feb 26");
     });
 
     it("Item 6: empty when no punishments", async () => {
@@ -872,7 +872,7 @@ describe("fillNavmc10132Pdf", () => {
       const bytes = await fill(fullData(), "HEARING");
       const { form } = await loadGeneratedForm(bytes);
 
-      expect(getTextValue(form, "10 DATE OF DISPOSITION NOTICE")).toBe("10 FEB 26");
+      expect(getTextValue(form, "10 DATE OF DISPOSITION NOTICE")).toBe("10 Feb 26");
     });
 
     it("Item 11: appeal advisement date", async () => {
@@ -880,7 +880,7 @@ describe("fillNavmc10132Pdf", () => {
       const bytes = await fill(fullData(), "HEARING");
       const { form } = await loadGeneratedForm(bytes);
 
-      expect(getTextValue(form, "11 APPEAL ADVISEMENT DATE_af_date")).toBe("10 FEB 26");
+      expect(getTextValue(form, "11 APPEAL ADVISEMENT DATE_af_date")).toBe("10 Feb 26");
     });
 
     it("Item 12: appeal intent dropdown and date (does not intend)", async () => {
@@ -889,7 +889,7 @@ describe("fillNavmc10132Pdf", () => {
       const { form } = await loadGeneratedForm(bytes);
 
       expect(getDropdownValue(form, "12 INTEND APPEAL")).toBe("I do not intend to appeal.");
-      expect(getTextValue(form, "12 APPEAL INTENT DATE_af_date")).toBe("10 FEB 26");
+      expect(getTextValue(form, "12 APPEAL INTENT DATE_af_date")).toBe("10 Feb 26");
     });
 
     it("Item 12: appeal intent — intends to appeal", async () => {
@@ -929,7 +929,7 @@ describe("fillNavmc10132Pdf", () => {
       const { form } = await loadGeneratedForm(bytes);
 
       const remarks = getTextValue(form, "21 REMARKS");
-      expect(remarks).toContain("10 FEB 26");
+      expect(remarks).toContain("10 Feb 26");
       expect(remarks).toContain("NJP hearing conducted at Bldg 1234.");
     });
 
@@ -967,8 +967,8 @@ describe("fillNavmc10132Pdf", () => {
     it("Item 13: appeal filed date field accepts formatted date", async () => {
       const form = await loadTemplate();
       const field = form.getTextField("13 DATE OF APPEAL IF ANY_af_date");
-      field.setText("12 FEB 26");
-      expect(field.getText()).toBe("12 FEB 26");
+      field.setText("12 Feb 26");
+      expect(field.getText()).toBe("12 Feb 26");
     });
 
     it("Item 14: appeal decision text field accepts all outcome values", async () => {
@@ -1198,8 +1198,8 @@ describe("fillNavmc10132Pdf", () => {
       const { form } = await loadGeneratedForm(bytes);
 
       const uaText = getTextValue(form, "4 CURRENT UAS OVER 24 HRS AND MARKS OF DESERTION");
-      expect(uaText).toContain("01 JAN 26");
-      expect(uaText).toContain("10 JAN 26");
+      expect(uaText).toContain("1 Jan 26");
+      expect(uaText).toContain("10 Jan 26");
       expect(uaText).toContain("Desertion marks: None");
     });
   });
