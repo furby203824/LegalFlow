@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { performPhaseAction } from "@/services/api";
 import { generatePdfDocument } from "@/services/documents";
+import PdfViewer from "@/components/documents/PdfViewer";
 import { getSession } from "@/lib/auth";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -514,6 +515,7 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
 
 function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseData; loading: boolean; onAcknowledge: () => void }) {
   const [step, setStep] = useState<"generate" | "upload" | "confirm">("generate");
+  const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfFilename, setPdfFilename] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -525,6 +527,7 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
     setGenerating(true);
     try {
       const result = await generatePdfDocument(caseData.id, "notification_election_rights");
+      setPdfBytes(result.pdfBytes);
       const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
@@ -627,7 +630,7 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
                     </button>
                   </div>
                 </div>
-                <iframe src={pdfUrl} className="w-full h-[350px] bg-white" title="Rights Notification PDF" />
+                {pdfBytes && <PdfViewer pdfBytes={pdfBytes} className="h-[350px]" />}
               </div>
             )}
 
