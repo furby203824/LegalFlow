@@ -251,5 +251,16 @@
     "userName": "admin",
     "action": "SIGN",
     "notes": "Item 16 signed - case closed"
+  },
+  {
+    "id": "audit-1774237258004-m509g",
+    "timestamp": "2026-03-23T03:40:58.004Z",
+    "caseId": "case-1774237256718-s3m2a",
+    "caseNumber": "CASE-2026-0003",
+    "userId": "user-1774232428618-42zo5",
+    "userRole": "NJP_PREPARER",
+    "userName": "preparer",
+    "action": "INSERT",
+    "notes": "Case CASE-2026-0003 initiated"
   }
 ]
