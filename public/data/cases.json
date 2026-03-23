@@ -1076,7 +1076,8 @@
         "forfeiture"
       ],
       "accusedGrade": "E6",
-      "accusedRank": "SSgt"
+      "accusedRank": "SSgt",
+      "locked": true
     },
     "appeal": null,
     "chargeSheet": null,
