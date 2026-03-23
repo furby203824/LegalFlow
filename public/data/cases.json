@@ -1059,7 +1059,35 @@
     "punishment": null,
     "appeal": null,
     "chargeSheet": null,
-    "hearingRecord": null,
+    "hearingRecord": {
+      "id": "hr-1774273705243-73qgm",
+      "currentStep": 17,
+      "responses": {
+        "accusedExaminedEvidence": "no",
+        "finding_A": "GUILTY",
+        "finding_B": "GUILTY",
+        "pun_forfeiture": "imposed",
+        "pun_forfeiture_detail": "1110",
+        "pun_forfeiture_susp": "yes",
+        "pun_extra_duties": "imposed",
+        "pun_extra_duties_detail": "7",
+        "pun_restriction": "imposed",
+        "pun_restriction_detail": "7",
+        "pun_corr_custody": "",
+        "pun_corr_custody_susp": "",
+        "pun_reprimand": "",
+        "pun_reprimand_susp": "",
+        "pun_admonition": "",
+        "pun_admonition_susp": "",
+        "susp_months": "6"
+      },
+      "appealAuthority": "",
+      "appellateRightsReader": "",
+      "completed": false,
+      "lastUpdatedBy": "user-1774232428029-skhw5",
+      "lastUpdatedByName": "admin",
+      "lastUpdatedAt": "2026-03-23T13:48:25.243Z"
+    },
     "item21Entries": [],
     "signatures": [
       {
