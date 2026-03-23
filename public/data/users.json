@@ -56,9 +56,9 @@
   {
     "id": "user-1774232429695-5pl19",
     "createdAt": "2026-03-23T02:20:29.695Z",
-    "updatedAt": "2026-03-23T03:02:22.699Z",
+    "updatedAt": "2026-03-23T03:04:49.139Z",
     "isActive": true,
-    "lastLogin": "2026-03-23T03:02:22.699Z",
+    "lastLogin": "2026-03-23T03:04:49.138Z",
     "username": "certifier",
     "passwordHash": "certifier",
     "firstName": "Michael",
