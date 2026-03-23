@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Scale, ChevronDown, ChevronRight, Menu, X, ExternalLink,
-  Home, LogOut, HelpCircle, FileText, Users, Settings,
+  Home, LogOut, HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSession, logout as doLogout, type SessionUser } from "@/lib/auth";
@@ -68,6 +68,7 @@ const SIDEBAR_MENU: SidebarSection[] = [
           { label: "CLA Training", href: "#", disabled: true },
         ],
       },
+      { label: "MISSO POCs", href: "#", disabled: true },
       { label: "User Management", href: "/admin/users" },
     ],
   },
@@ -119,25 +120,24 @@ function SidebarSectionItem({
   const [open, setOpen] = useState(section.defaultOpen || false);
 
   return (
-    <div className={cn(depth === 0 ? "border-b border-white/10" : "")}>
+    <div>
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "w-full flex items-center justify-between text-left text-sm transition-colors",
+          "w-full flex items-center text-left transition-colors",
           depth === 0
-            ? "px-3 py-2.5 font-semibold text-white/90 hover:bg-white/10"
-            : "px-3 py-1.5 text-white/70 hover:text-white hover:bg-white/5",
-          depth > 0 && `pl-${3 + depth * 3}`
+            ? "px-3 py-2 text-[13px] font-bold text-white/90 hover:bg-white/10 border-b border-white/5"
+            : "py-1.5 text-[12px] text-white/70 hover:text-white hover:bg-white/5"
         )}
-        style={depth > 0 ? { paddingLeft: `${12 + depth * 12}px` } : undefined}
+        style={{ paddingLeft: depth === 0 ? "12px" : `${12 + depth * 14}px` }}
       >
-        <span className="flex items-center gap-1.5">
-          {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        <span className="flex items-center gap-1">
+          {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
           {section.label}
         </span>
       </button>
       {open && (
-        <div className={cn(depth === 0 ? "pb-1" : "")}>
+        <div className={cn(depth === 0 ? "pb-0.5" : "")}>
           {section.children.map((child, i) =>
             isSidebarSection(child) ? (
               <SidebarSectionItem
@@ -170,13 +170,15 @@ function SidebarLinkItem({
   depth: number;
   pathname: string;
 }) {
-  const isActive = item.href ? pathname === item.href || pathname.startsWith(item.href + "/") : false;
+  const isActive = item.href && item.href !== "#"
+    ? pathname === item.href || pathname.startsWith(item.href + "/")
+    : false;
 
   if (item.disabled) {
     return (
       <span
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-white/30 cursor-not-allowed"
-        style={{ paddingLeft: `${12 + depth * 12}px` }}
+        className="block py-1.5 text-[12px] text-white/25 cursor-not-allowed"
+        style={{ paddingLeft: `${12 + depth * 14}px` }}
       >
         {item.label}
       </span>
@@ -187,16 +189,16 @@ function SidebarLinkItem({
     <Link
       href={item.href || "#"}
       className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors",
+        "block py-1.5 text-[12px] transition-colors",
         isActive
-          ? "bg-white/15 text-white font-medium border-l-2 border-secondary"
+          ? "bg-white/15 text-white font-medium border-l-2 border-accent"
           : "text-white/70 hover:text-white hover:bg-white/5"
       )}
-      style={{ paddingLeft: `${12 + depth * 12}px` }}
+      style={{ paddingLeft: `${12 + depth * 14}px` }}
       target={item.external ? "_blank" : undefined}
     >
       {item.label}
-      {item.external && <ExternalLink size={10} />}
+      {item.external && <ExternalLink size={10} className="inline ml-1" />}
     </Link>
   );
 }
@@ -229,10 +231,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-primary-dark">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-sm text-neutral-mid">Loading...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/30 border-t-white" />
+          <p className="text-sm text-white/60">Loading...</p>
         </div>
       </div>
     );
@@ -250,17 +252,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const sidebarContent = (
     <>
-      {/* Logo area — matching CLA header style */}
-      <div className="flex items-center gap-3 px-4 h-14 border-b border-white/10 bg-primary-light">
-        <Scale size={22} className="shrink-0 text-white" />
-        <div>
-          <div className="text-sm font-bold tracking-tight text-white">Command Legal Action</div>
-          <div className="text-[10px] text-white/50">LegalFlow Suite</div>
-        </div>
-      </div>
-
       {/* Sidebar menu sections */}
-      <nav className="flex-1 overflow-y-auto">
+      <nav className="flex-1 overflow-y-auto pt-1">
         {SIDEBAR_MENU.map((section, i) => (
           <SidebarSectionItem
             key={i}
@@ -271,99 +264,113 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* User info at bottom */}
-      <div className="border-t border-white/10 px-3 py-3">
-        <div className="text-xs text-white/60">
-          <div className="font-medium text-white/80">{user.firstName} {user.lastName}</div>
-          <div>{user.rank && `${user.rank} `}{roleLabels[user.role] || user.role}</div>
+      <div className="border-t border-white/10 px-3 py-2.5">
+        <div className="text-[11px] text-white/50">
+          <div className="font-medium text-white/70">{user.firstName} {user.lastName}</div>
+          <div>{roleLabels[user.role] || user.role}</div>
         </div>
       </div>
     </>
   );
 
   return (
-    <div className="flex min-h-screen">
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* Sidebar - desktop */}
-      <aside className="hidden md:flex flex-col bg-primary text-white w-56 shrink-0">
-        {sidebarContent}
-      </aside>
-
-      {/* Sidebar - mobile drawer */}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-primary text-white w-56 transition-transform duration-200 ease-in-out md:hidden",
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <button
-          onClick={() => setMobileOpen(false)}
-          className="absolute top-3 right-3 text-white/60 hover:text-white"
-        >
-          <X size={18} />
-        </button>
-        {sidebarContent}
-      </aside>
-
-      {/* Main area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top nav bar — matching CLA style */}
-        <header className="h-10 bg-primary-light flex items-center justify-between px-4 text-white text-sm">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="md:hidden p-1 mr-2 text-white/80 hover:text-white"
-              aria-label="Open navigation"
-            >
-              <Menu size={18} />
-            </button>
-            <Link href="/dashboard" className="flex items-center gap-1 px-2 py-1 text-white/80 hover:text-white transition-colors">
-              <Home size={14} /> Home
-            </Link>
-            <span className="text-white/30">|</span>
-            <Link href="/cases" className="px-2 py-1 text-white/80 hover:text-white transition-colors">
-              Package Tracking
-            </Link>
-            <span className="text-white/30">|</span>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 px-2 py-1 text-white/80 hover:text-white transition-colors"
-            >
-              <LogOut size={14} /> Logout
-            </button>
-            <span className="text-white/30">|</span>
-            <button className="flex items-center gap-1 px-2 py-1 text-white/80 hover:text-white transition-colors">
-              <HelpCircle size={14} /> Help
-            </button>
+    <div className="flex flex-col min-h-screen">
+      {/* ── Top header — CLA maroon/navy gradient with branding ── */}
+      <div className="bg-gradient-to-r from-primary-dark via-primary to-secondary h-12 flex items-center justify-between px-4 shrink-0">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="md:hidden p-1 text-white/80 hover:text-white"
+            aria-label="Open navigation"
+          >
+            <Menu size={20} />
+          </button>
+          <Scale size={24} className="text-white" />
+          <div>
+            <div className="text-white text-base font-bold tracking-tight leading-tight">Command Legal Action</div>
+            <div className="text-white/40 text-[10px] leading-tight">LegalFlow Suite</div>
           </div>
-          <div className="hidden sm:block text-xs text-white/60">
-            User: {user.firstName} {user.lastName}
-          </div>
-        </header>
-
-        {/* CUI Banner */}
-        <div className="h-8 bg-cui-bg flex items-center justify-center text-xs font-medium text-cui-text tracking-wide">
-          CONTROLLED UNCLASSIFIED INFORMATION - PRIVACY SENSITIVE
         </div>
+        <div className="hidden sm:block text-white/60 text-xs">
+          User: {user.firstName} {user.lastName}
+        </div>
+      </div>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto bg-surface">
-          <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-5">
-            {children}
+      {/* ── Navigation bar ── */}
+      <div className="bg-primary-light h-9 flex items-center justify-between px-4 text-white text-[13px] shrink-0">
+        <div className="flex items-center">
+          <Link href="/dashboard" className="flex items-center gap-1 px-2 py-1 text-white/80 hover:text-white transition-colors">
+            <Home size={13} /> Home
+          </Link>
+          <span className="text-white/20 mx-0.5">|</span>
+          <Link href="/cases" className="px-2 py-1 text-white/80 hover:text-white transition-colors">
+            Package Tracking
+          </Link>
+          <span className="text-white/20 mx-0.5">|</span>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 px-2 py-1 text-white/80 hover:text-white transition-colors"
+          >
+            <LogOut size={13} /> Logout
+          </button>
+          <span className="text-white/20 mx-0.5">|</span>
+          <button className="flex items-center gap-1 px-2 py-1 text-white/80 hover:text-white transition-colors">
+            <HelpCircle size={13} /> Help
+          </button>
+        </div>
+      </div>
+
+      {/* ── Body: sidebar + main ── */}
+      <div className="flex flex-1 min-h-0">
+        {/* Mobile overlay */}
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+
+        {/* Sidebar - desktop */}
+        <aside className="hidden md:flex flex-col bg-primary text-white w-48 shrink-0 overflow-y-auto">
+          {sidebarContent}
+        </aside>
+
+        {/* Sidebar - mobile drawer */}
+        <aside
+          className={cn(
+            "fixed inset-y-0 left-0 z-50 flex flex-col bg-primary text-white w-56 transition-transform duration-200 ease-in-out md:hidden",
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="absolute top-3 right-3 text-white/60 hover:text-white z-10"
+          >
+            <X size={18} />
+          </button>
+          {sidebarContent}
+        </aside>
+
+        {/* Main content area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* CUI Banner */}
+          <div className="h-7 bg-cui-bg flex items-center justify-center text-[11px] font-semibold text-cui-text tracking-wider shrink-0">
+            CONTROLLED UNCLASSIFIED INFORMATION - PRIVACY SENSITIVE
           </div>
-        </main>
 
-        {/* Footer */}
-        <footer className="h-10 bg-neutral-light border-t border-border flex items-center justify-between px-4 md:px-6 text-xs text-neutral-mid">
-          <span>CUI - Privacy Sensitive When Populated</span>
-          <span>LegalFlow v1.0</span>
-        </footer>
+          {/* Main Content */}
+          <main className="flex-1 overflow-auto bg-surface">
+            <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-5">
+              {children}
+            </div>
+          </main>
+
+          {/* Footer */}
+          <footer className="h-8 bg-neutral-light border-t border-border flex items-center justify-between px-4 md:px-6 text-[11px] text-neutral-mid shrink-0">
+            <span>CUI - Privacy Sensitive When Populated</span>
+            <span>LegalFlow v1.0</span>
+          </footer>
+        </div>
       </div>
     </div>
   );

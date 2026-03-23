@@ -3,8 +3,10 @@
 @theme {
   --color-primary: #1B2A47;
   --color-primary-light: #2A3F66;
-  --color-secondary: #C8102E;
-  --color-secondary-light: #E01535;
+  --color-primary-dark: #0F1B2E;
+  --color-secondary: #8B1A1A;
+  --color-secondary-light: #A52222;
+  --color-accent: #C8102E;
   --color-neutral-dark: #1A1A1A;
   --color-neutral-mid: #6B7280;
   --color-neutral-light: #F3F4F6;
