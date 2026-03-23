@@ -1452,7 +1452,21 @@
     "item21Entries": [],
     "signatures": [],
     "evidence": [],
-    "documents": [],
+    "documents": [
+      {
+        "id": "doc-1774294108648-0an3c",
+        "documentVersion": 1,
+        "isCurrent": true,
+        "createdAt": "2026-03-23T19:28:28.648Z",
+        "documentType": "NOTIFICATION_ELECTION_RIGHTS",
+        "generatedById": "user-co-preparer",
+        "generatedAt": "2026-03-23T19:28:28.648Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
+      }
+    ],
     "remedialActions": [],
     "vacationRecordsAsParent": [],
     "flags": [],
