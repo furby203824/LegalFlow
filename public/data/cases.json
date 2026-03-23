@@ -504,7 +504,21 @@
     "item21Entries": [],
     "signatures": [],
     "evidence": [],
-    "documents": [],
+    "documents": [
+      {
+        "id": "doc-1774238325212-r8zc1",
+        "documentVersion": 1,
+        "isCurrent": true,
+        "createdAt": "2026-03-23T03:58:45.212Z",
+        "documentType": "rights_ack",
+        "generatedById": "user-1774232428029-skhw5",
+        "generatedAt": "2026-03-23T03:58:45.212Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
+      }
+    ],
     "remedialActions": [],
     "vacationRecordsAsParent": [],
     "flags": [],
