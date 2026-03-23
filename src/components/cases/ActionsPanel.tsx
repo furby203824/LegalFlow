@@ -898,7 +898,7 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
   const [generating, setGenerating] = useState(false);
   const [outcome, setOutcome] = useState("DENIED");
   const [item15Date, setItem15Date] = useState("");
-  const [authorityName, setAuthorityName] = useState(caseData.hearingRecord?.appealAuthority || "");
+  const [authorityName, setAuthorityName] = useState(caseData.appealRecord?.appealAuthorityName || caseData.hearingRecord?.appealAuthority || "");
   const [fileName, setFileName] = useState("");
   const accused = caseData.accused || {};
 
