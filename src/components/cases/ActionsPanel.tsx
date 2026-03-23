@@ -334,27 +334,7 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
 
           {/* 8. Appeal Election (Item 12) — Accused's Acknowledgment of Appeal Rights (A-1-g) */}
           {hasSig("11") && !hasSig("12") && canPerformAction(userRole, "SIGN_ITEM_12") && (
-            <ActionSection title="Appeal Rights Acknowledgement (Item 12)">
-              <p className="text-xs text-neutral-mid mb-3">
-                Per JAGMAN A-1-g, the accused must be advised of the right to appeal within 5 working days. Record the accused&apos;s appeal election.
-              </p>
-              <div className="mb-3">
-                <ContextDocButton
-                  caseId={caseData.id}
-                  pdfType="appeal_rights_ack"
-                  label="Print A-1-g Appeal Rights Form"
-                  description="Acknowledgement of Appeal Rights — print for accused signature"
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <button onClick={() => performAction("SIGN_ITEM_12", { appealIntent: "INTENDS_TO_APPEAL", signerName: caseData.accused.lastName })} disabled={loading} className="btn-warning text-xs">
-                  Intend to Appeal
-                </button>
-                <button onClick={() => performAction("SIGN_ITEM_12", { appealIntent: "DOES_NOT_INTEND", signerName: caseData.accused.lastName })} disabled={loading} className="btn-primary text-xs">
-                  Do Not Intend to Appeal
-                </button>
-              </div>
-            </ActionSection>
+            <AppealElectionAction caseData={caseData} loading={loading} onSubmit={(data) => performAction("SIGN_ITEM_12", data)} />
           )}
 
           {/* 9. Appeal Filed (Item 13) */}
@@ -400,28 +380,7 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
                   </button>
                 </ActionSection>
               )}
-              <ActionSection title="Administrative Closure (Item 16)">
-                <p className="text-xs text-neutral-mid mb-3">
-                  Complete the Unit Punishment Book (NAVMC 10132) entry and close the NJP record.
-                </p>
-                <div className="mb-3">
-                  <ContextDocButton
-                    caseId={caseData.id}
-                    pdfType="navmc_10132_pdf"
-                    label="Download NAVMC 10132 (Final)"
-                    description="Completed UPB with all items filled — for OMPF/ESR filing"
-                  />
-                </div>
-                <input type="text" id="udNumber" placeholder="UD Number" className="input-field mb-2" />
-                <input type="date" id="udDate" className="input-field mb-2" />
-                <button onClick={() => {
-                  const ud = (document.getElementById("udNumber") as HTMLInputElement).value;
-                  const dt = (document.getElementById("udDate") as HTMLInputElement).value;
-                  performAction("SIGN_ITEM_16", { udNumber: ud, udDate: dt, signerName: "Admin" });
-                }} disabled={loading} className="btn-danger text-xs w-full">
-                  Sign Item 16 & Lock Form
-                </button>
-              </ActionSection>
+              <AdminClosureAction caseData={caseData} loading={loading} onSubmit={(data) => performAction("SIGN_ITEM_16", data)} />
             </>
           )}
         </div>
@@ -1021,6 +980,311 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
             <button onClick={() => onSubmit({ outcome, item15Date, authorityName })} disabled={loading} className="btn-primary text-xs w-full gap-1">
               <CheckCircle size={14} />
               {loading ? "Processing..." : "Validate Appeal Decision"}
+            </button>
+          </div>
+        )}
+      </div>
+    </ActionSection>
+  );
+}
+
+function AppealElectionAction({ caseData, loading, onSubmit }: { caseData: CaseData; loading: boolean; onSubmit: (d: Record<string, unknown>) => void }) {
+  const [step, setStep] = useState<"generate" | "upload" | "confirm">("generate");
+  const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfFilename, setPdfFilename] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const accused = caseData.accused || {};
+
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      const result = await generatePdfDocument(caseData.id, "appeal_rights_ack");
+      setPdfBytes(result.pdfBytes);
+      const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+      setPdfFilename(result.filename);
+      setStep("upload");
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function handleDownload() {
+    if (!pdfUrl) return;
+    const a = window.document.createElement("a");
+    a.href = pdfUrl;
+    a.download = pdfFilename;
+    a.click();
+  }
+
+  function handlePrint() {
+    if (!pdfUrl) return;
+    const printWindow = window.open(pdfUrl, "_blank");
+    if (printWindow) {
+      printWindow.addEventListener("load", () => printWindow.print());
+    }
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFileName(file.name);
+      setStep("confirm");
+    }
+  }
+
+  return (
+    <ActionSection title="Appeal Rights Acknowledgement (Item 12)">
+      <div className="space-y-4">
+        {/* Step indicator */}
+        <div className="flex items-center gap-2 text-xs">
+          <span className={cn("flex items-center gap-1 font-medium", step === "generate" ? "text-primary" : "text-success")}>
+            {step !== "generate" ? <CheckCircle size={14} /> : <span className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center text-[10px] font-bold">1</span>}
+            Generate A-1-g
+          </span>
+          <span className="w-6 border-t border-border" />
+          <span className={cn("flex items-center gap-1 font-medium", step === "upload" ? "text-primary" : step === "confirm" ? "text-success" : "text-neutral-mid")}>
+            {step === "confirm" ? <CheckCircle size={14} /> : <span className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold", step === "upload" ? "border-primary" : "border-neutral-mid/40")}>2</span>}
+            Print &amp; Sign
+          </span>
+          <span className="w-6 border-t border-border" />
+          <span className={cn("flex items-center gap-1 font-medium", step === "confirm" ? "text-primary" : "text-neutral-mid")}>
+            <span className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold", step === "confirm" ? "border-primary" : "border-neutral-mid/40")}>3</span>
+            Upload &amp; Record
+          </span>
+        </div>
+
+        {/* Step 1: Generate PDF */}
+        {step === "generate" && (
+          <div className="space-y-3">
+            <p className="text-xs text-neutral-mid">
+              Per JAGMAN A-1-g, generate the Appeal Rights Acknowledgement form for {accused.rank} {accused.lastName}. The accused must be advised of the right to appeal within 5 working days.
+            </p>
+            <button onClick={handleGenerate} disabled={generating} className="btn-primary text-xs w-full gap-1">
+              <FileText size={14} />
+              {generating ? "Generating PDF..." : "Generate Appeal Rights Form (A-1-g)"}
+            </button>
+          </div>
+        )}
+
+        {/* Step 2: Print, Sign & Upload */}
+        {step === "upload" && (
+          <div className="space-y-3">
+            {pdfUrl && (
+              <div className="border border-border rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-2 bg-surface border-b border-border">
+                  <span className="text-xs font-medium">{pdfFilename}</span>
+                  <div className="flex gap-2">
+                    <button onClick={handlePrint} className="btn-ghost text-xs gap-1">
+                      <Printer size={12} /> Print
+                    </button>
+                    <button onClick={handleDownload} className="btn-primary text-xs gap-1">
+                      <Download size={12} /> Download PDF
+                    </button>
+                  </div>
+                </div>
+                {pdfBytes && <PdfViewer pdfBytes={pdfBytes} className="h-[350px]" />}
+              </div>
+            )}
+
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800 space-y-1">
+              <p className="font-medium flex items-center gap-1"><AlertTriangle size={12} /> Instructions:</p>
+              <ol className="list-decimal ml-5 space-y-0.5">
+                <li>Download or print the A-1-g form above</li>
+                <li>Read appeal rights to the accused</li>
+                <li>Have the accused and witness sign the form</li>
+                <li>Scan/photograph the signed form and upload below</li>
+              </ol>
+            </div>
+
+            <label className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-blue-50/30 transition-colors">
+              <Upload size={20} className="text-neutral-mid" />
+              <span className="text-xs text-neutral-mid">Upload signed Appeal Rights Acknowledgement</span>
+              <span className="text-[10px] text-neutral-mid">PDF, JPG, or PNG</span>
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileUpload} className="hidden" />
+            </label>
+          </div>
+        )}
+
+        {/* Step 3: Record election */}
+        {step === "confirm" && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+              <CheckCircle size={16} className="text-success shrink-0" />
+              <div>
+                <p className="text-xs font-medium text-success">Signed document uploaded</p>
+                <p className="text-[10px] text-neutral-mid">{fileName}</p>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-mid">
+              Record {accused.rank} {accused.lastName}&apos;s appeal election from the signed A-1-g form.
+            </p>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => onSubmit({ appealIntent: "INTENDS_TO_APPEAL", signerName: accused.lastName })} disabled={loading} className="btn-warning text-xs">
+                Intend to Appeal
+              </button>
+              <button onClick={() => onSubmit({ appealIntent: "DOES_NOT_INTEND", signerName: accused.lastName })} disabled={loading} className="btn-primary text-xs">
+                Do Not Intend to Appeal
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </ActionSection>
+  );
+}
+
+function AdminClosureAction({ caseData, loading, onSubmit }: { caseData: CaseData; loading: boolean; onSubmit: (d: Record<string, unknown>) => void }) {
+  const [step, setStep] = useState<"generate" | "upload" | "confirm">("generate");
+  const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfFilename, setPdfFilename] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const [udNumber, setUdNumber] = useState("");
+  const [udDate, setUdDate] = useState("");
+
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      const result = await generatePdfDocument(caseData.id, "navmc_10132_pdf");
+      setPdfBytes(result.pdfBytes);
+      const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+      setPdfFilename(result.filename);
+      setStep("upload");
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function handleDownload() {
+    if (!pdfUrl) return;
+    const a = window.document.createElement("a");
+    a.href = pdfUrl;
+    a.download = pdfFilename;
+    a.click();
+  }
+
+  function handlePrint() {
+    if (!pdfUrl) return;
+    const printWindow = window.open(pdfUrl, "_blank");
+    if (printWindow) {
+      printWindow.addEventListener("load", () => printWindow.print());
+    }
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFileName(file.name);
+      setStep("confirm");
+    }
+  }
+
+  return (
+    <ActionSection title="Administrative Closure (Item 16)">
+      <div className="space-y-4">
+        {/* Step indicator */}
+        <div className="flex items-center gap-2 text-xs">
+          <span className={cn("flex items-center gap-1 font-medium", step === "generate" ? "text-primary" : "text-success")}>
+            {step !== "generate" ? <CheckCircle size={14} /> : <span className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center text-[10px] font-bold">1</span>}
+            Generate Final UPB
+          </span>
+          <span className="w-6 border-t border-border" />
+          <span className={cn("flex items-center gap-1 font-medium", step === "upload" ? "text-primary" : step === "confirm" ? "text-success" : "text-neutral-mid")}>
+            {step === "confirm" ? <CheckCircle size={14} /> : <span className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold", step === "upload" ? "border-primary" : "border-neutral-mid/40")}>2</span>}
+            Print &amp; Sign
+          </span>
+          <span className="w-6 border-t border-border" />
+          <span className={cn("flex items-center gap-1 font-medium", step === "confirm" ? "text-primary" : "text-neutral-mid")}>
+            <span className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold", step === "confirm" ? "border-primary" : "border-neutral-mid/40")}>3</span>
+            Upload &amp; Close
+          </span>
+        </div>
+
+        {/* Step 1: Generate Final NAVMC 10132 */}
+        {step === "generate" && (
+          <div className="space-y-3">
+            <p className="text-xs text-neutral-mid">
+              Generate the completed NAVMC 10132 (Final) with all items filled for OMPF/ESR filing and administrative closure.
+            </p>
+            <button onClick={handleGenerate} disabled={generating} className="btn-primary text-xs w-full gap-1">
+              <FileText size={14} />
+              {generating ? "Generating PDF..." : "Generate NAVMC 10132 (Final)"}
+            </button>
+          </div>
+        )}
+
+        {/* Step 2: Print, Sign & Upload */}
+        {step === "upload" && (
+          <div className="space-y-3">
+            {pdfUrl && (
+              <div className="border border-border rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-2 bg-surface border-b border-border">
+                  <span className="text-xs font-medium">{pdfFilename}</span>
+                  <div className="flex gap-2">
+                    <button onClick={handlePrint} className="btn-ghost text-xs gap-1">
+                      <Printer size={12} /> Print
+                    </button>
+                    <button onClick={handleDownload} className="btn-primary text-xs gap-1">
+                      <Download size={12} /> Download PDF
+                    </button>
+                  </div>
+                </div>
+                {pdfBytes && <PdfViewer pdfBytes={pdfBytes} className="h-[350px]" />}
+              </div>
+            )}
+
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800 space-y-1">
+              <p className="font-medium flex items-center gap-1"><AlertTriangle size={12} /> Instructions:</p>
+              <ol className="list-decimal ml-5 space-y-0.5">
+                <li>Download or print the final NAVMC 10132 above</li>
+                <li>Obtain all required signatures</li>
+                <li>Scan/photograph the signed form and upload below</li>
+              </ol>
+            </div>
+
+            <label className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-blue-50/30 transition-colors">
+              <Upload size={20} className="text-neutral-mid" />
+              <span className="text-xs text-neutral-mid">Upload signed NAVMC 10132 (Final)</span>
+              <span className="text-[10px] text-neutral-mid">PDF, JPG, or PNG</span>
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileUpload} className="hidden" />
+            </label>
+          </div>
+        )}
+
+        {/* Step 3: Confirm & Close */}
+        {step === "confirm" && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+              <CheckCircle size={16} className="text-success shrink-0" />
+              <div>
+                <p className="text-xs font-medium text-success">Signed document uploaded</p>
+                <p className="text-[10px] text-neutral-mid">{fileName}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-xs font-medium text-neutral-mid mb-1">UD Number</label>
+                <input type="text" value={udNumber} onChange={(e) => setUdNumber(e.target.value)} className="input-field" placeholder="UD Number" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-mid mb-1">UD Date</label>
+                <input type="date" value={udDate} onChange={(e) => setUdDate(e.target.value)} className="input-field" />
+              </div>
+            </div>
+            <button onClick={() => onSubmit({ udNumber, udDate, signerName: "Admin" })} disabled={loading} className="btn-danger text-xs w-full gap-1">
+              <CheckCircle size={14} />
+              {loading ? "Processing..." : "Validate & Lock Form (Item 16)"}
             </button>
           </div>
         )}
