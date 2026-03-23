@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { FileText, Download, RefreshCw } from "lucide-react";
-import { generateDocumentContent } from "@/services/documents";
+import { generateDocumentContent, generatePdfDocument } from "@/services/documents";
+import type { PdfDocType } from "@/services/documents";
 
 type Navmc10132Version = "PARTIAL" | "HEARING" | "FINAL";
 
@@ -15,11 +16,15 @@ interface DocDef {
   requiresVacation?: boolean;
   requiresRemedial?: boolean;
   finalOnly?: boolean;
+  isPdf?: boolean;
+  pdfType?: PdfDocType;
 }
 
 const DOCS: DocDef[] = [
   { key: "navmc_10132", label: "NAVMC 10132", desc: "Unit Punishment Book", hasVersions: true },
   { key: "charge_sheet", label: "DD 458", desc: "Charge Sheet" },
+  { key: "notification_election_rights", label: "A-1-c/d Rights", desc: "Notification & Election of Rights (PDF)", isPdf: true, pdfType: "notification_election_rights" },
+  { key: "appeal_rights_ack", label: "A-1-g Appeal", desc: "Acknowledgement of Appeal Rights (PDF)", isPdf: true, pdfType: "appeal_rights_ack" },
   { key: "office_hours_script", label: "Office Hours Script", desc: "Commander hearing guidance" },
   { key: "figure_14_1", label: "Figure 14-1", desc: "Vacation notice", requiresVacation: true },
   { key: "mmrp_notification", label: "MMRP Notification", desc: "Set-aside email", requiresRemedial: true },
@@ -52,12 +57,15 @@ export default function DocumentPanel({
   const [loading, setLoading] = useState(false);
   const [caseNumber, setCaseNumber] = useState("");
   const [showVersionSelector, setShowVersionSelector] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfFilename, setPdfFilename] = useState("");
 
   async function generateDocument(type: string, version?: Navmc10132Version) {
     setLoading(true);
     setDocType(type);
     setDocVersion(version || null);
     setShowVersionSelector(false);
+    setPdfUrl(null);
     try {
       const data = await generateDocumentContent(caseId, type, version);
       setDocument(data.document);
@@ -69,7 +77,33 @@ export default function DocumentPanel({
     }
   }
 
+  async function generatePdf(pdfType: PdfDocType) {
+    setLoading(true);
+    setDocType(pdfType);
+    setDocVersion(null);
+    setShowVersionSelector(false);
+    setDocument("");
+    try {
+      const result = await generatePdfDocument(caseId, pdfType);
+      const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+      setPdfFilename(result.filename);
+      if (result.caseNumber) setCaseNumber(result.caseNumber);
+    } catch (err) {
+      setDocument(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+      setPdfUrl(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function handleDocClick(doc: DocDef) {
+    if (doc.isPdf && doc.pdfType) {
+      generatePdf(doc.pdfType);
+      return;
+    }
     if (doc.hasVersions) {
       setShowVersionSelector(showVersionSelector && docType === doc.key ? false : true);
       setDocType(doc.key);
@@ -140,7 +174,40 @@ export default function DocumentPanel({
         </div>
       )}
 
-      {document && (
+      {/* PDF preview */}
+      {pdfUrl && (
+        <div className="card overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-surface border-b border-border">
+            <span className="text-sm font-medium">{pdfFilename}</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  const docDef = DOCS.find((d) => d.key === docType);
+                  if (docDef?.pdfType) generatePdf(docDef.pdfType);
+                }}
+                className="btn-ghost text-xs gap-1"
+              >
+                <RefreshCw size={12} /> Regenerate
+              </button>
+              <button
+                onClick={() => {
+                  const a = window.document.createElement("a");
+                  a.href = pdfUrl;
+                  a.download = pdfFilename;
+                  a.click();
+                }}
+                className="btn-primary text-xs gap-1"
+              >
+                <Download size={12} /> Download PDF
+              </button>
+            </div>
+          </div>
+          <iframe src={pdfUrl} className="w-full h-[600px] bg-white" title="PDF Preview" />
+        </div>
+      )}
+
+      {/* Text document preview */}
+      {document && !pdfUrl && (
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-surface border-b border-border">
             <span className="text-sm font-medium">

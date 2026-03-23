@@ -14,6 +14,7 @@ import {
   generateRightsAcknowledgement,
   createVersionedDocument,
 } from "@/lib/documents";
+import { generateNotificationElectionRightsPdf, generateAppealRightsAckPdf } from "@/lib/documents/pdf";
 import type { CaseData, Navmc10132Version } from "@/lib/documents";
 import type { Rank, Grade, CommanderGradeLevel } from "@/types";
 
@@ -157,4 +158,125 @@ export async function generateDocumentContent(
   });
 
   return { document, caseNumber: rawCase.caseNumber };
+}
+
+export type PdfDocType = "notification_election_rights" | "appeal_rights_ack";
+
+/**
+ * Generate a PDF document from case data.
+ * Returns { pdfBytes, filename, caseNumber }.
+ */
+export async function generatePdfDocument(
+  caseId: string,
+  type: PdfDocType
+): Promise<{ pdfBytes: Uint8Array; filename: string; caseNumber: string }> {
+  const session = getSession();
+  if (!session) throw new Error("Authentication required");
+
+  const rawCase = await casesStore.findById(caseId);
+  if (!rawCase) throw new Error("Case not found");
+
+  const njpCase = caseWithIncludes(rawCase);
+  const sig = (item: string) => (njpCase.signatures || []).find((s: Rec) => s.itemNumber === item);
+  const sig2 = sig("2"), sig3 = sig("3"), sig9 = sig("9"), sig11 = sig("11"), sig12 = sig("12"), sig16 = sig("16");
+  const appeal = njpCase.appealRecord;
+  const vacation = (njpCase.vacationRecordsAsParent || [])[0];
+  const remedial = (njpCase.remedialActions || []).find((ra: Rec) => ra.mmrpNotificationRequired && !ra.mmrpNotificationSent) || (njpCase.remedialActions || [])[0];
+  const pr = njpCase.punishmentRecord;
+
+  const caseData: CaseData = {
+    caseNumber: njpCase.caseNumber, caseId: njpCase.id,
+    accusedLastName: njpCase.accused.lastName, accusedFirstName: njpCase.accused.firstName,
+    accusedMiddleName: njpCase.accused.middleName || "", accusedRank: njpCase.accused.rank as Rank,
+    accusedGrade: njpCase.accused.grade as Grade, accusedEdipi: njpCase.accused.edipi,
+    accusedUnit: njpCase.accused.unitFullString, accusedUnitGcmca: njpCase.accused.unitFullString,
+    component: rawCase.component,
+    njpAuthorityName: rawCase.njpAuthorityName || undefined, njpAuthorityTitle: rawCase.njpAuthorityTitle || undefined,
+    njpAuthorityUnit: rawCase.njpAuthorityUnit || undefined, njpAuthorityRank: rawCase.njpAuthorityRank || undefined,
+    njpAuthorityGrade: rawCase.njpAuthorityGrade || undefined,
+    commanderGradeLevel: rawCase.commanderGradeLevel as CommanderGradeLevel,
+    vesselException: rawCase.vesselException,
+    offenses: (njpCase.offenses || []).map((o: Rec) => ({
+      letter: o.offenseLetter, ucmjArticle: o.ucmjArticle, offenseType: o.offenseType,
+      summary: o.offenseSummary, offenseDate: o.offenseDate, offensePlace: o.offensePlace,
+      finding: o.finding || undefined,
+      victims: ((o.victims || []) as Rec[]).map((v) => ({
+        letter: v.victimLetter || "", status: v.victimStatus || "Unknown",
+        sex: v.victimSex || "Unknown", race: v.victimRace || "Unknown", ethnicity: v.victimEthnicity || "Unknown",
+      })),
+    })),
+    item2ElectionAccepted: sig2 ? !sig2.refusalNoted : undefined,
+    item2CounselConsulted: sig2 ? true : undefined,
+    item2SignedDate: sig2?.signedDate, item2RefusalNoted: sig2?.refusalNoted,
+    item2CoSignedInstead: sig2?.coSignedInstead, item2SignerName: sig2?.signerName,
+    item3SignedDate: sig3?.signedDate, item3SignerName: sig3?.signerName,
+    uaApplicable: rawCase.uaApplicable || false,
+    uaPeriodStart: rawCase.uaPeriodStart, uaPeriodEnd: rawCase.uaPeriodEnd,
+    desertionMarks: rawCase.desertionMarks,
+    item6Punishments: pr ? buildPunishmentList(pr) : [], item6Date: rawCase.njpDate,
+    punishmentText: pr?.punishmentText,
+    item7SuspensionDetails: pr?.suspensionText, item7SuspensionMonths: pr?.suspensionMonths,
+    item7SuspensionStartDate: pr?.suspensionStartDate, item7SuspensionEndDate: pr?.suspensionEndDate,
+    item7RemissionTerms: pr?.suspensionRemissionTerms,
+    item9SignedDate: sig9?.signedDate, item9SignerName: sig9?.signerName,
+    dateNoticeToAccused: rawCase.dateNoticeToAccused,
+    item11SignedDate: sig11?.signedDate, item11SignerName: sig11?.signerName,
+    appealIntent: appeal?.appealIntent, item12SignedDate: appeal?.item12SignedDate || sig12?.signedDate,
+    item12SignerName: sig12?.signerName,
+    appealNotFiled: rawCase.appealNotFiled || false,
+    appealFiledDate: appeal?.appealFiledDate || rawCase.appealFiledDate,
+    appealAuthorityName: appeal?.appealAuthorityName, appealAuthorityRank: appeal?.appealAuthorityRank,
+    appealAuthoritySignedDate: appeal?.appealAuthoritySignedDate,
+    appealOutcome: appeal?.appealOutcome, appealOutcomeDetail: appeal?.appealOutcomeDetail,
+    dateNoticeAppealDecision: rawCase.dateNoticeAppealDecision,
+    accusedTransferred: rawCase.accusedTransferred || false,
+    item16SignedDate: rawCase.item16SignedDate || sig16?.signedDate,
+    item16UdNumber: rawCase.item16UdNumber, item16Dtd: rawCase.item16Dtd,
+    item16SignerName: sig16?.signerName,
+    item21Entries: (njpCase.item21Entries || []).map((e: Rec) => ({ entryDate: e.entryDate, entryText: e.entryText })),
+    njpDate: rawCase.njpDate,
+    vacationRecord: vacation ? {
+      vacationDate: vacation.vacationDate, coName: vacation.coName, coTitle: vacation.coTitle,
+      originalSuspendedPunishment: vacation.originalSuspendedPunishment,
+      originalSuspensionDate: vacation.originalSuspensionDate,
+      vacatedInFull: vacation.vacatedInFull, vacatedPortion: vacation.vacatedPortion,
+      triggeringUcmjArticle: vacation.triggeringUcmjArticle,
+      triggeringOffenseSummary: vacation.triggeringOffenseSummary,
+      triggeringOffenseDate: vacation.triggeringOffenseDate,
+      pocName: vacation.figure141PocName, pocContact: vacation.figure141PocContact,
+    } : undefined,
+    remedialAction: remedial ? {
+      actionType: remedial.actionType, actionDate: remedial.actionDate,
+      actionAuthorityName: remedial.actionAuthorityName,
+      punishmentAffected: remedial.punishmentAffected, actionDetail: remedial.actionDetail,
+      reason: remedial.reason, restorationLanguage: remedial.restorationLanguage,
+    } : undefined,
+  };
+
+  let pdfBytes: Uint8Array;
+  let filename: string;
+  const cn = rawCase.caseNumber || "case";
+
+  switch (type) {
+    case "notification_election_rights":
+      pdfBytes = await generateNotificationElectionRightsPdf(caseData);
+      filename = `${cn}_Notification_Election_Rights${rawCase.vesselException ? "_Vessel" : ""}.pdf`;
+      break;
+    case "appeal_rights_ack":
+      pdfBytes = await generateAppealRightsAckPdf(caseData);
+      filename = `${cn}_Appeal_Rights_Acknowledgement.pdf`;
+      break;
+    default:
+      throw new Error("Invalid PDF document type");
+  }
+
+  await createVersionedDocument(caseId, type.toUpperCase(), session.userId);
+
+  await auditStore.append({
+    caseId, caseNumber: rawCase.caseNumber,
+    userId: session.userId, userRole: session.role, userName: session.username,
+    action: "GENERATE", notes: `Generated PDF: ${type}`,
+  });
+
+  return { pdfBytes, filename, caseNumber: rawCase.caseNumber };
 }
