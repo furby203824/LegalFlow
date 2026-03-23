@@ -256,7 +256,17 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
 
           {/* ═══ THE PROCEEDING ═══ */}
           {hasSig("3") && (!offenses.every((o: { finding: string | null }) => o.finding) || !pr || !hasSig("9")) && (
-            <PhaseHeader label="The Proceeding" description="JAGMAN A-1-f — NJP Hearing" />
+            <>
+              <PhaseHeader label="The Proceeding" description="JAGMAN A-1-f — NJP Hearing" />
+              {!offenses.every((o: { finding: string | null }) => o.finding) && (
+                <ContextDocButton
+                  caseId={caseData.id}
+                  pdfType="navmc_10132_pdf"
+                  label="Print NAVMC 10132 for Hearing"
+                  description="Pre-filled UPB with offenses for the NJP Authority"
+                />
+              )}
+            </>
           )}
 
           {/* 4. Findings (Item 5) */}
@@ -285,6 +295,14 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
               <p className="text-xs text-neutral-mid mb-3">
                 The accused must be notified of the punishment imposed and their appeal rights per JAGMAN A-1-g.
               </p>
+              <div className="mb-3">
+                <ContextDocButton
+                  caseId={caseData.id}
+                  pdfType="navmc_10132_pdf"
+                  label="Print NAVMC 10132 for Notification"
+                  description="UPB with findings & punishment — for accused review"
+                />
+              </div>
               <label className="block text-xs font-medium mb-1">Item 10 — Date of Notice to Accused</label>
               <input type="date" id="item10Date" defaultValue={caseData.njpDate || ""} className="input-field mb-2" />
               <button onClick={() => { const v = (document.getElementById("item10Date") as HTMLInputElement).value; performAction("SIGN_ITEM_11", { item10Date: v, signerName: "NJP Authority" }); }} disabled={loading} className="btn-primary text-xs w-full">
@@ -299,6 +317,14 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
               <p className="text-xs text-neutral-mid mb-3">
                 Per JAGMAN A-1-g, the accused must be advised of the right to appeal within 5 working days. Record the accused&apos;s appeal election.
               </p>
+              <div className="mb-3">
+                <ContextDocButton
+                  caseId={caseData.id}
+                  pdfType="appeal_rights_ack"
+                  label="Print A-1-g Appeal Rights Form"
+                  description="Acknowledgement of Appeal Rights — print for accused signature"
+                />
+              </div>
               <div className="flex flex-col gap-2">
                 <button onClick={() => performAction("SIGN_ITEM_12", { appealIntent: "INTENDS_TO_APPEAL", signerName: caseData.accused.lastName })} disabled={loading} className="btn-warning text-xs">
                   Intend to Appeal
@@ -373,6 +399,14 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
                 <p className="text-xs text-neutral-mid mb-3">
                   Complete the Unit Punishment Book (NAVMC 10132) entry and close the NJP record.
                 </p>
+                <div className="mb-3">
+                  <ContextDocButton
+                    caseId={caseData.id}
+                    pdfType="navmc_10132_pdf"
+                    label="Download NAVMC 10132 (Final)"
+                    description="Completed UPB with all items filled — for OMPF/ESR filing"
+                  />
+                </div>
                 <input type="text" id="udNumber" placeholder="UD Number" className="input-field mb-2" />
                 <input type="date" id="udDate" className="input-field mb-2" />
                 <button onClick={() => {
@@ -388,11 +422,6 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
         </div>
       )}
 
-      {/* Documents */}
-      <div className="card p-4">
-        <h3 className="text-xs font-medium text-neutral-mid uppercase tracking-wide mb-3">Documents</h3>
-        <p className="text-xs text-neutral-mid">Use the Documents tab below to generate and download documents.</p>
-      </div>
     </div>
   );
 }
@@ -407,6 +436,44 @@ function PhaseHeader({ label, description }: { label: string; description: strin
       </div>
       <div className="flex-1 border-t border-primary/30" />
     </div>
+  );
+}
+
+function ContextDocButton({ caseId, pdfType, label, description }: { caseId: string; pdfType: string; label: string; description: string }) {
+  const [generating, setGenerating] = useState(false);
+
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await generatePdfDocument(caseId, pdfType as any);
+      const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = window.document.createElement("a");
+      a.href = url;
+      a.download = result.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleGenerate}
+      disabled={generating}
+      className="flex items-center gap-2 w-full p-2.5 rounded-md border border-dashed border-primary/40 bg-blue-50/30 hover:bg-blue-50 transition-colors text-left"
+    >
+      <FileText size={14} className="text-primary shrink-0" />
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-medium text-primary">{generating ? "Generating..." : label}</span>
+        <p className="text-[10px] text-neutral-mid">{description}</p>
+      </div>
+      <Download size={12} className="text-primary shrink-0" />
+    </button>
   );
 }
 
