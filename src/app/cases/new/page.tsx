@@ -93,7 +93,6 @@ export default function NewCasePage() {
   const [component, setComponent] = useState("ACTIVE");
   const [commanderGrade, setCommanderGrade] = useState("");
   const [vesselException, setVesselException] = useState(false);
-  const [jurisdictionConfirmed, setJurisdictionConfirmed] = useState(false);
   const [statuteAck, setStatuteAck] = useState(false);
 
   const [detailsOpen, setDetailsOpen] = useState<Record<number, boolean>>({});
@@ -224,7 +223,7 @@ export default function NewCasePage() {
         component: component || "ACTIVE",
         vesselException: vesselException || false,
         commanderGradeLevel: cmdGradeLevel,
-        jurisdictionConfirmed,
+        jurisdictionConfirmed: true,
         uaApplicable,
         offenseDateEarliest: offenseDates[0] || null,
         formLocked: false, jaReviewRequired: false, jaReviewComplete: false,
@@ -536,18 +535,6 @@ export default function NewCasePage() {
                 )}
               </div>
             </label>
-          </Section>
-
-          {/* System Checks */}
-          <Section title="System Checks">
-            <div className="space-y-3">
-              <label className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-md cursor-pointer">
-                <input type="checkbox" checked={jurisdictionConfirmed} onChange={(e) => setJurisdictionConfirmed(e.target.checked)} required className="mt-1" />
-                <span className="text-sm">
-                  I confirm the accused is assigned or attached to this command and that this command has jurisdiction to impose Non-Judicial Punishment. <span className="text-error">*</span>
-                </span>
-              </label>
-            </div>
           </Section>
 
           {/* Actions */}
