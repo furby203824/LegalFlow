@@ -56,9 +56,9 @@
   {
     "id": "user-co-certifier",
     "createdAt": "2026-03-23T00:00:00.000Z",
-    "updatedAt": "2026-03-23T19:52:51.639Z",
+    "updatedAt": "2026-03-23T23:52:41.816Z",
     "isActive": true,
-    "lastLogin": "2026-03-23T19:52:51.639Z",
+    "lastLogin": "2026-03-23T23:52:41.816Z",
     "username": "co-certifier",
     "passwordHash": "co-certifier",
     "firstName": "David",
