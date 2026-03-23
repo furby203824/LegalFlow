@@ -14,6 +14,7 @@ interface UserInfo {
   lastName: string;
   role: string;
   unitId: string;
+  unitName: string;
   edipi: string | null;
   rank: string | null;
   grade: string | null;
@@ -21,7 +22,11 @@ interface UserInfo {
   isActive: boolean;
 }
 
-const ROLES = ["INITIATOR", "ADMIN", "NJP_AUTHORITY", "ACCUSED", "APPEAL_AUTHORITY", "IPAC_ADMIN", "SUITE_ADMIN"];
+const ROLES = [
+  "NJP_PREPARER", "CERTIFIER_REVIEWER", "CERTIFIER",
+  "NJP_AUTHORITY", "APPEAL_AUTHORITY",
+  "IPAC_ADMIN", "SUITE_ADMIN",
+];
 
 export default function UsersPage() {
   const [users, setUsers] = useState<UserInfo[]>([]);
@@ -50,7 +55,8 @@ export default function UsersPage() {
       await createUser({
         username: fd.get("username"), password: fd.get("password"),
         firstName: fd.get("firstName"), lastName: fd.get("lastName"),
-        role: fd.get("role"), unitId: fd.get("unitId"),
+        role: fd.get("role"),
+        unitId: "unit-3bn7mar", unitName: "3d Bn, 7th Marines",
         email: fd.get("email"),
         edipi: fd.get("edipi") || null, rank: fd.get("rank") || null, grade: fd.get("grade") || null,
       });
@@ -88,8 +94,9 @@ export default function UsersPage() {
               <div><label className="block text-sm font-medium mb-1">First Name *</label><input name="firstName" required className="input-field" /></div>
               <div><label className="block text-sm font-medium mb-1">Last Name *</label><input name="lastName" required className="input-field" /></div>
               <div><label className="block text-sm font-medium mb-1">Role *</label>
-                <select name="role" required className="input-field">{ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select></div>
-              <div><label className="block text-sm font-medium mb-1">Unit ID *</label><input name="unitId" required className="input-field" /></div>
+                <select name="role" required className="input-field">{ROLES.map((r) => <option key={r} value={r}>{r.replace(/_/g, " ")}</option>)}</select></div>
+              <div><label className="block text-sm font-medium mb-1">Unit</label>
+                <input value="3d Bn, 7th Marines" readOnly className="input-field bg-surface text-neutral-mid" /></div>
               <div><label className="block text-sm font-medium mb-1">EDIPI</label><input name="edipi" maxLength={10} className="input-field" /></div>
               <div><label className="block text-sm font-medium mb-1">Rank</label>
                 <select name="rank" className="input-field"><option value="">—</option>{RANKS.map((r) => <option key={r} value={r}>{r}</option>)}</select></div>
@@ -127,8 +134,8 @@ export default function UsersPage() {
                   )}>
                     <td className="px-4 py-3 font-medium">{u.lastName}, {u.firstName}</td>
                     <td className="px-4 py-3 font-mono text-xs">{u.username}</td>
-                    <td className="px-4 py-3"><span className="badge bg-primary/10 text-primary">{u.role}</span></td>
-                    <td className="px-4 py-3 text-neutral-mid">{u.unitId}</td>
+                    <td className="px-4 py-3"><span className="badge bg-primary/10 text-primary">{u.role.replace(/_/g, " ")}</span></td>
+                    <td className="px-4 py-3 text-neutral-mid">{u.unitName || u.unitId}</td>
                     <td className="px-4 py-3">
                       <span className={cn("badge", u.isActive ? "bg-success/10 text-success" : "bg-gray-100 text-gray-500")}>
                         {u.isActive ? "Active" : "Inactive"}
@@ -157,9 +164,9 @@ export default function UsersPage() {
                 </div>
               </div>
               <div className="space-y-2 text-sm">
-                <DetailRow label="Role" value={selectedUser.role} />
+                <DetailRow label="Role" value={selectedUser.role.replace(/_/g, " ")} />
                 <DetailRow label="Email" value={selectedUser.email} />
-                <DetailRow label="Unit" value={selectedUser.unitId} />
+                <DetailRow label="Unit" value={selectedUser.unitName || selectedUser.unitId} />
                 <DetailRow label="Rank/Grade" value={selectedUser.rank ? `${selectedUser.rank}/${selectedUser.grade}` : "—"} />
                 <DetailRow label="EDIPI" value={selectedUser.edipi || "—"} />
                 <DetailRow label="Status" value={selectedUser.isActive ? "Active" : "Inactive"} />
