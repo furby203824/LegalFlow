@@ -517,6 +517,19 @@
         "distributionOmpf": false,
         "distributionFiles": false,
         "distributionMember": false
+      },
+      {
+        "id": "doc-1774240417275-1b2wb",
+        "documentVersion": 1,
+        "isCurrent": true,
+        "createdAt": "2026-03-23T04:33:37.275Z",
+        "documentType": "APPEAL_RIGHTS_ACK",
+        "generatedById": "user-1774232428029-skhw5",
+        "generatedAt": "2026-03-23T04:33:37.275Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
       }
     ],
     "remedialActions": [],
