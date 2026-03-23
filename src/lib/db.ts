@@ -6,6 +6,7 @@
 // =============================================================================
 
 import { readJsonFile, writeJsonFile } from "./github";
+import { computeYearsOfService } from "@/types";
 
 const DATA_PATH = "public/data";
 
@@ -421,7 +422,10 @@ export function caseWithIncludes(c: Rec): Rec {
     grade: c.accusedGrade,
     edipi: c.accusedEdipi,
     dateOfBirth: c.accusedDateOfBirth || null,
-    yearsOfService: c.accusedYearsOfService ?? null,
+    afadbd: c.accusedAfadbd || null,
+    yearsOfService: c.accusedAfadbd
+      ? computeYearsOfService(c.accusedAfadbd, c.njpDate || undefined)
+      : null,
     serviceBranch: c.accusedServiceBranch || "USMC",
     unitFullString: c.unitFullString || c.accusedUnit || "",
     component: c.component,

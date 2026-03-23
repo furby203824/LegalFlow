@@ -389,6 +389,29 @@ export function getMaxForfeiture(
   return row[col];
 }
 
+// --- YOS Calculation ---
+// Years of Service = floor((NJP date or current date) - AFADBD) in whole years
+export function computeYearsOfService(afadbd: string, referenceDate?: string): number {
+  const start = new Date(afadbd).getTime();
+  const end = referenceDate ? new Date(referenceDate).getTime() : Date.now();
+  return Math.floor((end - start) / (365.25 * 24 * 60 * 60 * 1000));
+}
+
+// --- UPB Standard Abbreviations ---
+export const UPB_ABBREVIATIONS: Record<string, string> = {
+  conf: "confinement / confined",
+  cust: "correctional custody",
+  du: "duty",
+  forf: "forfeitures",
+  fr: "from",
+  fwd: "forwarded",
+  rec: "recommending",
+  red: "reduction / reduced",
+  restr: "restriction / restricted",
+  susp: "suspension / suspended",
+  "w/o": "without",
+};
+
 // --- JA Review Thresholds (Section 5.3) ---
 export const JA_REVIEW_THRESHOLDS = {
   arrestQuartersDays: 7,
