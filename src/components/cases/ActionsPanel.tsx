@@ -526,7 +526,7 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
   async function handleGenerate() {
     setGenerating(true);
     try {
-      const result = await generatePdfDocument(caseData.id, "notification_election_rights");
+      const result = await generatePdfDocument(caseData.id, "suspects_rights_ack");
       setPdfBytes(result.pdfBytes);
       const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
@@ -564,9 +564,7 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
     }
   }
 
-  const formTitle = vesselException
-    ? "Notification & Election of Rights (Vessel Exception Applies)"
-    : "Notification & Election of Rights (Vessel Exception Does Not Apply)";
+  const formTitle = "Suspect's Rights Acknowledgement / Statement";
 
   return (
     <ActionSection title="Step 1 — Rights Advisement">
@@ -593,22 +591,20 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
         {step === "generate" && (
           <div className="space-y-3">
             <p className="text-xs text-neutral-mid">
-              Generate the official JAGINST 5800.7G form for {accused.rank} {accused.lastName}.
-              {vesselException
-                ? " The vessel exception applies — the accused cannot refuse NJP."
-                : " The accused has the right to refuse NJP and demand trial by court-martial."}
+              Generate the Suspect&apos;s Rights Acknowledgement / Statement for {accused.rank} {accused.lastName}.
+              This form advises the accused of their rights before any questioning.
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
               <p className="text-xs font-medium text-blue-800 flex items-center gap-1">
                 <FileText size={14} /> {formTitle}
               </p>
               <p className="text-[10px] text-blue-700 mt-1">
-                {vesselException ? "JAGMAN A-1-c" : "JAGMAN A-1-d"} — Pre-filled with case offenses and max punishments
+                JAGMAN 0175 — Pre-filled with accused identification and suspected offenses
               </p>
             </div>
             <button onClick={handleGenerate} disabled={generating} className="btn-primary text-xs w-full gap-1">
               <FileText size={14} />
-              {generating ? "Generating PDF..." : "Generate Rights Notification PDF"}
+              {generating ? "Generating PDF..." : "Generate Rights Acknowledgement PDF"}
             </button>
           </div>
         )}
@@ -638,8 +634,8 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
               <p className="font-medium flex items-center gap-1"><AlertTriangle size={12} /> Instructions:</p>
               <ol className="list-decimal ml-5 space-y-0.5">
                 <li>Download or print the PDF above</li>
-                <li>Read rights to the accused and have them complete the Election of Rights section</li>
-                <li>Have the accused and witness sign the form</li>
+                <li>Read rights to the accused and have them complete the Acknowledgement section</li>
+                <li>Have the accused, witness, and interviewer sign the form</li>
                 <li>Scan/photograph the signed form and upload below</li>
               </ol>
             </div>
@@ -647,7 +643,7 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
             {/* Upload signed copy */}
             <label className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-blue-50/30 transition-colors">
               <Upload size={20} className="text-neutral-mid" />
-              <span className="text-xs text-neutral-mid">Upload signed Notification &amp; Election of Rights</span>
+              <span className="text-xs text-neutral-mid">Upload signed Rights Acknowledgement / Statement</span>
               <span className="text-[10px] text-neutral-mid">PDF, JPG, or PNG</span>
               <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileUpload} className="hidden" />
             </label>
@@ -665,7 +661,7 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
               </div>
             </div>
             <p className="text-xs text-neutral-mid">
-              Confirm that {accused.rank} {accused.lastName} has been advised of their rights per JAGINST 5800.7G and the signed notification &amp; election form has been received.
+              Confirm that {accused.rank} {accused.lastName} has been advised of their rights per JAGINST 5800.7G (JAGMAN 0175) and the signed acknowledgement / statement has been received.
             </p>
             <button onClick={onAcknowledge} disabled={loading} className="btn-primary text-xs w-full gap-1">
               <CheckCircle size={14} />
