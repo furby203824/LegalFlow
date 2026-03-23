@@ -83,3 +83,11 @@ export function isDirectParent(parentUnitId: string, childUnitId: string): boole
 export function isAncestor(ancestorUnitId: string, descendantUnitId: string): boolean {
   return getAncestorUnitIds(descendantUnitId).includes(ancestorUnitId);
 }
+
+/** Get the appeal authority label for a unit (parent unit's name + CO info) */
+export function getAppealAuthorityLabel(unitId: string): string {
+  const parent = getParentUnit(unitId);
+  if (!parent) return "";
+  // Return a standard label: "Commanding Officer, <parent unit name>"
+  return `Commanding Officer, ${parent.name}`;
+}
