@@ -265,18 +265,8 @@ function getReductionLimit(accusedGrade: string, accusedRank: string, isField: b
   if (gradeIdx <= 0) return { label: "Not available — already at lowest grade", available: false };
 
   if (!isField) {
-    // Company grade: can ONLY reduce E4 and below, by one pay grade
-    if (gradeIdx > 3) {
-      // E5+ cannot be reduced by a company grade commander
-      return { label: "Not available — company grade commander cannot reduce E5 and above", available: false };
-    }
-    const targetGrade = ENLISTED_GRADES[gradeIdx - 1];
-    const targetRank = GRADE_TO_RANK_ABBR[targetGrade] || targetGrade;
-    return {
-      label: `Red fr ${accusedRank}/${accusedGrade} to ${targetRank}/${targetGrade}`,
-      available: true,
-      targetGrade,
-    };
+    // Company grade commanders cannot impose reduction in grade
+    return { label: "Not available — company grade commander cannot reduce in grade", available: false };
   }
 
   // Field grade: can reduce one or more pay grades
