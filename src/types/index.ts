@@ -12,7 +12,10 @@ export type UserRole =
   | "ACCUSED"
   | "APPEAL_AUTHORITY"
   | "IPAC_ADMIN"
-  | "SUITE_ADMIN";
+  | "SUITE_ADMIN"
+  | "NJP_PREPARER"
+  | "CERTIFIER_REVIEWER"
+  | "CERTIFIER";
 
 // --- Case Status ---
 export type CaseStatus =
