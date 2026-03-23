@@ -1018,7 +1018,7 @@
         "toDate": "2026-03-19",
         "toTime": "04:31",
         "offensePlace": "MCBH",
-        "finding": null,
+        "finding": "GUILTY",
         "locked": true
       },
       {
@@ -1030,7 +1030,7 @@
         "offenseDate": "2026-03-20",
         "offenseTime": "10:39",
         "offensePlace": "MCBH",
-        "finding": null,
+        "finding": "GUILTY",
         "locked": true
       }
     ],
@@ -1142,7 +1142,7 @@
     "isOverdue": false,
     "caseNumber": "CASE-2026-0004",
     "status": "RIGHTS_ADVISED",
-    "currentPhase": "RIGHTS_ADVISEMENT",
+    "currentPhase": "HEARING",
     "unitId": "unit-hq",
     "unitFullString": "Headquarters, LegalFlow",
     "accusedName": "Sanchez, Samantha James",
