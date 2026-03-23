@@ -457,19 +457,16 @@ function PhaseHeader({ label, description }: { label: string; description: strin
 
 function ContextDocButton({ caseId, pdfType, label, description }: { caseId: string; pdfType: string; label: string; description: string }) {
   const [generating, setGenerating] = useState(false);
+  const [pdfData, setPdfData] = useState<{ pdfBytes: Uint8Array; filename: string } | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   async function handleGenerate() {
     setGenerating(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await generatePdfDocument(caseId, pdfType as any);
-      const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = window.document.createElement("a");
-      a.href = url;
-      a.download = result.filename;
-      a.click();
-      URL.revokeObjectURL(url);
+      setPdfData({ pdfBytes: result.pdfBytes, filename: result.filename });
+      setShowPreview(true);
     } catch (err) {
       console.error("PDF generation failed:", err);
     } finally {
@@ -477,19 +474,52 @@ function ContextDocButton({ caseId, pdfType, label, description }: { caseId: str
     }
   }
 
+  function handleDownload() {
+    if (!pdfData) return;
+    const blob = new Blob([pdfData.pdfBytes as BlobPart], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const a = window.document.createElement("a");
+    a.href = url;
+    a.download = pdfData.filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
-    <button
-      onClick={handleGenerate}
-      disabled={generating}
-      className="flex items-center gap-2 w-full p-2.5 rounded-md border border-dashed border-primary/40 bg-blue-50/30 hover:bg-blue-50 transition-colors text-left"
-    >
-      <FileText size={14} className="text-primary shrink-0" />
-      <div className="flex-1 min-w-0">
-        <span className="text-xs font-medium text-primary">{generating ? "Generating..." : label}</span>
-        <p className="text-[10px] text-neutral-mid">{description}</p>
-      </div>
-      <Download size={12} className="text-primary shrink-0" />
-    </button>
+    <div className="space-y-2">
+      <button
+        onClick={handleGenerate}
+        disabled={generating}
+        className="flex items-center gap-2 w-full p-2.5 rounded-md border border-dashed border-primary/40 bg-blue-50/30 hover:bg-blue-50 transition-colors text-left"
+      >
+        <FileText size={14} className="text-primary shrink-0" />
+        <div className="flex-1 min-w-0">
+          <span className="text-xs font-medium text-primary">{generating ? "Generating..." : label}</span>
+          <p className="text-[10px] text-neutral-mid">{description}</p>
+        </div>
+        <Printer size={12} className="text-primary shrink-0" />
+      </button>
+
+      {showPreview && pdfData && (
+        <div className="rounded-md border border-border overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 bg-neutral-100 border-b border-border">
+            <span className="text-xs font-medium text-neutral-dark">Document Preview</span>
+            <div className="flex items-center gap-2">
+              <button onClick={() => handleGenerate()} disabled={generating} className="text-xs text-primary hover:underline flex items-center gap-1">
+                <Printer size={12} /> Regenerate
+              </button>
+              <button onClick={handleDownload} className="btn-primary text-xs py-1 px-3 flex items-center gap-1">
+                <Download size={12} /> Download
+              </button>
+              <button onClick={() => setShowPreview(false)} className="text-neutral-mid hover:text-neutral-dark text-xs px-1">
+                &times;
+              </button>
+            </div>
+          </div>
+          <PdfViewer pdfBytes={pdfData.pdfBytes} className="h-[500px]" />
+        </div>
+      )}
+    </div>
   );
 }
 
