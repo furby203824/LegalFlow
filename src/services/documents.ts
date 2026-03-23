@@ -11,6 +11,7 @@ import {
   generateOfficeHoursScript,
   generateFigure141,
   generateMmrpNotification,
+  generateRightsAcknowledgement,
   createVersionedDocument,
 } from "@/lib/documents";
 import type { CaseData, Navmc10132Version } from "@/lib/documents";
@@ -131,6 +132,7 @@ export async function generateDocumentContent(
     case "office_hours_script": document = generateOfficeHoursScript(caseData); break;
     case "figure_14_1": document = generateFigure141(caseData); break;
     case "mmrp_notification": document = generateMmrpNotification(caseData); break;
+    case "rights_ack": document = generateRightsAcknowledgement(caseData); break;
     default: throw new Error("Invalid document type");
   }
 

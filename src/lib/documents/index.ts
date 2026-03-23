@@ -6,4 +6,5 @@ export { generateNavmc10132 } from "./navmc10132";
 export { generateOfficeHoursScript } from "./officeHoursScript";
 export { generateFigure141 } from "./figure141";
 export { generateMmrpNotification } from "./mmrpNotification";
+export { generateRightsAcknowledgement } from "./rightsAcknowledgement";
 export { createVersionedDocument } from "./versionControl";
