@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 import { RANK_GRADE_OPTIONS, getMaxForfeiture } from "@/types";
 import type { CommanderGradeLevel, UserRole } from "@/types";
 import {
-  AlertTriangle, AlertOctagon, Info, Clock, Lock,
+  AlertTriangle, AlertOctagon, Info, Clock, Lock, FileText, Download, Upload, Printer, CheckCircle,
 } from "lucide-react";
 import { performPhaseAction } from "@/services/api";
+import { generateDocumentContent } from "@/services/documents";
 import { getSession } from "@/lib/auth";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -212,9 +213,13 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
 
           {/* Step 2: NJP Election (only after rights acknowledged) */}
           {rightsAcked && !hasSig("2") && canPerformAction(userRole, "SIGN_ITEM_2") && (
-            <ActionSection title="Item 2 — NJP Election">
+            <ActionSection title="Step 2 — NJP Election (Item 2)">
+              <div className="flex items-center gap-2 p-2 mb-3 bg-green-50 border border-green-200 rounded-md">
+                <CheckCircle size={14} className="text-success shrink-0" />
+                <span className="text-xs text-success font-medium">Rights acknowledged — proceed to election</span>
+              </div>
               <p className="text-xs text-neutral-mid mb-3">
-                Member has acknowledged their rights. Now elect to accept NJP or demand court-martial.
+                Record the member&apos;s election. Select the appropriate option based on {caseData.accused.rank} {caseData.accused.lastName}&apos;s decision.
               </p>
               <div className="flex flex-col gap-2">
                 <button onClick={() => performAction("SIGN_ITEM_2", { acceptsNjp: true, counselProvided: true, signerName: `${caseData.accused.lastName}, ${caseData.accused.firstName}` })} disabled={loading} className="btn-primary text-xs">
@@ -508,45 +513,142 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
 }
 
 function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseData; loading: boolean; onAcknowledge: () => void }) {
-  const [checked, setChecked] = useState(false);
+  const [step, setStep] = useState<"generate" | "upload" | "confirm">("generate");
+  const [docContent, setDocContent] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [uploaded, setUploaded] = useState(false);
+  const [fileName, setFileName] = useState("");
   const accused = caseData.accused || {};
-  const vesselException = !!caseData.vesselException;
+
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      const result = await generateDocumentContent(caseData.id, "rights_ack");
+      setDocContent(result.document);
+      setStep("upload");
+    } catch {
+      setDocContent("Error generating document");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function handleDownload() {
+    const blob = new Blob([docContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = window.document.createElement("a");
+    a.href = url;
+    a.download = `${caseData.caseNumber || "case"}_rights_acknowledgement.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handlePrint() {
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(`<pre style="font-family:monospace;font-size:12px;white-space:pre-wrap;">${docContent}</pre>`);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFileName(file.name);
+      setUploaded(true);
+      setStep("confirm");
+    }
+  }
 
   return (
-    <ActionSection title="Rights Advisement">
-      <div className="space-y-3">
-        <p className="text-xs text-neutral-mid">
-          Before electing NJP or court-martial, the member must be advised of the following rights per MCO 5800.16:
-        </p>
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-xs space-y-2">
-          <p className="font-semibold text-sm text-neutral-dark">
-            Rights of {accused.rank} {accused.lastName}, {accused.firstName}
-          </p>
-          <ol className="list-decimal ml-4 space-y-1.5 text-neutral-dark">
-            <li>The nature of the offense(s) alleged against you.</li>
-            <li>Your right to consult with an independent lawyer (military or civilian at no expense to the government) before deciding how to proceed.</li>
-            <li>Your right to examine all evidence the command intends to present.</li>
-            {!vesselException && (
-              <li>Your right to <strong>demand trial by court-martial</strong> instead of accepting NJP.</li>
-            )}
-            {vesselException && (
-              <li className="text-warning">Because you are attached to or embarked upon a vessel, you <strong>do not</strong> have the right to refuse NJP and demand trial by court-martial.</li>
-            )}
-            <li>If NJP is accepted, your right to a personal appearance before the commanding officer.</li>
-            <li>Your right to bring witnesses and present evidence on your behalf.</li>
-            <li>Your right to have a spokesperson (not necessarily a lawyer) present during the hearing.</li>
-            <li>Your right to appeal any punishment imposed within 5 calendar days.</li>
-          </ol>
-        </div>
-        <label className="flex items-start gap-3 p-3 bg-surface border border-border rounded-md cursor-pointer">
-          <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} className="mt-0.5" />
-          <span className="text-xs text-neutral-dark">
-            I confirm that {accused.rank} {accused.lastName} has been advised of the above rights and understands them.
+    <ActionSection title="Step 1 — Rights Advisement">
+      <div className="space-y-4">
+        {/* Step indicator */}
+        <div className="flex items-center gap-2 text-xs">
+          <span className={cn("flex items-center gap-1 font-medium", step === "generate" ? "text-primary" : "text-success")}>
+            {step !== "generate" ? <CheckCircle size={14} /> : <span className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center text-[10px] font-bold">1</span>}
+            Generate
           </span>
-        </label>
-        <button onClick={onAcknowledge} disabled={loading || !checked} className="btn-primary text-xs w-full">
-          Confirm Rights Acknowledged
-        </button>
+          <span className="w-6 border-t border-border" />
+          <span className={cn("flex items-center gap-1 font-medium", step === "upload" ? "text-primary" : step === "confirm" ? "text-success" : "text-neutral-mid")}>
+            {step === "confirm" ? <CheckCircle size={14} /> : <span className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold", step === "upload" ? "border-primary" : "border-neutral-mid/40")}> 2</span>}
+            Print & Upload
+          </span>
+          <span className="w-6 border-t border-border" />
+          <span className={cn("flex items-center gap-1 font-medium", step === "confirm" ? "text-primary" : "text-neutral-mid")}>
+            <span className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold", step === "confirm" ? "border-primary" : "border-neutral-mid/40")}>3</span>
+            Confirm
+          </span>
+        </div>
+
+        {/* Step 1: Generate */}
+        {step === "generate" && (
+          <div className="space-y-3">
+            <p className="text-xs text-neutral-mid">
+              Generate the Suspect&apos;s Rights Acknowledgement form (JAGMAN 0175) for {accused.rank} {accused.lastName}. Print the form and have the member read and sign it before proceeding.
+            </p>
+            <button onClick={handleGenerate} disabled={generating} className="btn-primary text-xs w-full gap-1">
+              <FileText size={14} />
+              {generating ? "Generating..." : "Generate Rights Acknowledgement"}
+            </button>
+          </div>
+        )}
+
+        {/* Step 2: Print & Upload */}
+        {step === "upload" && (
+          <div className="space-y-3">
+            {/* Document preview */}
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-2 bg-surface border-b border-border">
+                <span className="text-xs font-medium">Rights Acknowledgement — Preview</span>
+                <div className="flex gap-2">
+                  <button onClick={handlePrint} className="btn-ghost text-xs gap-1">
+                    <Printer size={12} /> Print
+                  </button>
+                  <button onClick={handleDownload} className="btn-ghost text-xs gap-1">
+                    <Download size={12} /> Download
+                  </button>
+                </div>
+              </div>
+              <pre className="p-3 text-[10px] font-mono overflow-auto max-h-[250px] whitespace-pre-wrap bg-bg">
+                {docContent}
+              </pre>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">
+              <p className="font-medium flex items-center gap-1"><AlertTriangle size={12} /> Print, have the member sign, then upload the signed copy.</p>
+            </div>
+
+            {/* Upload signed copy */}
+            <label className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-blue-50/30 transition-colors">
+              <Upload size={20} className="text-neutral-mid" />
+              <span className="text-xs text-neutral-mid">Upload signed Rights Acknowledgement</span>
+              <span className="text-[10px] text-neutral-mid">PDF, JPG, or PNG</span>
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileUpload} className="hidden" />
+            </label>
+          </div>
+        )}
+
+        {/* Step 3: Confirm */}
+        {step === "confirm" && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+              <CheckCircle size={16} className="text-success shrink-0" />
+              <div>
+                <p className="text-xs font-medium text-success">Signed document uploaded</p>
+                <p className="text-[10px] text-neutral-mid">{fileName}</p>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-mid">
+              Confirm that {accused.rank} {accused.lastName} has been advised of their rights and the signed acknowledgement has been received.
+            </p>
+            <button onClick={onAcknowledge} disabled={loading} className="btn-primary text-xs w-full gap-1">
+              <CheckCircle size={14} />
+              {loading ? "Processing..." : "Confirm Rights Acknowledged"}
+            </button>
+          </div>
+        )}
       </div>
     </ActionSection>
   );
