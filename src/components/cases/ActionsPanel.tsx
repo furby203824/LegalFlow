@@ -277,16 +277,6 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             </>
           )}
 
-          {/* 4. Findings (Item 5) */}
-          {hasSig("3") && !offenses.every((o: { finding: string | null }) => o.finding) && caseData.status === "RIGHTS_ADVISED" && canPerformAction(userRole, "ENTER_FINDINGS") && (
-            <FindingsAction offenses={offenses} loading={loading} onSubmit={(findings) => performAction("ENTER_FINDINGS", { findings })} />
-          )}
-
-          {/* 5. Punishment (Item 6) */}
-          {offenses.every((o: { finding: string | null }) => o.finding) && !pr && caseData.currentPhase === "HEARING" && canPerformAction(userRole, "ENTER_PUNISHMENT") && (
-            <PunishmentAction caseData={caseData} loading={loading} onSubmit={(data) => performAction("ENTER_PUNISHMENT", data)} />
-          )}
-
           {/* 6. NJP Authority Signature (Items 8-9) */}
           {pr && !hasSig("9") && canPerformAction(userRole, "SIGN_ITEM_9") && (
             <Item9Action caseData={caseData} loading={loading} onSubmit={(data) => performAction("SIGN_ITEM_9", data)} />
