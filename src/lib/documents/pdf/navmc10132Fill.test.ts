@@ -397,8 +397,8 @@ describe("fillNavmc10132Pdf", () => {
       const { form } = await loadGeneratedForm(bytes);
 
       const punishment = getTextValue(form, "6 PUNISHMENT IMPOSED");
-      expect(punishment).toContain("Extra duties for 14 days");
-      expect(punishment).toContain("Restriction for 14 days");
+      expect(punishment).toContain("ED 14 days");
+      expect(punishment).toContain("Rest 14 days");
     });
 
     it("should fill CO certification date (Item 3)", async () => {
@@ -435,8 +435,8 @@ describe("fillNavmc10132Pdf", () => {
       const { form } = await loadGeneratedForm(bytes);
 
       const suspension = getTextValue(form, "7 SUSPENSION IF ANY");
-      expect(suspension).toContain("suspended");
-      expect(suspension).toContain("6 months");
+      expect(suspension).toContain("susp");
+      expect(suspension).toContain("6 mos");
     });
 
     it("should fill appeal intent (Item 12) when present", async () => {
@@ -805,10 +805,10 @@ describe("fillNavmc10132Pdf", () => {
       const { form } = await loadGeneratedForm(bytes);
 
       const punishment = getTextValue(form, "6 PUNISHMENT IMPOSED");
-      expect(punishment).toContain("Extra duties for 45 days");
-      expect(punishment).toContain("Restriction for 60 days");
-      expect(punishment).toContain("Reduction to Cpl");
-      // Date is now inline in the punishment text, not in the separate date field
+      expect(punishment).toContain("ED 45 days");
+      expect(punishment).toContain("Rest 60 days");
+      expect(punishment).toContain("Red to");
+      // Date is now inline in the punishment text
       expect(punishment).toContain("10 Feb 26");
     });
 
@@ -829,8 +829,8 @@ describe("fillNavmc10132Pdf", () => {
       const { form } = await loadGeneratedForm(bytes);
 
       const suspension = getTextValue(form, "7 SUSPENSION IF ANY");
-      expect(suspension).toContain("Reduction to Cpl suspended");
-      expect(suspension).toContain("6 months");
+      expect(suspension).toContain("Red to");
+      expect(suspension).toContain("susp 6 mos");
     });
 
     it("Item 7: empty when no suspended punishments", async () => {

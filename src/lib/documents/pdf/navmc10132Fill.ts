@@ -8,7 +8,7 @@
 
 import { PDFDocument, PDFName, PDFDict, PDFNumber } from "pdf-lib";
 import type { CaseData, Navmc10132Version } from "../types";
-import { punishmentFull } from "../punishmentText";
+import { punishmentAbbreviated, punishmentFull } from "../punishmentText";
 import { fmtStandard, fmtTitleCase } from "../dateFormatters";
 
 /**
@@ -120,7 +120,7 @@ function mapDemand(accepted?: boolean, vesselException?: boolean): string {
 function buildPunishmentText(data: CaseData): string {
   if (data.punishmentText) return data.punishmentText;
   if (!data.item6Punishments || data.item6Punishments.length === 0) return "";
-  return data.item6Punishments.map((p) => punishmentFull(p)).join("; ");
+  return data.item6Punishments.map((p) => punishmentAbbreviated(p)).join("; ");
 }
 
 /**
@@ -133,9 +133,9 @@ function buildSuspensionText(data: CaseData): string {
   if (suspended.length === 0) return "";
 
   const parts = suspended.map((p) => {
-    const desc = punishmentFull(p);
-    const mo = p.suspensionMonths ? ` for ${p.suspensionMonths} months` : "";
-    return `${desc} suspended${mo}`;
+    const desc = punishmentAbbreviated(p);
+    const mo = p.suspensionMonths ? ` susp ${p.suspensionMonths} mos` : " susp";
+    return `${desc}${mo}`;
   });
 
   let text = parts.join("; ");
@@ -322,6 +322,8 @@ export async function fillNavmc10132Pdf(
     } else {
       setText(form, "6 PUNISHMENT IMPOSED", item6Full);
     }
+    // Clear the separate date field — date is inline in the text
+    setText(form, "6 PUNISHMENT IMPOSITION DATE", "");
   }
 
   if (version !== "PARTIAL") {
