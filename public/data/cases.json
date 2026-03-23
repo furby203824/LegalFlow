@@ -1430,7 +1430,7 @@
         "offenseTime": "09:28",
         "offensePlace": "MCBH",
         "finding": null,
-        "locked": false
+        "locked": true
       }
     ],
     "victims": [
@@ -1442,7 +1442,7 @@
         "victimSex": "Unknown",
         "victimRace": "Unknown",
         "victimEthnicity": "Unknown",
-        "locked": false
+        "locked": true
       }
     ],
     "punishment": null,
