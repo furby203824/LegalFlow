@@ -95,7 +95,31 @@ export async function getDashboard() {
 // Cases List
 // =============================================================================
 
-export async function getCases(filters?: { status?: string; name?: string }) {
+// Compute which role "owns" the next required action on a case
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function computePendingRole(c: any): string | null {
+  const isClosed = (c.status || "").startsWith("CLOSED") || c.status === "DESTROYED";
+  const isReferred = c.status === "REFERRED_COURT_MARTIAL";
+  if (isClosed || isReferred) return null;
+
+  const sigs = (c.signatures || []) as { itemNumber: string }[];
+  const hasSig = (n: string) => sigs.some((s) => s.itemNumber === n);
+  const offenses = c.offenses || [];
+  const appeal = c.appeal || c.appealRecord;
+
+  if (!hasSig("2")) return "ACCUSED";
+  if (!hasSig("3")) return "CERTIFIER";
+  if (!offenses.every((o: { finding?: string | null }) => o.finding)) return "CERTIFIER";
+  if (!c.punishment && !c.punishmentRecord) return "CERTIFIER";
+  if (!hasSig("9")) return "CERTIFIER";
+  if (!hasSig("11")) return "CERTIFIER";
+  if (!hasSig("12")) return "ACCUSED";
+  if (appeal?.appealIntent === "INTENDS_TO_APPEAL" && !hasSig("14")) return "APPEAL_AUTHORITY";
+  if (!hasSig("16")) return "NJP_PREPARER";
+  return null;
+}
+
+export async function getCases(filters?: { status?: string; name?: string; pendingRole?: string }) {
   const u = user();
   let cases = await casesStore.findAll();
 
@@ -119,8 +143,28 @@ export async function getCases(filters?: { status?: string; name?: string }) {
     );
   }
 
+  // Role-based pending filter: only cases where next action belongs to this role
+  if (filters?.pendingRole) {
+    const pr = filters.pendingRole;
+    cases = cases.filter((c) => {
+      const owner = computePendingRole(c);
+      if (!owner) return false;
+      // Certifier Reviewer sees same cases as Certifier (they review before certifier acts)
+      if (pr === "CERTIFIER_REVIEWER") return owner === "CERTIFIER";
+      return owner === pr;
+    });
+  }
+
   cases.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
-  return { cases: cases.map(caseWithIncludes) };
+
+  // Attach the pending role to each case for display
+  return {
+    cases: cases.map((c) => {
+      const full = caseWithIncludes(c);
+      full.pendingForRole = computePendingRole(c);
+      return full;
+    }),
+  };
 }
 
 // =============================================================================

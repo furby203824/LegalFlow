@@ -7,6 +7,7 @@ import AppShell from "@/components/ui/AppShell";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Download } from "lucide-react";
 import { getCases } from "@/services/api";
+import { getSession } from "@/lib/auth";
 
 interface CaseRow {
   id: string;
@@ -20,7 +21,16 @@ interface CaseRow {
   updatedAt: string;
   jaReviewRequired?: boolean;
   jaReviewComplete?: boolean;
+  pendingForRole?: string | null;
 }
+
+const PENDING_ROLE_LABELS: Record<string, string> = {
+  ACCUSED: "Accused",
+  CERTIFIER: "Certifier",
+  NJP_PREPARER: "NJP Preparer",
+  APPEAL_AUTHORITY: "Appeal Authority",
+  CERTIFIER_REVIEWER: "Certifier Reviewer",
+};
 
 const STATUS_OPTIONS = [
   "INITIATED", "REFERRED_COURT_MARTIAL", "RIGHTS_ADVISED", "PUNISHMENT_IMPOSED",
@@ -69,12 +79,35 @@ function CasesListContent() {
   const [filterPhase, setFilterPhase] = useState("");
   const [filterArticle, setFilterArticle] = useState("");
 
+  // view=pending means filter to only cases pending the current user's role
+  const viewMode = searchParams.get("view") || "all";
+  const session = getSession();
+  const userRole = session?.role || "SUITE_ADMIN";
+
+  const VIEW_TITLES: Record<string, Record<string, string>> = {
+    pending: {
+      NJP_PREPARER: "Packages Pending Your Action",
+      CERTIFIER_REVIEWER: "Packages Pending Review",
+      CERTIFIER: "Packages Awaiting Your Action",
+      SUITE_ADMIN: "All Packages",
+    },
+    all: { default: "Available Packages" },
+  };
+
+  const pageTitle = viewMode === "pending"
+    ? (VIEW_TITLES.pending[userRole] || "Packages Pending Your Role")
+    : "Available Packages";
+
   useEffect(() => {
-    getCases({})
+    const filters: { status?: string; name?: string; pendingRole?: string } = {};
+    if (viewMode === "pending" && userRole !== "SUITE_ADMIN") {
+      filters.pendingRole = userRole;
+    }
+    getCases(filters)
       .then((data) => setCases((data.cases || []) as CaseRow[]))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [viewMode, userRole]);
 
   // Filter + sort
   const filteredCases = useMemo(() => {
@@ -145,7 +178,7 @@ function CasesListContent() {
   }
 
   function exportCSV() {
-    const headers = ["Case #", "EDIPI", "Name", "Status", "Phase", "Articles", "Updated"];
+    const headers = ["Case #", "EDIPI", "Name", "Status", "Phase", "Articles", "Pending", "Updated"];
     const rows = filteredCases.map((c) => [
       c.caseNumber,
       c.accused.edipi,
@@ -153,6 +186,7 @@ function CasesListContent() {
       STATUS_LABEL[c.status] || c.status,
       c.currentPhase.replace(/_/g, " "),
       c.offenses.map((o) => `Art. ${o.ucmjArticle}`).join("; "),
+      c.pendingForRole ? (PENDING_ROLE_LABELS[c.pendingForRole] || c.pendingForRole) : "",
       c.updatedAt,
     ]);
     const csv = [headers, ...rows].map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
@@ -175,7 +209,12 @@ function CasesListContent() {
         {/* Header bar — matches CLA "Available Packages" style */}
         <div className="card px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold text-neutral-dark">Available Packages</h1>
+            <h1 className="text-lg font-semibold text-neutral-dark">{pageTitle}</h1>
+            {viewMode === "pending" && (
+              <Link href="/cases" className="btn-ghost text-xs">
+                View All
+              </Link>
+            )}
             <button
               onClick={() => {
                 setFilterCaseNum(""); setFilterEdipi(""); setFilterName("");
@@ -274,6 +313,9 @@ function CasesListContent() {
                       <span className="font-medium text-neutral-dark text-xs">Articles</span>
                     </th>
                     <th className="text-left px-4 py-2">
+                      <span className="font-medium text-neutral-dark text-xs">Pending</span>
+                    </th>
+                    <th className="text-left px-4 py-2">
                       <button onClick={() => toggleSort("updatedAt")} className="flex items-center gap-1 font-medium text-neutral-dark text-xs">
                         Updated <SortIcon field="updatedAt" />
                       </button>
@@ -339,13 +381,14 @@ function CasesListContent() {
                       />
                     </td>
                     <td className="px-4 py-1.5" />
+                    <td className="px-4 py-1.5" />
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedCases.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-5 py-12 text-center text-sm text-neutral-mid">
-                        No packages found.
+                      <td colSpan={8} className="px-5 py-12 text-center text-sm text-neutral-mid">
+                        {viewMode === "pending" ? "No packages pending your action." : "No packages found."}
                       </td>
                     </tr>
                   ) : (
@@ -378,6 +421,20 @@ function CasesListContent() {
                           </td>
                           <td className="px-4 py-2.5 text-xs text-neutral-mid">
                             {c.offenses.map((o) => `Art. ${o.ucmjArticle}`).join(", ")}
+                          </td>
+                          <td className="px-4 py-2.5 text-xs">
+                            {c.pendingForRole ? (
+                              <span className={cn(
+                                "inline-block px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                c.pendingForRole === userRole && "bg-primary/10 text-primary",
+                                c.pendingForRole === "CERTIFIER" && userRole === "CERTIFIER_REVIEWER" && "bg-warning/10 text-warning",
+                                c.pendingForRole !== userRole && !(c.pendingForRole === "CERTIFIER" && userRole === "CERTIFIER_REVIEWER") && "bg-neutral-light text-neutral-mid",
+                              )}>
+                                {PENDING_ROLE_LABELS[c.pendingForRole] || c.pendingForRole}
+                              </span>
+                            ) : (
+                              <span className="text-neutral-mid/50">—</span>
+                            )}
                           </td>
                           <td className="px-4 py-2.5 text-xs">
                             <span className={cn(overdue ? "text-error font-bold" : "text-neutral-mid")}>

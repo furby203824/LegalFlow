@@ -57,6 +57,7 @@ function buildSidebarMenu(role: string): SidebarSection[] {
       label: "NJP Preparer",
       children: [
         { label: "Initiate NJP Package", href: "/cases/new" },
+        { label: "My Pending Packages", href: "/cases?view=pending" },
       ],
     });
   }
@@ -65,7 +66,7 @@ function buildSidebarMenu(role: string): SidebarSection[] {
     njpChildren.push({
       label: "Certifier Reviewer",
       children: [
-        { label: "Packages Pending Review", href: "/cases" },
+        { label: "Packages Pending Review", href: "/cases?view=pending" },
       ],
     });
   }
@@ -74,7 +75,7 @@ function buildSidebarMenu(role: string): SidebarSection[] {
     njpChildren.push({
       label: "Certifier",
       children: [
-        { label: "Packages Awaiting Action", href: "/cases" },
+        { label: "Packages Awaiting Action", href: "/cases?view=pending" },
       ],
     });
   }
