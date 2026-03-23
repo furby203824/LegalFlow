@@ -6,10 +6,35 @@
  * and FINAL versions based on how much data is available.
  */
 
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, PDFName, PDFDict } from "pdf-lib";
 import type { CaseData, Navmc10132Version } from "../types";
 import { punishmentFull } from "../punishmentText";
 import { fmtStandard } from "../dateFormatters";
+
+/**
+ * Strip the rich text (/RV) flag from a text field so pdf-lib can
+ * read/write it without throwing RichTextFieldReadError.
+ */
+function stripRichText(form: ReturnType<PDFDocument["getForm"]>, name: string): void {
+  try {
+    const field = form.getTextField(name);
+    const dict = (field as unknown as { acroField: { dict: PDFDict } }).acroField.dict;
+    // Remove /RV (rich value) entry
+    dict.delete(PDFName.of("RV"));
+    // Clear the rich text bit (bit 26) from /Ff flags if present
+    const ffRef = dict.get(PDFName.of("Ff"));
+    if (ffRef) {
+      const ff = (ffRef as unknown as { numberValue: number }).numberValue ?? 0;
+      const RICH_TEXT_BIT = 1 << 25; // 0-indexed bit 25 = bit position 26
+      if (ff & RICH_TEXT_BIT) {
+        const { PDFNumber } = require("pdf-lib");
+        dict.set(PDFName.of("Ff"), PDFNumber.of(ff & ~RICH_TEXT_BIT));
+      }
+    }
+  } catch {
+    // Field not found — skip
+  }
+}
 
 // Template PDF path — served from public/ directory (must include basePath for static export)
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/LegalFlow";
@@ -350,6 +375,9 @@ export async function fillNavmc10132Pdf(
   }
 
   // ═══ Item 21: Remarks (all versions if entries exist) ═══
+  // The "21 REMARKS" field is a rich text field in the template;
+  // strip the /RV flag so pdf-lib can set text and flatten without error.
+  stripRichText(form, "21 REMARKS");
   if (data.item21Entries && data.item21Entries.length > 0) {
     const remarks = data.item21Entries
       .map((e) => `${fmtStandard(e.entryDate)} - ${e.entryText}`)
