@@ -933,5 +933,16 @@
     "userName": "co-preparer",
     "action": "UPDATE",
     "notes": "Member rights acknowledged"
+  },
+  {
+    "id": "audit-1774294154186-z0sag",
+    "timestamp": "2026-03-23T19:29:14.186Z",
+    "caseId": "case-1774294101445-2c51m",
+    "caseNumber": "CASE-2026-0005",
+    "userId": "user-co-preparer",
+    "userRole": "NJP_PREPARER",
+    "userName": "co-preparer",
+    "action": "SIGN",
+    "notes": "Item 2 signed - NJP accepted"
   }
 ]
