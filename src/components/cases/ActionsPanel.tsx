@@ -12,6 +12,7 @@ import { generatePdfDocument } from "@/services/documents";
 import PdfViewer from "@/components/documents/PdfViewer";
 import HearingGuidePanel from "@/components/cases/HearingGuidePanel";
 import { getSession } from "@/lib/auth";
+import { getAppealAuthorityLabel } from "@/lib/units";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CaseData = any;
@@ -1024,7 +1025,7 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
   const [generating, setGenerating] = useState(false);
   const [outcome, setOutcome] = useState("DENIED");
   const [item15Date, setItem15Date] = useState("");
-  const [authorityName, setAuthorityName] = useState(caseData.appealRecord?.appealAuthorityName || caseData.hearingRecord?.appealAuthority || "");
+  const [authorityName, setAuthorityName] = useState(caseData.appealRecord?.appealAuthorityName || caseData.hearingRecord?.appealAuthority || getAppealAuthorityLabel(caseData.unitId || "") || "");
   const [fileName, setFileName] = useState("");
   const accused = caseData.accused || {};
 
@@ -1156,8 +1157,8 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
               Record the decision from the signed appeal document for {accused.rank} {accused.lastName}.
             </p>
             <div>
-              <label className="block text-xs font-medium text-neutral-mid mb-1">Appeal Authority (Next Higher Commander)</label>
-              <input type="text" value={authorityName} onChange={(e) => setAuthorityName(e.target.value)} className="input-field text-xs" placeholder="e.g., Commanding General, 1st MARDIV" />
+              <label className="block text-xs font-medium text-neutral-mid mb-1">Appeal Authority (Next Higher)</label>
+              <div className="input-field text-xs bg-surface text-neutral-dark">{authorityName || "—"}</div>
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-mid mb-1">Decision</label>

@@ -7,6 +7,7 @@ import { updateHearingRecord } from "@/services/api";
 import { PUNISHMENT_LIMITS, getMaxForfeiture } from "@/types";
 import type { CommanderGradeLevel } from "@/types";
 import MastScriptPrint from "./MastScriptPrint";
+import { getAppealAuthorityLabel } from "@/lib/units";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Rec = Record<string, any>;
@@ -560,7 +561,7 @@ export default function HearingGuidePanel({ caseId, caseData, onUpdate }: { case
   const rateName = `${fullRank} ${accused.lastName || ""}`.trim() || "RATE NAME";
   const articles = offenses.map((o: Rec) => o.ucmjArticle).filter(Boolean);
 
-  const [appealAuthority, setAppealAuthority] = useState(hr.appealAuthority || "");
+  const [appealAuthority, setAppealAuthority] = useState(hr.appealAuthority || getAppealAuthorityLabel(caseData.unitId || "") || "");
   const [appellateRightsReader, setAppellateRightsReader] = useState(hr.appellateRightsReader || "");
   const [currentStep, setCurrentStep] = useState<number>(hr.currentStep || 0);
   const [responses, setResponses] = useState<Record<string, string>>(hr.responses || {});
@@ -630,8 +631,8 @@ export default function HearingGuidePanel({ caseId, caseData, onUpdate }: { case
       {/* Config bar */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-surface rounded-lg border border-border">
         <div>
-          <label className="block text-xs font-medium text-neutral-mid mb-1">Appeal Authority</label>
-          <input className="input-field text-sm" value={appealAuthority} onChange={(e) => setAppealAuthority(e.target.value)} placeholder="e.g., Commanding General, 1st MARDIV" />
+          <label className="block text-xs font-medium text-neutral-mid mb-1">Appeal Authority (Next Higher)</label>
+          <div className="input-field text-sm bg-surface text-neutral-dark">{appealAuthority || "—"}</div>
         </div>
         <div>
           <label className="block text-xs font-medium text-neutral-mid mb-1">Who Reads Appellate Rights</label>
