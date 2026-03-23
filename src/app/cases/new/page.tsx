@@ -112,6 +112,7 @@ interface OffenseInput {
   summary: string;
   offenseDate: string;
   offenseTime: string;
+  hasDuration: boolean;
   fromDate: string;
   fromTime: string;
   toDate: string;
@@ -182,7 +183,7 @@ export default function NewCasePage() {
   }
 
   const [offenses, setOffenses] = useState<OffenseInput[]>([{
-    ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", fromDate: "", fromTime: "", toDate: "", toTime: "", offensePlace: "",
+    ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", hasDuration: false, fromDate: "", fromTime: "", toDate: "", toTime: "", offensePlace: "",
     victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }],
   }]);
 
@@ -239,20 +240,16 @@ export default function NewCasePage() {
       if (!session) { setErrors(["Not authenticated"]); return; }
       const cmdGradeLevel = getCommanderGradeLevel(commanderGrade as Grade);
       const uaApplicable = offenses.some((o) => o.ucmjArticle === "85" || o.ucmjArticle === "86");
-      const isUa = (art: string) => art === "85" || art === "86";
-      const offenseDates = offenses.map((o) => isUa(o.ucmjArticle) ? o.fromDate : o.offenseDate).filter(Boolean).sort();
+      const offenseDates = offenses.map((o) => o.hasDuration ? o.fromDate : o.offenseDate).filter(Boolean).sort();
       const offenseRecords = offenses.map((o, i) => ({
         id: `off-${Date.now()}-${letters[i]}`,
         offenseLetter: letters[i],
         ucmjArticle: o.ucmjArticle,
         offenseType: o.offenseType,
         offenseSummary: o.summary,
-        offenseDate: isUa(o.ucmjArticle) ? o.fromDate : o.offenseDate,
-        offenseTime: isUa(o.ucmjArticle) ? o.fromTime : o.offenseTime,
-        fromDate: o.fromDate,
-        fromTime: o.fromTime,
-        toDate: o.toDate,
-        toTime: o.toTime,
+        offenseDate: o.hasDuration ? o.fromDate : o.offenseDate,
+        offenseTime: o.hasDuration ? o.fromTime : o.offenseTime,
+        ...(o.hasDuration ? { fromDate: o.fromDate, fromTime: o.fromTime, toDate: o.toDate, toTime: o.toTime } : {}),
         offensePlace: o.offensePlace,
         finding: null,
         locked: false,
@@ -427,7 +424,7 @@ export default function NewCasePage() {
 
           {/* Offenses */}
           <Section title="Offenses" action={offenses.length < 5 ? (
-            <button type="button" onClick={() => setOffenses([...offenses, { ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", fromDate: "", fromTime: "", toDate: "", toTime: "", offensePlace: "", victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }] }])} className="btn-ghost text-xs gap-1">
+            <button type="button" onClick={() => setOffenses([...offenses, { ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", hasDuration: false, fromDate: "", fromTime: "", toDate: "", toTime: "", offensePlace: "", victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }] }])} className="btn-ghost text-xs gap-1">
               <Plus size={14} /> Add Offense
             </button>
           ) : undefined}>
@@ -482,7 +479,7 @@ export default function NewCasePage() {
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="UCMJ Article" required>
-                    <select className="input-field" value={o.ucmjArticle} onChange={(e) => updateOffense(oi, "ucmjArticle", e.target.value, { offenseType: UCMJ_ARTICLE_NAMES[e.target.value] || "" })} required>
+                    <select className="input-field" value={o.ucmjArticle} onChange={(e) => { const art = e.target.value; updateOffense(oi, "ucmjArticle", art, { offenseType: UCMJ_ARTICLE_NAMES[art] || "", ...(art === "85" || art === "86" ? { hasDuration: true } : {}) }); }} required>
                       <option value="">Select article</option>
                       {UCMJ_ARTICLES.map((a) => <option key={a} value={a}>Art. {a} — {UCMJ_ARTICLE_NAMES[a] || a}</option>)}
                     </select>
@@ -491,8 +488,8 @@ export default function NewCasePage() {
                     <input className="input-field" value={o.offenseType} onChange={(e) => updateOffense(oi, "offenseType", e.target.value)} required readOnly />
                   </Field>
 
-                  {/* Art 85/86: FROM/TO datetime pair. All others: single Date + Time. */}
-                  {o.ucmjArticle === "85" || o.ucmjArticle === "86" ? (
+                  {/* Date/Time — single or FROM/TO range based on hasDuration toggle */}
+                  {o.hasDuration ? (
                     <>
                       <Field label="FROM Date" required>
                         <input type="date" className="input-field" value={o.fromDate} onChange={(e) => updateOffense(oi, "fromDate", e.target.value)} required />
@@ -518,6 +515,14 @@ export default function NewCasePage() {
                           </div>
                         );
                       })()}
+                      {/* Allow removing duration (unless Art 85/86 which requires it) */}
+                      {o.ucmjArticle !== "85" && o.ucmjArticle !== "86" && (
+                        <div className="sm:col-span-2">
+                          <button type="button" onClick={() => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { hasDuration: false, offenseDate: o.fromDate, offenseTime: o.fromTime })} className="text-xs text-primary hover:underline">
+                            Remove duration
+                          </button>
+                        </div>
+                      )}
                     </>
                   ) : (
                     <>
@@ -527,6 +532,11 @@ export default function NewCasePage() {
                       <Field label="Time" required>
                         <input type="time" className="input-field" value={o.offenseTime} onChange={(e) => updateOffense(oi, "offenseTime", e.target.value)} required />
                       </Field>
+                      <div className="sm:col-span-2">
+                        <button type="button" onClick={() => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { hasDuration: true, fromDate: o.offenseDate, fromTime: o.offenseTime })} className="text-xs text-primary hover:underline">
+                          + Add duration
+                        </button>
+                      </div>
                     </>
                   )}
 
@@ -543,6 +553,7 @@ export default function NewCasePage() {
                 {/* Item 5 — UA Data auto-fill for Art 85/86 with duration > 24h */}
                 {(() => {
                   if (o.ucmjArticle !== "85" && o.ucmjArticle !== "86") return null;
+                  if (!o.hasDuration) return null;
                   const dur = calcDuration(o.fromDate, o.fromTime, o.toDate, o.toTime);
                   if (!dur.valid || dur.totalHours <= 24) return null;
                   return (
