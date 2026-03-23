@@ -3,10 +3,10 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/ui/AppShell";
-import { UCMJ_ARTICLES, RANK_GRADE_OPTIONS, RANK_TO_GRADE, GRADES } from "@/types";
-import type { Rank } from "@/types";
+import { UCMJ_ARTICLES, RANK_GRADE_OPTIONS, USMC_RANK_GRADE_OPTIONS, NAVY_RANK_GRADE_OPTIONS, RANK_TO_GRADE, GRADES } from "@/types";
+import type { Rank, ServiceBranch } from "@/types";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, AlertOctagon, Info, Plus, Trash2, HelpCircle, ChevronDown, ChevronUp, FileText } from "lucide-react";
+import { AlertTriangle, AlertOctagon, Info, Plus, Trash2, HelpCircle, ChevronDown, ChevronUp, FileText, RefreshCw } from "lucide-react";
 import { casesStore, caseWithIncludes, auditStore } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getCommanderGradeLevel } from "@/types";
@@ -23,6 +23,51 @@ const VICTIM_RACES = [
 ];
 const VICTIM_ETHNICITIES = ["Hispanic or Latino", "Not Hispanic or Latino", "Unknown"];
 
+// --- Random accused generator (simulates MCTFS pull) ---
+const FIRST_NAMES = [
+  "James", "John", "Robert", "Michael", "David", "William", "Joseph", "Charles",
+  "Thomas", "Daniel", "Matthew", "Anthony", "Joshua", "Andrew", "Christopher",
+  "Ryan", "Brandon", "Justin", "Kevin", "Tyler", "Austin", "Jacob", "Ethan",
+  "Nathan", "Marcus", "Carlos", "Diego", "Luis", "Miguel", "Jose",
+  "Maria", "Jessica", "Ashley", "Jennifer", "Sarah", "Amanda", "Brittany",
+  "Stephanie", "Nicole", "Samantha", "Elizabeth", "Lauren", "Megan", "Rachel",
+  "Emily", "Alexis", "Victoria", "Destiny", "Jasmine", "Brianna",
+];
+const LAST_NAMES = [
+  "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
+  "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson",
+  "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson",
+  "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson",
+  "Walker", "Young", "Allen", "King", "Wright", "Scott", "Torres", "Nguyen",
+  "Hill", "Flores", "Green", "Adams", "Nelson", "Baker", "Hall", "Rivera",
+  "Campbell", "Mitchell", "Carter", "Roberts",
+];
+const MIDDLE_NAMES = [
+  "A", "B", "C", "D", "E", "J", "L", "M", "N", "R", "T", "W",
+  "Lee", "Ray", "James", "Michael", "Ann", "Marie", "Lynn", "Rose", "",
+];
+
+function pick<T>(arr: readonly T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function generateRandomAccused() {
+  const branch: ServiceBranch = Math.random() < 0.7 ? "USMC" : "USN";
+  // Only enlisted ranks (E1-E9)
+  const enlistedOptions = (branch === "USMC" ? USMC_RANK_GRADE_OPTIONS : NAVY_RANK_GRADE_OPTIONS)
+    .filter((o) => o.grade.startsWith("E"));
+  const rankOpt = pick(enlistedOptions);
+  const edipi = String(Math.floor(1000000000 + Math.random() * 9000000000));
+  return {
+    firstName: pick(FIRST_NAMES),
+    lastName: pick(LAST_NAMES),
+    middleName: pick(MIDDLE_NAMES),
+    rankGrade: rankOpt.label,
+    edipi,
+    serviceBranch: branch,
+  };
+}
+
 interface OffenseInput {
   ucmjArticle: string;
   offenseType: string;
@@ -38,12 +83,13 @@ export default function NewCasePage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
 
-  const [lastName, setLastName] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [middleName, setMiddleName] = useState("");
-  const [rankGrade, setRankGrade] = useState(""); // combined "E3/LCpl" value
-  const [edipi, setEdipi] = useState("");
-  const [serviceBranch, setServiceBranch] = useState("USMC");
+  const [initial] = useState(() => generateRandomAccused());
+  const [lastName, setLastName] = useState(initial.lastName);
+  const [firstName, setFirstName] = useState(initial.firstName);
+  const [middleName, setMiddleName] = useState(initial.middleName);
+  const [rankGrade, setRankGrade] = useState(initial.rankGrade);
+  const [edipi, setEdipi] = useState(initial.edipi);
+  const [serviceBranch, setServiceBranch] = useState(initial.serviceBranch as string);
   const [component, setComponent] = useState("ACTIVE");
   const [commanderGrade, setCommanderGrade] = useState("");
   const [vesselException, setVesselException] = useState(false);
@@ -73,6 +119,31 @@ export default function NewCasePage() {
   // Parse rank and grade from combined value like "E3/LCpl"
   const rank = rankGrade ? rankGrade.split("/")[1] : "";
   const grade = rankGrade ? rankGrade.split("/")[0] : "";
+
+  // Re-roll all accused fields (simulates pulling a different SM from MCTFS)
+  function regenerateAccused() {
+    const a = generateRandomAccused();
+    setLastName(a.lastName);
+    setFirstName(a.firstName);
+    setMiddleName(a.middleName);
+    setRankGrade(a.rankGrade);
+    setEdipi(a.edipi);
+    setServiceBranch(a.serviceBranch);
+  }
+
+  // Enlisted rank options filtered by current service branch
+  const enlistedRankOptions = (serviceBranch === "USN" ? NAVY_RANK_GRADE_OPTIONS : USMC_RANK_GRADE_OPTIONS)
+    .filter((o) => o.grade.startsWith("E"));
+
+  // When service branch changes, reset rank if current rank is not valid for the new branch
+  function handleBranchChange(newBranch: string) {
+    setServiceBranch(newBranch);
+    const validOptions = (newBranch === "USN" ? NAVY_RANK_GRADE_OPTIONS : USMC_RANK_GRADE_OPTIONS)
+      .filter((o) => o.grade.startsWith("E"));
+    if (!validOptions.some((o) => o.label === rankGrade)) {
+      setRankGrade("");
+    }
+  }
 
   // Simulate MCTFS DOB lookup — generate realistic DOB based on grade
   function generateDOB(g: string): string {
@@ -215,7 +286,14 @@ export default function NewCasePage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Accused */}
-          <Section title="Accused Information">
+          <Section title="Accused Information" action={
+            <button type="button" onClick={regenerateAccused} className="btn-ghost text-xs gap-1">
+              <RefreshCw size={14} /> Randomize
+            </button>
+          }>
+            <p className="text-xs text-neutral-mid mb-3 flex items-center gap-1">
+              <Info size={12} /> Accused data auto-generated to simulate MCTFS pull. Only enlisted USMC/USN personnel are eligible for NJP.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field label="Last Name" required>
                 <input className="input-field" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
@@ -229,20 +307,16 @@ export default function NewCasePage() {
               <Field label="Rank / Grade" required>
                 <select className="input-field" value={rankGrade} onChange={(e) => setRankGrade(e.target.value)} required>
                   <option value="">Select rank/grade</option>
-                  {RANK_GRADE_OPTIONS.map((o) => <option key={o.label} value={o.label}>{o.label}</option>)}
+                  {enlistedRankOptions.map((o) => <option key={o.label} value={o.label}>{o.label}</option>)}
                 </select>
               </Field>
               <Field label="EDIPI (10 digits)" required>
                 <input className="input-field font-mono" value={edipi} onChange={(e) => setEdipi(e.target.value)} pattern="\d{10}" maxLength={10} required />
               </Field>
               <Field label="Service Branch" required>
-                <select className="input-field" value={serviceBranch} onChange={(e) => setServiceBranch(e.target.value)} required>
+                <select className="input-field" value={serviceBranch} onChange={(e) => handleBranchChange(e.target.value)} required>
                   <option value="USMC">USMC</option>
                   <option value="USN">USN</option>
-                  <option value="USCG">USCG</option>
-                  <option value="USA">USA</option>
-                  <option value="USAF">USAF</option>
-                  <option value="USSF">USSF</option>
                 </select>
               </Field>
               <div className="sm:col-span-3">
