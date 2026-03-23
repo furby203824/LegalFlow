@@ -259,25 +259,33 @@ const GRADE_TO_RANK_ABBR: Record<string, string> = {
   E6: "SSgt", E7: "GySgt", E8: "MSgt", E9: "MGySgt",
 };
 
-function getReductionLimit(accusedGrade: string, accusedRank: string, isField: boolean): { label: string; available: boolean } {
+function getReductionLimit(accusedGrade: string, accusedRank: string, isField: boolean): { label: string; available: boolean; targetGrade?: string } {
   const gradeIdx = ENLISTED_GRADES.indexOf(accusedGrade);
+  // E1 cannot be reduced further
   if (gradeIdx <= 0) return { label: "Not available — already at lowest grade", available: false };
 
-  if (isField) {
-    // Field grade: can reduce one or more pay grades
-    const targetGrade = "E1";
+  if (!isField) {
+    // Company grade: can ONLY reduce E4 and below, by one pay grade
+    if (gradeIdx > 3) {
+      // E5+ cannot be reduced by a company grade commander
+      return { label: "Not available — company grade commander cannot reduce E5 and above", available: false };
+    }
+    const targetGrade = ENLISTED_GRADES[gradeIdx - 1];
     const targetRank = GRADE_TO_RANK_ABBR[targetGrade] || targetGrade;
     return {
-      label: `Red fr ${accusedRank}/${accusedGrade} to as low as ${targetRank}/${targetGrade}`,
+      label: `Red fr ${accusedRank}/${accusedGrade} to ${targetRank}/${targetGrade}`,
       available: true,
+      targetGrade,
     };
   }
-  // Company grade: can only reduce one pay grade
-  const targetGrade = ENLISTED_GRADES[gradeIdx - 1];
+
+  // Field grade: can reduce one or more pay grades
+  const targetGrade = "E1";
   const targetRank = GRADE_TO_RANK_ABBR[targetGrade] || targetGrade;
   return {
-    label: `Red fr ${accusedRank}/${accusedGrade} to ${targetRank}/${targetGrade}`,
+    label: `Red fr ${accusedRank}/${accusedGrade} to as low as ${targetRank}/${targetGrade}`,
     available: true,
+    targetGrade,
   };
 }
 
@@ -298,8 +306,18 @@ function PunishmentChecklist({
 }) {
   const limits = PUNISHMENT_LIMITS[commanderGradeLevel] || PUNISHMENT_LIMITS.COMPANY_GRADE;
   const isField = commanderGradeLevel === "FIELD_GRADE_AND_ABOVE";
-  const maxForfeit = getMaxForfeiture(accusedGrade, commanderGradeLevel, yearsOfService);
   const reduction = getReductionLimit(accusedGrade, accusedRank, isField);
+
+  // If reduction is imposed, forfeiture is based on the reduced grade
+  const reductionImposed = responses["pun_reduction"] === "imposed";
+  const reducedGrade = reductionImposed && reduction.targetGrade
+    ? (isField && responses["pun_reduction_detail"]
+      // Field grade: user specifies target grade in detail field, try to parse it
+      ? (ENLISTED_GRADES.find((g) => responses["pun_reduction_detail"].toUpperCase().includes(g)) || reduction.targetGrade)
+      : reduction.targetGrade)
+    : accusedGrade;
+  const effectiveGradeForForf = reductionImposed ? reducedGrade : accusedGrade;
+  const maxForfeit = getMaxForfeiture(effectiveGradeForForf, commanderGradeLevel, yearsOfService);
 
   const punishments = [
     ...(reduction.available ? [{
@@ -311,8 +329,8 @@ function PunishmentChecklist({
       key: "pun_forfeiture",
       label: "Forfeiture of Pay",
       limit: isField
-        ? `Up to 1/2 of 1 month's pay per month for ${(limits as typeof PUNISHMENT_LIMITS.FIELD_GRADE_AND_ABOVE).forfeitureMonths} months${maxForfeit ? ` (max $${maxForfeit.toLocaleString()}/mo — CY26)` : ""}`
-        : `${(limits as typeof PUNISHMENT_LIMITS.COMPANY_GRADE).forfeitureDays} days' pay${maxForfeit ? ` (max $${maxForfeit.toLocaleString()} — CY26)` : ""}`,
+        ? `Up to 1/2 of 1 month's pay per month for ${(limits as typeof PUNISHMENT_LIMITS.FIELD_GRADE_AND_ABOVE).forfeitureMonths} months${maxForfeit ? ` (max $${maxForfeit.toLocaleString()}/mo — CY26${reductionImposed ? `, based on ${effectiveGradeForForf}` : ""})` : ""}`
+        : `${(limits as typeof PUNISHMENT_LIMITS.COMPANY_GRADE).forfeitureDays} days' pay${maxForfeit ? ` (max $${maxForfeit.toLocaleString()} — CY26${reductionImposed ? `, based on ${effectiveGradeForForf}` : ""})` : ""}`,
     },
     {
       key: "pun_extra_duties",
@@ -399,15 +417,17 @@ function PunishmentChecklist({
                   {suspended && (
                     <div className="flex items-center gap-1 ml-auto" onClick={(e) => e.stopPropagation()}>
                       <span>for</span>
-                      <input
-                        type="number"
-                        className="input-field text-xs w-16 text-center"
+                      <select
+                        className="input-field text-xs w-20 text-center"
                         value={responses[`${p.key}_susp_months`] || ""}
                         onChange={(e) => setResponse(`${p.key}_susp_months`, e.target.value)}
-                        placeholder="6"
-                        min={1}
-                        max={12}
-                      />
+                      >
+                        <option value="">--</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                      </select>
                       <span>months</span>
                     </div>
                   )}
