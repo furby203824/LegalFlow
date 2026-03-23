@@ -449,5 +449,16 @@
     "userName": "admin",
     "action": "UPDATE",
     "notes": "Hearing record updated: step 20"
+  },
+  {
+    "id": "audit-1774247018637-w2yf6",
+    "timestamp": "2026-03-23T06:23:38.637Z",
+    "caseId": "case-1774237256718-s3m2a",
+    "caseNumber": "CASE-2026-0003",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "UPDATE",
+    "notes": "Hearing record updated: step 20"
   }
 ]
