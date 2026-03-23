@@ -158,7 +158,7 @@ function buildSidebarMenu(role: string): SidebarSection[] {
     label: "Utilities",
     defaultOpen: false,
     children: [
-      { label: "My Account", href: "#", disabled: true },
+      { label: "My Account", href: "/account" },
     ],
   });
 

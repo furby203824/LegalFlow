@@ -672,6 +672,12 @@ export async function getUsers() {
   return { users: await usersStore.findAll() };
 }
 
+export async function updateUser(userId: string, data: Rec) {
+  const updated = await usersStore.update(userId, data);
+  if (!updated) throw new Error("User not found");
+  return { user: updated };
+}
+
 export async function createUser(data: Rec) {
   const existing = await usersStore.findByUsername(data.username);
   if (existing) throw new Error("Username already exists");
