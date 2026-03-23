@@ -24,7 +24,7 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
 
   // Section I: Personal Data — read from case record (not editable here)
   const accusedName = `${accused.lastName || ""}, ${accused.firstName || ""}${accused.middleName ? " " + accused.middleName.charAt(0) + "." : ""}`;
-  const ssn = accused.ssnLast4 || "";
+  const edipi = accused.edipi || "";
   const gradeOrRank = accused.rank ? `${accused.grade || ""}/${accused.rank}` : accused.grade || "";
   const payGrade = accused.grade || "";
   const unitOrOrg = accused.unitFullString || "";
@@ -142,7 +142,7 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         </div>
         <ChargeSheetPrint
           data={{
-            accusedName, ssn, gradeOrRank, payGrade, unitOrOrg,
+            accusedName, edipi, gradeOrRank, payGrade, unitOrOrg,
             serviceInitialDate, serviceTerm,
             payBasic, paySeaForeign, payTotal,
             natureOfRestraint, datesImposed,
@@ -197,8 +197,8 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
             <input className="input-field bg-gray-50" value={accusedName} disabled />
           </div>
           <div>
-            <Label>2. SSN (last 4 only)</Label>
-            <input className="input-field font-mono bg-gray-50" value={ssn || "Not provided"} disabled />
+            <Label>2. EDIPI</Label>
+            <input className="input-field font-mono bg-gray-50" value={edipi || "Not provided"} disabled />
           </div>
           <div>
             <Label>3. Grade or Rank</Label>

@@ -43,7 +43,6 @@ export default function NewCasePage() {
   const [middleName, setMiddleName] = useState("");
   const [rankGrade, setRankGrade] = useState(""); // combined "E3/LCpl" value
   const [edipi, setEdipi] = useState("");
-  const [ssnLast4, setSsnLast4] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [serviceBranch, setServiceBranch] = useState("USMC");
   const [unit, setUnit] = useState("");
@@ -134,7 +133,7 @@ export default function NewCasePage() {
         accusedName: `${lastName}, ${firstName}${middleName ? " " + middleName : ""}`,
         accusedLastName: lastName, accusedFirstName: firstName, accusedMiddleName: middleName || null,
         accusedRank: rank, accusedGrade: grade, accusedEdipi: edipi,
-        accusedSsnLast4: ssnLast4 || null, accusedDateOfBirth: dateOfBirth || null,
+        accusedDateOfBirth: dateOfBirth || null,
         accusedServiceBranch: serviceBranch,
         component: component || "ACTIVE",
         vesselException: vesselException || false,
@@ -220,9 +219,6 @@ export default function NewCasePage() {
               </Field>
               <Field label="EDIPI (10 digits)" required>
                 <input className="input-field font-mono" value={edipi} onChange={(e) => setEdipi(e.target.value)} pattern="\d{10}" maxLength={10} required />
-              </Field>
-              <Field label="SSN (last 4)">
-                <input className="input-field font-mono" value={ssnLast4} onChange={(e) => setSsnLast4(e.target.value)} pattern="\d{4}" maxLength={4} placeholder="XXXX" />
               </Field>
               <Field label="Date of Birth">
                 <input type="date" className="input-field" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />

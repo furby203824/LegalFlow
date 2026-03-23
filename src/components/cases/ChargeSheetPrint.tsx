@@ -70,7 +70,7 @@ export default function ChargeSheetPrint({ data }: ChargeSheetPrintProps) {
             <tbody>
               <tr>
                 <Cell label="1. NAME OF ACCUSED (Last, First, Middle Initial)" value={data.accusedName} colSpan={3} />
-                <Cell label="2. SSN" value={data.ssn ? `XXX-XX-${data.ssn}` : ""} />
+                <Cell label="2. EDIPI" value={data.edipi || ""} />
                 <Cell label="3. GRADE OR RANK" value={data.gradeOrRank} />
                 <Cell label="4. PAY GRADE" value={data.payGrade} />
               </tr>
