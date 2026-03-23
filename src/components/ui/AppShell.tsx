@@ -12,11 +12,17 @@ import { getSession, logout as doLogout, login, seedDefaultUser, type SessionUse
 
 /* ── Demo accounts for quick switching ── */
 const DEMO_ACCOUNTS = [
-  { username: "admin", password: "admin", label: "System Admin", rank: "" },
-  { username: "preparer", password: "preparer", label: "NJP Preparer", rank: "Sgt Rodriguez" },
-  { username: "reviewer", password: "reviewer", label: "Certifier Reviewer", rank: "GySgt Mitchell" },
-  { username: "certifier", password: "certifier", label: "Certifier", rank: "LtCol Chen" },
-  { username: "appeal", password: "appeal", label: "Certifier (Regt)", rank: "Col Hayes" },
+  { username: "admin", password: "admin", label: "System Admin", rank: "", group: "System" },
+  // Company
+  { username: "co-preparer", password: "co-preparer", label: "Co Preparer", rank: "Sgt Rodriguez", group: "Alpha Co" },
+  { username: "co-reviewer", password: "co-reviewer", label: "Co Reviewer", rank: "GySgt Mitchell", group: "Alpha Co" },
+  { username: "co-certifier", password: "co-certifier", label: "Co Certifier", rank: "Capt Park", group: "Alpha Co" },
+  // Battalion
+  { username: "bn-preparer", password: "bn-preparer", label: "Bn Preparer", rank: "Sgt Torres", group: "1st Bn" },
+  { username: "bn-reviewer", password: "bn-reviewer", label: "Bn Reviewer", rank: "MSgt Nguyen", group: "1st Bn" },
+  { username: "bn-certifier", password: "bn-certifier", label: "Bn Certifier", rank: "LtCol Chen", group: "1st Bn" },
+  // Regiment
+  { username: "regt-certifier", password: "regt-certifier", label: "Regt Certifier", rank: "Col Hayes", group: "5th Mar" },
 ];
 
 type User = SessionUser;
@@ -373,7 +379,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="px-3 py-2 bg-surface border-b border-border">
                   <div className="text-[10px] font-semibold text-neutral-mid uppercase tracking-wider">Switch Account</div>
                 </div>
-                {DEMO_ACCOUNTS.map((acct) => {
+                {(() => {
+                  const groups: string[] = [];
+                  DEMO_ACCOUNTS.forEach((a) => { if (!groups.includes(a.group)) groups.push(a.group); });
+                  return groups.map((group) => (
+                    <div key={group}>
+                      <div className="text-[9px] font-semibold text-neutral-mid uppercase tracking-wider px-3 pt-2 pb-1">{group}</div>
+                      {DEMO_ACCOUNTS.filter((a) => a.group === group).map((acct) => {
                   const isActive = user.username === acct.username;
                   return (
                     <button
@@ -391,7 +403,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         }
                       }}
                       className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2 text-left text-sm transition-colors",
+                        "w-full flex items-center gap-3 px-3 py-1.5 text-left text-sm transition-colors",
                         isActive
                           ? "bg-primary/5 border-l-2 border-primary"
                           : "hover:bg-surface border-l-2 border-transparent"
@@ -411,6 +423,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     </button>
                   );
                 })}
+                    </div>
+                  ));
+                })()}
               </div>
             </>
           )}

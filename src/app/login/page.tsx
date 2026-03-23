@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Scale, User, Shield, FileCheck, Eye, Gavel } from "lucide-react";
+import { Scale, User, Shield, FileCheck, Eye, Gavel, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { setGitHubConfig, isGitHubConfigured } from "@/lib/github";
 import { login, seedDefaultUser, autoLogin } from "@/lib/auth";
@@ -16,42 +16,80 @@ const DEMO_ACCOUNTS = [
     icon: <Shield size={16} />,
     rank: "",
     color: "text-primary",
+    group: "system",
   },
+  // --- Company Level ---
   {
-    username: "preparer",
-    password: "preparer",
-    label: "NJP Preparer",
-    description: "Initiates and prepares NJP/ADSEP packages",
+    username: "co-preparer",
+    password: "co-preparer",
+    label: "Co Preparer",
+    description: "Initiates and prepares NJP packages at company level",
     icon: <User size={16} />,
     rank: "Sgt Rodriguez",
     color: "text-info",
+    group: "Alpha Co, 1st Bn, 5th Mar",
   },
   {
-    username: "reviewer",
-    password: "reviewer",
-    label: "Certifier Reviewer",
-    description: "Reviews packages prior to routing to Commander (optional)",
+    username: "co-reviewer",
+    password: "co-reviewer",
+    label: "Co Reviewer",
+    description: "Reviews packages prior to routing to Company Commander",
     icon: <Eye size={16} />,
     rank: "GySgt Mitchell",
     color: "text-warning",
+    group: "Alpha Co, 1st Bn, 5th Mar",
   },
   {
-    username: "certifier",
-    password: "certifier",
-    label: "Certifier",
-    description: "Commander — notifies Marines of admin sep processing",
+    username: "co-certifier",
+    password: "co-certifier",
+    label: "Co Certifier",
+    description: "Company Commander — Capt and below. Appeals go to Battalion",
+    icon: <FileCheck size={16} />,
+    rank: "Capt Park",
+    color: "text-success",
+    group: "Alpha Co, 1st Bn, 5th Mar",
+  },
+  // --- Battalion Level ---
+  {
+    username: "bn-preparer",
+    password: "bn-preparer",
+    label: "Bn Preparer",
+    description: "Initiates and prepares NJP packages at battalion level",
+    icon: <User size={16} />,
+    rank: "Sgt Torres",
+    color: "text-info",
+    group: "1st Bn, 5th Marines",
+  },
+  {
+    username: "bn-reviewer",
+    password: "bn-reviewer",
+    label: "Bn Reviewer",
+    description: "Reviews packages prior to routing to Battalion Commander",
+    icon: <Eye size={16} />,
+    rank: "MSgt Nguyen",
+    color: "text-warning",
+    group: "1st Bn, 5th Marines",
+  },
+  {
+    username: "bn-certifier",
+    password: "bn-certifier",
+    label: "Bn Certifier",
+    description: "Battalion Commander — handles Co appeals. Own appeals go to Regiment",
     icon: <FileCheck size={16} />,
     rank: "LtCol Chen",
     color: "text-success",
+    group: "1st Bn, 5th Marines",
   },
+  // --- Regiment Level ---
   {
-    username: "appeal",
-    password: "appeal",
-    label: "Certifier (Regt)",
-    description: "Regimental CO — certifier and appeal authority for subordinate units",
+    username: "regt-certifier",
+    password: "regt-certifier",
+    label: "Regt Certifier",
+    description: "Regimental CO — handles Bn appeals. Does not initiate NJP",
     icon: <Gavel size={16} />,
     rank: "Col Hayes",
     color: "text-purple-600",
+    group: "5th Marine Regiment",
   },
 ];
 
@@ -233,13 +271,22 @@ export default function LoginPage() {
               <h3 className="text-xs font-semibold text-neutral-dark mb-3 uppercase tracking-wider">
                 Demo Accounts — Quick Login
               </h3>
-              <div className="space-y-2">
-                {DEMO_ACCOUNTS.map((acct) => (
+              <div className="space-y-3">
+                {(() => {
+                  const groups: string[] = [];
+                  DEMO_ACCOUNTS.forEach((a) => { if (!groups.includes(a.group)) groups.push(a.group); });
+                  return groups.map((group) => (
+                    <div key={group}>
+                      <div className="text-[10px] font-semibold text-neutral-mid uppercase tracking-wider mb-1.5 px-1">
+                        {group}
+                      </div>
+                      <div className="space-y-1.5">
+                        {DEMO_ACCOUNTS.filter((a) => a.group === group).map((acct) => (
                   <button
                     key={acct.username}
                     onClick={() => quickLogin(acct)}
                     disabled={loading}
-                    className="w-full flex items-start gap-3 px-3 py-2.5 rounded-md border border-border hover:bg-surface hover:border-primary/20 transition-colors text-left disabled:opacity-50"
+                    className="w-full flex items-start gap-3 px-3 py-2 rounded-md border border-border hover:bg-surface hover:border-primary/20 transition-colors text-left disabled:opacity-50"
                   >
                     <div className={cn("mt-0.5 p-1.5 rounded bg-neutral-light", acct.color)}>
                       {acct.icon}
@@ -257,7 +304,11 @@ export default function LoginPage() {
                       </div>
                     </div>
                   </button>
-                ))}
+                        ))}
+                      </div>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
           </div>
