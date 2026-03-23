@@ -830,7 +830,7 @@
       {
         "id": "doc-1774249470997-yyp6x",
         "documentVersion": 1,
-        "isCurrent": true,
+        "isCurrent": false,
         "createdAt": "2026-03-23T07:04:30.997Z",
         "documentType": "NAVMC_10132_PDF",
         "generatedById": "user-1774232428029-skhw5",
@@ -838,7 +838,8 @@
         "distributionEsrb": false,
         "distributionOmpf": false,
         "distributionFiles": false,
-        "distributionMember": false
+        "distributionMember": false,
+        "supersededById": "doc-1774251866772-y5hwe"
       },
       {
         "id": "doc-1774250005955-zdp9r",
@@ -875,6 +876,19 @@
         "documentType": "NAVMC_10132_MEMBER",
         "generatedById": "user-1774232428029-skhw5",
         "generatedAt": "2026-03-23T07:13:28.207Z"
+      },
+      {
+        "id": "doc-1774251866772-y5hwe",
+        "documentVersion": 2,
+        "isCurrent": true,
+        "createdAt": "2026-03-23T07:44:26.772Z",
+        "documentType": "NAVMC_10132_PDF",
+        "generatedById": "user-1774232428029-skhw5",
+        "generatedAt": "2026-03-23T07:44:26.772Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
       }
     ],
     "remedialActions": [],
