@@ -214,6 +214,16 @@ function buildSteps(rateName: string, charges: string[], appealAuthority: string
       responseKey: "punishmentAnnounced",
     },
     {
+      id: "suspension_announcement",
+      phase: "findings",
+      speaker: "CO",
+      text: "The following portion of the punishment is suspended for a period of (months), at which time, unless the suspension is sooner vacated, the suspended portion of the punishment will be remitted without further action.",
+      responseType: "freetext",
+      responseKey: "suspensionAnnouncement",
+      placeholder: "Specify suspended punishments, duration, and conditions (or enter N/A if no suspension)...",
+      note: "Per JAGMAN 0109c, any or all of the punishment may be suspended. The suspension period should not exceed the maximum period of punishment that can be imposed. Conditions of the suspension may be stated.",
+    },
+    {
       id: "appeal_advisement",
       phase: "findings",
       speaker: "CO",
@@ -241,35 +251,76 @@ const PHASE_LABELS: Record<string, string> = {
 
 const PHASE_ORDER = ["opening", "examination", "evidence_review", "mitigation", "findings"];
 
+// Enlisted grade ordering for reduction calculation
+const ENLISTED_GRADES = ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9"];
+// Map grade to the USMC rank abbreviation at that grade
+const GRADE_TO_RANK_ABBR: Record<string, string> = {
+  E1: "Pvt", E2: "PFC", E3: "LCpl", E4: "Cpl", E5: "Sgt",
+  E6: "SSgt", E7: "GySgt", E8: "MSgt", E9: "MGySgt",
+};
+
+function getReductionLimit(accusedGrade: string, accusedRank: string, isField: boolean): { label: string; available: boolean; targetGrade?: string } {
+  const gradeIdx = ENLISTED_GRADES.indexOf(accusedGrade);
+  // E1 cannot be reduced further
+  if (gradeIdx <= 0) return { label: "Not available — already at lowest grade", available: false };
+
+  if (!isField) {
+    // Company grade commanders cannot impose reduction in grade
+    return { label: "Not available — company grade commander cannot reduce in grade", available: false };
+  }
+
+  // Field grade: can reduce one or more pay grades
+  const targetGrade = "E1";
+  const targetRank = GRADE_TO_RANK_ABBR[targetGrade] || targetGrade;
+  return {
+    label: `Red fr ${accusedRank}/${accusedGrade} to as low as ${targetRank}/${targetGrade}`,
+    available: true,
+    targetGrade,
+  };
+}
+
 function PunishmentChecklist({
   commanderGradeLevel,
   accusedGrade,
+  accusedRank,
   yearsOfService,
   responses,
   setResponse,
 }: {
   commanderGradeLevel: CommanderGradeLevel;
   accusedGrade: string;
+  accusedRank: string;
   yearsOfService?: number;
   responses: Record<string, string>;
   setResponse: (key: string, value: string) => void;
 }) {
   const limits = PUNISHMENT_LIMITS[commanderGradeLevel] || PUNISHMENT_LIMITS.COMPANY_GRADE;
   const isField = commanderGradeLevel === "FIELD_GRADE_AND_ABOVE";
-  const maxForfeit = getMaxForfeiture(accusedGrade, commanderGradeLevel, yearsOfService);
+  const reduction = getReductionLimit(accusedGrade, accusedRank, isField);
+
+  // If reduction is imposed, forfeiture is based on the reduced grade
+  const reductionImposed = responses["pun_reduction"] === "imposed";
+  const reducedGrade = reductionImposed && reduction.targetGrade
+    ? (isField && responses["pun_reduction_detail"]
+      // Field grade: user specifies target grade in detail field, try to parse it
+      ? (ENLISTED_GRADES.find((g) => responses["pun_reduction_detail"].toUpperCase().includes(g)) || reduction.targetGrade)
+      : reduction.targetGrade)
+    : accusedGrade;
+  const effectiveGradeForForf = reductionImposed ? reducedGrade : accusedGrade;
+  const maxForfeit = getMaxForfeiture(effectiveGradeForForf, commanderGradeLevel, yearsOfService);
 
   const punishments = [
-    {
+    ...(reduction.available ? [{
       key: "pun_reduction",
       label: "Reduction in Grade",
-      limit: isField ? "One or more pay grades" : "One pay grade",
-    },
+      limit: reduction.label,
+    }] : []),
     {
       key: "pun_forfeiture",
       label: "Forfeiture of Pay",
       limit: isField
-        ? `Up to 1/2 of 1 month's pay per month for ${(limits as typeof PUNISHMENT_LIMITS.FIELD_GRADE_AND_ABOVE).forfeitureMonths} months${maxForfeit ? ` (max $${maxForfeit.toLocaleString()}/mo — CY26)` : ""}`
-        : `${(limits as typeof PUNISHMENT_LIMITS.COMPANY_GRADE).forfeitureDays} days' pay${maxForfeit ? ` (max $${maxForfeit.toLocaleString()} — CY26)` : ""}`,
+        ? `Up to 1/2 of 1 month's pay per month for ${(limits as typeof PUNISHMENT_LIMITS.FIELD_GRADE_AND_ABOVE).forfeitureMonths} months${maxForfeit ? ` (max $${maxForfeit.toLocaleString()}/mo — CY26${reductionImposed ? `, based on ${effectiveGradeForForf}` : ""})` : ""}`
+        : `${(limits as typeof PUNISHMENT_LIMITS.COMPANY_GRADE).forfeitureDays} days' pay${maxForfeit ? ` (max $${maxForfeit.toLocaleString()} — CY26${reductionImposed ? `, based on ${effectiveGradeForForf}` : ""})` : ""}`,
     },
     {
       key: "pun_extra_duties",
@@ -306,32 +357,74 @@ function PunishmentChecklist({
       </p>
       {punishments.map((p) => {
         const checked = responses[p.key] === "imposed";
+        const suspended = responses[`${p.key}_susp`] === "yes";
         return (
-          <label key={p.key} className={cn(
-            "flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors",
+          <div key={p.key} className={cn(
+            "rounded-md border transition-colors",
             checked ? "border-primary bg-blue-50" : "border-border hover:bg-surface"
           )}>
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={(e) => setResponse(p.key, e.target.checked ? "imposed" : "")}
-              className="mt-0.5 accent-primary"
-            />
-            <div className="flex-1">
-              <span className="text-sm font-medium">{p.label}</span>
-              <p className="text-xs text-neutral-mid">{p.limit}</p>
-              {checked && (
+            <label className="flex items-start gap-3 p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={(e) => {
+                  setResponse(p.key, e.target.checked ? "imposed" : "");
+                  if (!e.target.checked) {
+                    setResponse(`${p.key}_susp`, "");
+                    setResponse(`${p.key}_susp_months`, "");
+                  }
+                }}
+                className="mt-0.5 accent-primary"
+              />
+              <div className="flex-1">
+                <span className="text-sm font-medium">{p.label}</span>
+                <p className="text-xs text-neutral-mid">{p.limit}</p>
+              </div>
+            </label>
+            {checked && (
+              <div className="px-3 pb-3 pl-9 space-y-2">
                 <input
                   type="text"
-                  className="input-field text-xs mt-2"
+                  className="input-field text-xs"
                   value={responses[`${p.key}_detail`] || ""}
                   onChange={(e) => setResponse(`${p.key}_detail`, e.target.value)}
                   placeholder={`Specify ${p.label.toLowerCase()} details...`}
-                  onClick={(e) => e.stopPropagation()}
                 />
-              )}
-            </div>
-          </label>
+                <label className={cn(
+                  "flex items-center gap-2 p-2 rounded border cursor-pointer text-xs transition-colors",
+                  suspended ? "border-amber-300 bg-amber-50 text-amber-800" : "border-dashed border-border text-neutral-mid"
+                )}>
+                  <input
+                    type="checkbox"
+                    checked={suspended}
+                    onChange={(e) => {
+                      setResponse(`${p.key}_susp`, e.target.checked ? "yes" : "");
+                      if (!e.target.checked) setResponse(`${p.key}_susp_months`, "");
+                    }}
+                    className="accent-amber-600"
+                  />
+                  <span className="font-medium">Suspend this punishment</span>
+                  {suspended && (
+                    <div className="flex items-center gap-1 ml-auto" onClick={(e) => e.stopPropagation()}>
+                      <span>for</span>
+                      <select
+                        className="input-field text-xs w-20 text-center"
+                        value={responses[`${p.key}_susp_months`] || ""}
+                        onChange={(e) => setResponse(`${p.key}_susp_months`, e.target.value)}
+                      >
+                        <option value="">--</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                      </select>
+                      <span>months</span>
+                    </div>
+                  )}
+                </label>
+              </div>
+            )}
+          </div>
         );
       })}
     </div>
@@ -554,6 +647,7 @@ export default function HearingGuidePanel({ caseId, caseData, onUpdate }: { case
               <PunishmentChecklist
                 commanderGradeLevel={caseData.commanderGradeLevel}
                 accusedGrade={accused.grade}
+                accusedRank={accused.rank}
                 yearsOfService={accused.yearsOfService ?? undefined}
                 responses={responses}
                 setResponse={setResponse}
