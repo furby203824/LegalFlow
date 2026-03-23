@@ -1100,7 +1100,7 @@
     "isOverdue": false,
     "caseNumber": "CASE-2026-0004",
     "status": "INITIATED",
-    "currentPhase": "INITIATION",
+    "currentPhase": "RIGHTS_ADVISEMENT",
     "unitId": "unit-hq",
     "unitFullString": "Headquarters, LegalFlow",
     "accusedName": "Sanchez, Samantha James",
