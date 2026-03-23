@@ -241,15 +241,47 @@ const PHASE_LABELS: Record<string, string> = {
 
 const PHASE_ORDER = ["opening", "examination", "evidence_review", "mitigation", "findings"];
 
+// Enlisted grade ordering for reduction calculation
+const ENLISTED_GRADES = ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9"];
+// Map grade to the USMC rank abbreviation at that grade
+const GRADE_TO_RANK_ABBR: Record<string, string> = {
+  E1: "Pvt", E2: "PFC", E3: "LCpl", E4: "Cpl", E5: "Sgt",
+  E6: "SSgt", E7: "GySgt", E8: "MSgt", E9: "MGySgt",
+};
+
+function getReductionLimit(accusedGrade: string, accusedRank: string, isField: boolean): { label: string; available: boolean } {
+  const gradeIdx = ENLISTED_GRADES.indexOf(accusedGrade);
+  if (gradeIdx <= 0) return { label: "Not available — already at lowest grade", available: false };
+
+  if (isField) {
+    // Field grade: can reduce one or more pay grades
+    const targetGrade = "E1";
+    const targetRank = GRADE_TO_RANK_ABBR[targetGrade] || targetGrade;
+    return {
+      label: `Red fr ${accusedRank}/${accusedGrade} to as low as ${targetRank}/${targetGrade}`,
+      available: true,
+    };
+  }
+  // Company grade: can only reduce one pay grade
+  const targetGrade = ENLISTED_GRADES[gradeIdx - 1];
+  const targetRank = GRADE_TO_RANK_ABBR[targetGrade] || targetGrade;
+  return {
+    label: `Red fr ${accusedRank}/${accusedGrade} to ${targetRank}/${targetGrade}`,
+    available: true,
+  };
+}
+
 function PunishmentChecklist({
   commanderGradeLevel,
   accusedGrade,
+  accusedRank,
   yearsOfService,
   responses,
   setResponse,
 }: {
   commanderGradeLevel: CommanderGradeLevel;
   accusedGrade: string;
+  accusedRank: string;
   yearsOfService?: number;
   responses: Record<string, string>;
   setResponse: (key: string, value: string) => void;
@@ -257,13 +289,14 @@ function PunishmentChecklist({
   const limits = PUNISHMENT_LIMITS[commanderGradeLevel] || PUNISHMENT_LIMITS.COMPANY_GRADE;
   const isField = commanderGradeLevel === "FIELD_GRADE_AND_ABOVE";
   const maxForfeit = getMaxForfeiture(accusedGrade, commanderGradeLevel, yearsOfService);
+  const reduction = getReductionLimit(accusedGrade, accusedRank, isField);
 
   const punishments = [
-    {
+    ...(reduction.available ? [{
       key: "pun_reduction",
       label: "Reduction in Grade",
-      limit: isField ? "One or more pay grades" : "One pay grade",
-    },
+      limit: reduction.label,
+    }] : []),
     {
       key: "pun_forfeiture",
       label: "Forfeiture of Pay",
@@ -554,6 +587,7 @@ export default function HearingGuidePanel({ caseId, caseData, onUpdate }: { case
               <PunishmentChecklist
                 commanderGradeLevel={caseData.commanderGradeLevel}
                 accusedGrade={accused.grade}
+                accusedRank={accused.rank}
                 yearsOfService={accused.yearsOfService ?? undefined}
                 responses={responses}
                 setResponse={setResponse}
