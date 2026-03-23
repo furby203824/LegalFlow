@@ -39,10 +39,19 @@ export interface CaseData {
     ucmjArticle: string;
     offenseType: string;
     summary: string;
-    offenseDate: string;
-    offenseTime: string;
+    fromDate: string;
+    fromTime: string;
+    toDate: string;
+    toTime: string;
     offensePlace: string;
     finding?: string;
+    // Item 5 fields for Art 85/86
+    desertionMarksApplied?: boolean;
+    dfrDate?: string;
+    terminationMethod?: string;
+    terminationDate?: string;
+    terminationLocation?: string;
+    intent?: string;
     victims: {
       letter: string;
       status: string;

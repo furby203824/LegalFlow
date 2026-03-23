@@ -119,11 +119,13 @@ export default function UPBItemsPanel({ caseData, onUpdate }: { caseData: CaseDa
 
   allItems["1"] = (
     <ItemCard key="1" number="1" title="UCMJ Offenses Alleged" state={hasSig("2") ? "LOCKED" : "COMPLETE"} defaultOpen>
-      {offenses.map((o: { offenseLetter: string; ucmjArticle: string; offenseType: string; offenseSummary: string; offenseDate: string; offenseTime?: string; offensePlace: string }) => (
+      {offenses.map((o: { offenseLetter: string; ucmjArticle: string; offenseType: string; offenseSummary: string; fromDate?: string; fromTime?: string; toDate?: string; toTime?: string; offenseDate?: string; offensePlace: string }) => (
         <div key={o.offenseLetter} className="mb-2 last:mb-0">
           <div className="font-medium">{o.offenseLetter}. Art. {o.ucmjArticle} - {o.offenseType}</div>
           <div className="text-neutral-mid text-xs mt-0.5">{o.offenseSummary}</div>
-          <div className="text-neutral-mid text-xs">{o.offenseDate}{o.offenseTime ? ` at ${o.offenseTime}` : ""} at {o.offensePlace}</div>
+          <div className="text-neutral-mid text-xs">
+            {o.fromDate ? `${o.fromTime || ""}, ${o.fromDate} through ${o.toTime || ""}, ${o.toDate}` : o.offenseDate} at {o.offensePlace}
+          </div>
         </div>
       ))}
     </ItemCard>
@@ -154,7 +156,21 @@ export default function UPBItemsPanel({ caseData, onUpdate }: { caseData: CaseDa
   allItems["4"] = (
     <ItemCard key="4" number="4" title="UA/Desertion Data" state={caseData.uaApplicable ? "COMPLETE" : "NA"}>
       {caseData.uaApplicable ? (
-        <div className="text-neutral-mid">UA period and marks of desertion recorded</div>
+        <div className="text-neutral-mid space-y-1">
+          {offenses
+            .filter((o: { ucmjArticle: string }) => o.ucmjArticle === "85" || o.ucmjArticle === "86")
+            .map((o: { offenseLetter: string; ucmjArticle: string; fromTime?: string; fromDate?: string; toTime?: string; toDate?: string; desertionMarksApplied?: boolean; dfrDate?: string; terminationMethod?: string; terminationDate?: string; terminationLocation?: string; intent?: string }) => (
+              <div key={o.offenseLetter} className="text-xs">
+                <span className="font-medium">{o.offenseLetter}.</span>{" "}
+                UA dur the prd {o.fromTime?.replace(":", "") || ""}, {o.fromDate} through {o.toTime?.replace(":", "") || ""}, {o.toDate}.
+                {o.dfrDate && ` DFR ${o.dfrDate}.`}
+                {o.intent && ` ${o.intent}.`}
+                {o.terminationMethod && o.terminationLocation && o.terminationDate && (
+                  <> {o.terminationMethod} to {o.terminationLocation}, {o.terminationDate}.</>
+                )}
+              </div>
+            ))}
+        </div>
       ) : (
         <div className="text-neutral-mid">N/A - No Art. 85/86 charges</div>
       )}
