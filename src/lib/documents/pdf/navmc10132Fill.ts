@@ -6,7 +6,7 @@
  * and FINAL versions based on how much data is available.
  */
 
-import { PDFDocument, PDFName, PDFDict } from "pdf-lib";
+import { PDFDocument, PDFName, PDFDict, PDFNumber } from "pdf-lib";
 import type { CaseData, Navmc10132Version } from "../types";
 import { punishmentFull } from "../punishmentText";
 import { fmtStandard } from "../dateFormatters";
@@ -412,17 +412,18 @@ export async function fillNavmc10132Pdf(
   // ═══ Booker statement (Item 2 area) ═══
   // The template has a pre-filled booker text; leave it as-is
 
-  // Remove borders from all form field widgets so filled text appears clean
+  // Change form field borders from boxes to underline-only
   const fields = form.getFields();
   for (const field of fields) {
     const widgets = field.acroField.getWidgets();
     for (const widget of widgets) {
-      // Remove border style dict
-      widget.dict.delete(PDFName.of("BS"));
-      // Remove or clear appearance characteristics (border/background color)
+      // Set border style to underline (/S /U) with thin width
+      const bs = pdf.context.obj({ S: "U", W: 1 });
+      widget.dict.set(PDFName.of("BS"), bs);
+      // Remove background fill color but keep border color for the underline
       const mk = widget.dict.lookup(PDFName.of("MK"));
       if (mk instanceof PDFDict) {
-        mk.delete(PDFName.of("BC")); // border color
+        mk.delete(PDFName.of("BG")); // remove background color
       }
     }
   }

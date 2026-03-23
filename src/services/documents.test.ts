@@ -150,8 +150,8 @@ describe("buildPunishmentList", () => {
     expect(list).toHaveLength(0);
   });
 
-  it("should NOT produce entries from old wrong field names", () => {
-    // These were the OLD field names that SubmitPunishmentFromGuide used to produce
+  it("should handle old field names from previous SubmitPunishmentFromGuide format", () => {
+    // These are the OLD field names — buildPunishmentList now handles them as fallback
     const pr = {
       forfeiture: true,
       forfeitureDetail: "500",
@@ -163,7 +163,38 @@ describe("buildPunishmentList", () => {
       admonition: true,
     };
     const list = buildPunishmentList(pr);
-    // None of these should produce entries — they're the wrong format
-    expect(list).toHaveLength(0);
+    expect(list).toHaveLength(5);
+    const types = list.map((p) => p.type);
+    expect(types).toContain("FORFEITURE");
+    expect(types).toContain("EXTRA_DUTIES");
+    expect(types).toContain("RESTRICTION");
+    expect(types).toContain("REPRIMAND");
+    expect(types).toContain("ADMONITION");
+
+    const forf = list.find((p) => p.type === "FORFEITURE")!;
+    expect(forf.amount).toBe(500);
+
+    const ed = list.find((p) => p.type === "EXTRA_DUTIES")!;
+    expect(ed.duration).toBe(14);
+  });
+
+  it("should handle old suspendedPunishments array format", () => {
+    const pr = {
+      forfeiture: true,
+      forfeitureDetail: "300",
+      extraDuties: true,
+      extraDutiesDetail: "14",
+      suspendedPunishments: ["forfeiture"],
+      suspensionMonths: 6,
+    };
+    const list = buildPunishmentList(pr);
+    expect(list).toHaveLength(2);
+
+    const forf = list.find((p) => p.type === "FORFEITURE")!;
+    expect(forf.suspended).toBe(true);
+    expect(forf.suspensionMonths).toBe(6);
+
+    const ed = list.find((p) => p.type === "EXTRA_DUTIES")!;
+    expect(ed.suspended).toBe(false);
   });
 });
