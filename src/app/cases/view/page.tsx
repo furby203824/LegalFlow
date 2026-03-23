@@ -121,20 +121,25 @@ function CaseViewContent() {
 
         <div className="card overflow-hidden">
           <div className="border-b border-border">
-            <nav className="flex">
+            <nav className="flex overflow-x-auto scrollbar-hide -mb-px">
               {([
-                { key: "remarks" as const, label: "Item 21 Remarks" },
-                { key: "evidence" as const, label: "Evidence" },
-                { key: "hearing" as const, label: "Mast Guide" },
-                { key: "chargesheet" as const, label: "DD 458" },
-                { key: "documents" as const, label: "Documents" },
-                { key: "audit" as const, label: "Audit Log" },
-              ]).map((tab) => (
+                { key: "remarks" as const, label: "Item 21 Remarks", minPhase: "INITIATION" },
+                { key: "evidence" as const, label: "Evidence", minPhase: "RIGHTS_ADVISEMENT" },
+                { key: "hearing" as const, label: "Mast Guide", minPhase: "HEARING" },
+                { key: "chargesheet" as const, label: "DD 458", minPhase: "HEARING" },
+                { key: "documents" as const, label: "Documents", minPhase: "INITIATION" },
+                { key: "audit" as const, label: "Audit Log", minPhase: "INITIATION" },
+              ] as const).filter((tab) => {
+                const phaseOrder = ["INITIATION", "RIGHTS_ADVISEMENT", "HEARING", "NOTIFICATION", "APPEAL", "REMEDIAL_ACTION", "ADMIN_COMPLETION", "VACATION", "CLOSED"];
+                const currentIdx = phaseOrder.indexOf(caseData.currentPhase);
+                const minIdx = phaseOrder.indexOf(tab.minPhase);
+                return currentIdx >= minIdx;
+              }).map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={cn(
-                    "px-5 py-3 text-sm font-medium border-b-2 transition-colors",
+                    "px-5 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0",
                     activeTab === tab.key
                       ? "border-primary text-primary"
                       : "border-transparent text-neutral-mid hover:text-neutral-dark"
