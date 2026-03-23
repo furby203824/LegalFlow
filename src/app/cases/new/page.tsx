@@ -188,9 +188,9 @@ export default function NewCasePage() {
     }
   }
 
-  function updateOffense(idx: number, field: keyof OffenseInput, value: string) {
+  function updateOffense(idx: number, field: keyof OffenseInput, value: string, extraFields?: Partial<OffenseInput>) {
     const updated = [...offenses];
-    if (field !== "victims") updated[idx] = { ...updated[idx], [field]: value };
+    if (field !== "victims") updated[idx] = { ...updated[idx], [field]: value, ...extraFields };
     setOffenses(updated);
   }
 
@@ -447,13 +447,13 @@ export default function NewCasePage() {
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="UCMJ Article" required>
-                    <select className="input-field" value={o.ucmjArticle} onChange={(e) => updateOffense(oi, "ucmjArticle", e.target.value)} required>
+                    <select className="input-field" value={o.ucmjArticle} onChange={(e) => updateOffense(oi, "ucmjArticle", e.target.value, { offenseType: UCMJ_ARTICLE_NAMES[e.target.value] || "" })} required>
                       <option value="">Select article</option>
                       {UCMJ_ARTICLES.map((a) => <option key={a} value={a}>Art. {a} — {UCMJ_ARTICLE_NAMES[a] || a}</option>)}
                     </select>
                   </Field>
                   <Field label="Offense Type" required>
-                    <input className="input-field" value={o.offenseType} onChange={(e) => updateOffense(oi, "offenseType", e.target.value)} required />
+                    <input className="input-field" value={o.offenseType} onChange={(e) => updateOffense(oi, "offenseType", e.target.value)} required readOnly />
                   </Field>
                   <Field label="Date" required>
                     <input type="date" className="input-field" value={o.offenseDate} onChange={(e) => updateOffense(oi, "offenseDate", e.target.value)} required />
