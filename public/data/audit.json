@@ -680,5 +680,16 @@
     "userName": "admin",
     "action": "SIGN",
     "notes": "Item 3 signed - rights advisement complete"
+  },
+  {
+    "id": "audit-1774273707700-c0s5j",
+    "timestamp": "2026-03-23T13:48:27.700Z",
+    "caseId": "case-1774273010844-6nplg",
+    "caseNumber": "CASE-2026-0004",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "UPDATE",
+    "notes": "Hearing record updated: step 17"
   }
 ]
