@@ -4,6 +4,8 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronRight, ChevronLeft, Check, Printer, Save, RotateCcw, AlertTriangle } from "lucide-react";
 import { updateHearingRecord } from "@/services/api";
+import { PUNISHMENT_LIMITS, getMaxForfeiture } from "@/types";
+import type { CommanderGradeLevel } from "@/types";
 import MastScriptPrint from "./MastScriptPrint";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,7 +51,7 @@ interface HearingStep {
   phase: "opening" | "examination" | "evidence_review" | "mitigation" | "findings";
   speaker: "CO" | "ACC" | "WIT" | "NOTE";
   text: string;
-  responseType?: "yes_no" | "freetext" | "none";
+  responseType?: "yes_no" | "freetext" | "none" | "findings_checklist" | "punishment_checklist";
   responseKey?: string;
   placeholder?: string;
   note?: string;
@@ -200,18 +202,16 @@ function buildSteps(rateName: string, charges: string[], appealAuthority: string
       phase: "findings",
       speaker: "CO",
       text: "I find that you have committed the following offense(s):",
-      responseType: "freetext",
+      responseType: "findings_checklist",
       responseKey: "findingsAnnounced",
-      placeholder: "List offenses found to have been committed...",
     },
     {
       id: "impose_punishment",
       phase: "findings",
       speaker: "CO",
       text: "I impose the following punishment:",
-      responseType: "freetext",
+      responseType: "punishment_checklist",
       responseKey: "punishmentAnnounced",
-      placeholder: "Record punishment imposed...",
     },
     {
       id: "appeal_advisement",
@@ -240,6 +240,101 @@ const PHASE_LABELS: Record<string, string> = {
 };
 
 const PHASE_ORDER = ["opening", "examination", "evidence_review", "mitigation", "findings"];
+
+function PunishmentChecklist({
+  commanderGradeLevel,
+  accusedGrade,
+  responses,
+  setResponse,
+}: {
+  commanderGradeLevel: CommanderGradeLevel;
+  accusedGrade: string;
+  responses: Record<string, string>;
+  setResponse: (key: string, value: string) => void;
+}) {
+  const limits = PUNISHMENT_LIMITS[commanderGradeLevel] || PUNISHMENT_LIMITS.COMPANY_GRADE;
+  const isField = commanderGradeLevel === "FIELD_GRADE_AND_ABOVE";
+  const maxForfeit = getMaxForfeiture(accusedGrade, commanderGradeLevel);
+
+  const punishments = [
+    {
+      key: "pun_reduction",
+      label: "Reduction in Grade",
+      limit: isField ? "One or more pay grades" : "One pay grade",
+    },
+    {
+      key: "pun_forfeiture",
+      label: "Forfeiture of Pay",
+      limit: isField
+        ? `Up to 1/2 of 1 month's pay per month for ${(limits as typeof PUNISHMENT_LIMITS.FIELD_GRADE_AND_ABOVE).forfeitureMonths} months${maxForfeit ? ` ($${maxForfeit}/mo)` : ""}`
+        : `${(limits as typeof PUNISHMENT_LIMITS.COMPANY_GRADE).forfeitureDays} days' pay${maxForfeit ? ` ($${maxForfeit})` : ""}`,
+    },
+    {
+      key: "pun_extra_duties",
+      label: "Extra Duties",
+      limit: `Up to ${limits.extraDutiesDays} days`,
+    },
+    {
+      key: "pun_restriction",
+      label: "Restriction",
+      limit: `Up to ${limits.restrictionDays} days`,
+    },
+    {
+      key: "pun_corr_custody",
+      label: "Correctional Custody",
+      limit: `Up to ${limits.corrCustodyDays} days`,
+    },
+    {
+      key: "pun_reprimand",
+      label: "Letter of Reprimand",
+      limit: "Written or oral",
+    },
+    {
+      key: "pun_admonition",
+      label: "Admonition",
+      limit: "Written or oral",
+    },
+  ];
+
+  return (
+    <div className="mt-4 space-y-2">
+      <p className="text-xs text-neutral-mid mb-2">
+        {isField ? "Field Grade" : "Company Grade"} commander limitations apply.
+        Check each punishment to impose:
+      </p>
+      {punishments.map((p) => {
+        const checked = responses[p.key] === "imposed";
+        return (
+          <label key={p.key} className={cn(
+            "flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors",
+            checked ? "border-primary bg-blue-50" : "border-border hover:bg-surface"
+          )}>
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => setResponse(p.key, e.target.checked ? "imposed" : "")}
+              className="mt-0.5 accent-primary"
+            />
+            <div className="flex-1">
+              <span className="text-sm font-medium">{p.label}</span>
+              <p className="text-xs text-neutral-mid">{p.limit}</p>
+              {checked && (
+                <input
+                  type="text"
+                  className="input-field text-xs mt-2"
+                  value={responses[`${p.key}_detail`] || ""}
+                  onChange={(e) => setResponse(`${p.key}_detail`, e.target.value)}
+                  placeholder={`Specify ${p.label.toLowerCase()} details...`}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
+            </div>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function HearingGuidePanel({ caseId, caseData, onUpdate }: { caseId: string; caseData: Rec; onUpdate: () => void }) {
   const accused = caseData.accused || {};
@@ -419,6 +514,47 @@ export default function HearingGuidePanel({ caseId, caseData, onUpdate }: { case
                   placeholder={step.placeholder}
                 />
               </div>
+            )}
+
+            {/* Findings checklist — checkboxes for each charged offense */}
+            {step.responseType === "findings_checklist" && (
+              <div className="mt-4 space-y-2">
+                {offenses.map((o: Rec) => {
+                  const key = `finding_${o.offenseLetter}`;
+                  const checked = responses[key] === "GUILTY";
+                  return (
+                    <label key={o.offenseLetter} className={cn(
+                      "flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors",
+                      checked ? "border-red-300 bg-red-50" : "border-border hover:bg-surface"
+                    )}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => setResponse(key, e.target.checked ? "GUILTY" : "NOT_GUILTY")}
+                        className="mt-0.5 accent-red-600"
+                      />
+                      <div>
+                        <span className="text-sm font-medium">
+                          Charge {o.offenseLetter}: Art. {o.ucmjArticle} — {o.offenseType}
+                        </span>
+                        {o.offenseSummary && (
+                          <p className="text-xs text-neutral-mid mt-0.5">{o.offenseSummary}</p>
+                        )}
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Punishment checklist — available punishments with limits */}
+            {step.responseType === "punishment_checklist" && (
+              <PunishmentChecklist
+                commanderGradeLevel={caseData.commanderGradeLevel}
+                accusedGrade={accused.grade}
+                responses={responses}
+                setResponse={setResponse}
+              />
             )}
           </div>
         </div>
