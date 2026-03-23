@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "user-1774232428029-skhw5",
+    "createdAt": "2026-03-23T02:20:28.029Z",
+    "updatedAt": "2026-03-23T02:20:28.029Z",
+    "isActive": true,
+    "lastLogin": null,
+    "username": "admin",
+    "passwordHash": "admin",
+    "firstName": "System",
+    "lastName": "Admin",
+    "email": "admin@legalflow.local",
+    "role": "SUITE_ADMIN",
+    "unitId": "unit-hq",
+    "unitName": "Headquarters, LegalFlow",
+    "rank": "",
+    "grade": "",
+    "edipi": ""
+  }
+]
