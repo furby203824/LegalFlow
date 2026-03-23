@@ -207,5 +207,16 @@
     "userName": "admin",
     "action": "UPDATE",
     "notes": "Rights Acknowledgement updated"
+  },
+  {
+    "id": "audit-1774231561023-8a6j7",
+    "timestamp": "2026-03-23T02:06:01.023Z",
+    "caseId": "case-1774220758799-tm18d",
+    "caseNumber": "CASE-2026-0001",
+    "userId": "user-1774218618690-02z7m",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated navmc_10132 (PARTIAL)"
   }
 ]
