@@ -110,10 +110,44 @@ interface OffenseInput {
   ucmjArticle: string;
   offenseType: string;
   summary: string;
-  offenseDate: string;
-  offenseTime: string;
+  fromDate: string;
+  fromTime: string;
+  toDate: string;
+  toTime: string;
   offensePlace: string;
   victims: { status: string; sex: string; race: string; ethnicity: string }[];
+  // Item 5 fields for Art 85/86
+  desertionMarksApplied?: boolean;
+  dfrDate?: string;
+  terminationMethod?: string;
+  terminationDate?: string;
+  terminationLocation?: string;
+  // Art 85 specific
+  intent?: string;
+}
+
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function fmtMilDate(iso: string): string {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return `${parseInt(d, 10)} ${MONTH_ABBR[parseInt(m, 10) - 1]} ${y.slice(2)}`;
+}
+
+function calcDuration(fromDate: string, fromTime: string, toDate: string, toTime: string): { valid: boolean; days: number; hours: number; totalHours: number; label: string } {
+  if (!fromDate || !fromTime || !toDate || !toTime) return { valid: false, days: 0, hours: 0, totalHours: 0, label: "" };
+  const from = new Date(`${fromDate}T${fromTime}`);
+  const to = new Date(`${toDate}T${toTime}`);
+  if (isNaN(from.getTime()) || isNaN(to.getTime())) return { valid: false, days: 0, hours: 0, totalHours: 0, label: "" };
+  const diffMs = to.getTime() - from.getTime();
+  if (diffMs < 0) return { valid: false, days: 0, hours: 0, totalHours: 0, label: "TO datetime cannot precede FROM datetime" };
+  const totalHours = diffMs / (1000 * 60 * 60);
+  const days = Math.floor(totalHours / 24);
+  const hours = Math.round(totalHours % 24);
+  if (days === 0 && hours === 0) return { valid: true, days: 0, hours: 0, totalHours: 0, label: "Duration: instantaneous (same FROM and TO)" };
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days} day${days !== 1 ? "s" : ""}`);
+  if (hours > 0) parts.push(`${hours} hour${hours !== 1 ? "s" : ""}`);
+  return { valid: true, days, hours, totalHours, label: `Duration: ${parts.join(", ")}` };
 }
 
 export default function NewCasePage() {
@@ -154,7 +188,7 @@ export default function NewCasePage() {
   }
 
   const [offenses, setOffenses] = useState<OffenseInput[]>([{
-    ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", offensePlace: "",
+    ucmjArticle: "", offenseType: "", summary: "", fromDate: "", fromTime: "", toDate: "", toTime: "", offensePlace: "",
     victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }],
   }]);
 
@@ -211,18 +245,29 @@ export default function NewCasePage() {
       if (!session) { setErrors(["Not authenticated"]); return; }
       const cmdGradeLevel = getCommanderGradeLevel(commanderGrade as Grade);
       const uaApplicable = offenses.some((o) => o.ucmjArticle === "85" || o.ucmjArticle === "86");
-      const offenseDates = offenses.map((o) => o.offenseDate).filter(Boolean).sort();
+      const offenseDates = offenses.map((o) => o.fromDate).filter(Boolean).sort();
       const offenseRecords = offenses.map((o, i) => ({
         id: `off-${Date.now()}-${letters[i]}`,
         offenseLetter: letters[i],
         ucmjArticle: o.ucmjArticle,
         offenseType: o.offenseType,
         offenseSummary: o.summary,
-        offenseDate: o.offenseDate,
-        offenseTime: o.offenseTime,
+        fromDate: o.fromDate,
+        fromTime: o.fromTime,
+        toDate: o.toDate,
+        toTime: o.toTime,
         offensePlace: o.offensePlace,
         finding: null,
         locked: false,
+        // Item 5 fields for Art 85/86
+        ...(o.ucmjArticle === "85" || o.ucmjArticle === "86" ? {
+          desertionMarksApplied: o.desertionMarksApplied || false,
+          dfrDate: o.dfrDate || "",
+          terminationMethod: o.terminationMethod || "",
+          terminationDate: o.terminationDate || "",
+          terminationLocation: o.terminationLocation || "",
+          intent: o.intent || "",
+        } : {}),
       }));
       const victimRecords = offenses.flatMap((o, i) =>
         (o.victims || []).map((v: { status: string; sex: string; race: string; ethnicity: string }) => ({
@@ -256,7 +301,9 @@ export default function NewCasePage() {
         jurisdictionConfirmed: true,
         uaApplicable,
         offenseDateEarliest: offenseDates[0] || null,
-        formLocked: false, jaReviewRequired: false, jaReviewComplete: false,
+        formLocked: false,
+        jaReviewRequired: offenses.some((o) => o.ucmjArticle === "85" || (o.ucmjArticle === "86" && o.desertionMarksApplied)),
+        jaReviewComplete: false,
         njpDate: null, appealNotFiled: false, accusedTransferred: false,
         initiatedById: session.userId,
         offenses: offenseRecords,
@@ -394,7 +441,7 @@ export default function NewCasePage() {
 
           {/* Offenses */}
           <Section title="Offenses" action={offenses.length < 5 ? (
-            <button type="button" onClick={() => setOffenses([...offenses, { ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", offensePlace: "", victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }] }])} className="btn-ghost text-xs gap-1">
+            <button type="button" onClick={() => setOffenses([...offenses, { ucmjArticle: "", offenseType: "", summary: "", fromDate: "", fromTime: "", toDate: "", toTime: "", offensePlace: "", victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }] }])} className="btn-ghost text-xs gap-1">
               <Plus size={14} /> Add Offense
             </button>
           ) : undefined}>
@@ -434,7 +481,7 @@ export default function NewCasePage() {
                       <span className="font-medium">Offense Type:</span> A short label describing the nature of the offense (e.g., &quot;UA&quot;, &quot;Drunk on duty&quot;, &quot;Assault consummated by battery&quot;). This appears on the NAVMC 10132 and charge sheet.
                     </div>
                     <div>
-                      <span className="font-medium">Date:</span> The date the offense was committed. For continuing offenses (e.g., UA), use the start date. The exact date must match the charge sheet specification.
+                      <span className="font-medium">FROM / TO Datetime:</span> All offenses require a FROM and TO date and time in military format. For instantaneous offenses (e.g., a single strike), FROM and TO will be the same. For continuing offenses (e.g., UA), enter the start and end. Duration is calculated automatically.
                     </div>
                     <div>
                       <span className="font-medium">Place:</span> The location where the offense occurred, including the installation or ship name if applicable (e.g., &quot;Camp Lejeune, NC&quot; or &quot;USS Wasp (LHD-1)&quot;).
@@ -457,14 +504,32 @@ export default function NewCasePage() {
                   <Field label="Offense Type" required>
                     <input className="input-field" value={o.offenseType} onChange={(e) => updateOffense(oi, "offenseType", e.target.value)} required readOnly />
                   </Field>
-                  <Field label="Date" required>
-                    <input type="date" className="input-field" value={o.offenseDate} onChange={(e) => updateOffense(oi, "offenseDate", e.target.value)} required />
+                  <Field label="FROM Date" required>
+                    <input type="date" className="input-field" value={o.fromDate} onChange={(e) => updateOffense(oi, "fromDate", e.target.value)} required />
                   </Field>
-                  <Field label="Time" required>
-                    <input type="time" className="input-field" value={o.offenseTime} onChange={(e) => updateOffense(oi, "offenseTime", e.target.value)} required />
+                  <Field label="FROM Time" required>
+                    <input type="time" className="input-field" value={o.fromTime} onChange={(e) => updateOffense(oi, "fromTime", e.target.value)} required />
                   </Field>
+                  <Field label="TO Date" required>
+                    <input type="date" className="input-field" value={o.toDate} onChange={(e) => updateOffense(oi, "toDate", e.target.value)} required />
+                  </Field>
+                  <Field label="TO Time" required>
+                    <input type="time" className="input-field" value={o.toTime} onChange={(e) => updateOffense(oi, "toTime", e.target.value)} required />
+                  </Field>
+                  {/* Duration display */}
+                  {(() => {
+                    const dur = calcDuration(o.fromDate, o.fromTime, o.toDate, o.toTime);
+                    if (!o.fromDate || !o.fromTime || !o.toDate || !o.toTime) return null;
+                    return (
+                      <div className="sm:col-span-2">
+                        <div className={cn("text-xs px-3 py-2 rounded-md", dur.valid ? "bg-blue-50 text-primary" : "bg-red-50 text-error")}>
+                          {dur.label}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <Field label="Place" required>
-                    <input className="input-field" value={o.offensePlace} onChange={(e) => updateOffense(oi, "offensePlace", e.target.value)} required />
+                    <input className="input-field" value={o.offensePlace} onChange={(e) => updateOffense(oi, "offensePlace", e.target.value)} required placeholder="Unit and installation (e.g., Co A, 1st Bn, 7th Mar, MCB Camp Pendleton)" />
                   </Field>
                   <div className="sm:col-span-2">
                     <Field label="Summary" required>
@@ -472,6 +537,113 @@ export default function NewCasePage() {
                     </Field>
                   </div>
                 </div>
+
+                {/* Item 5 Auto-fill for Art 85/86 */}
+                {(() => {
+                  const isArt85 = o.ucmjArticle === "85";
+                  const isArt86 = o.ucmjArticle === "86";
+                  if (!isArt85 && !isArt86) return null;
+                  const dur = calcDuration(o.fromDate, o.fromTime, o.toDate, o.toTime);
+                  if (!dur.valid) return null;
+                  // Art 86: only show Item 5 if duration > 24 hours
+                  if (isArt86 && dur.totalHours <= 24) return null;
+
+                  return (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <div className="text-xs font-semibold text-neutral-dark mb-2 flex items-center gap-1">
+                        <AlertTriangle size={12} className="text-warning" />
+                        Item 5 — UA/Desertion Data (Auto-populated)
+                      </div>
+                      <div className="text-xs bg-amber-50 border border-amber-200 rounded-md p-3 mb-3">
+                        <p className="font-mono">
+                          UA dur the prd {o.fromTime?.replace(":", "")}, {fmtMilDate(o.fromDate)} through {o.toTime?.replace(":", "")}, {fmtMilDate(o.toDate)}.
+                        </p>
+                      </div>
+
+                      {isArt86 && (
+                        <div className="space-y-3">
+                          <Field label="Were marks of desertion applied?">
+                            <div className="flex gap-4">
+                              <label className="flex items-center gap-2 text-sm">
+                                <input type="radio" name={`desertion-${oi}`} checked={o.desertionMarksApplied === false || o.desertionMarksApplied === undefined} onChange={() => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { desertionMarksApplied: false, dfrDate: "", terminationMethod: "", terminationDate: "", terminationLocation: "" })} />
+                                No
+                              </label>
+                              <label className="flex items-center gap-2 text-sm">
+                                <input type="radio" name={`desertion-${oi}`} checked={o.desertionMarksApplied === true} onChange={() => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { desertionMarksApplied: true })} />
+                                Yes
+                              </label>
+                            </div>
+                          </Field>
+                          {o.desertionMarksApplied && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-4 border-l-2 border-warning">
+                              <Field label="DFR Date" required>
+                                <input type="date" className="input-field" value={o.dfrDate || ""} onChange={(e) => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { dfrDate: e.target.value })} required />
+                              </Field>
+                              <Field label="Termination Method" required>
+                                <select className="input-field" value={o.terminationMethod || ""} onChange={(e) => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { terminationMethod: e.target.value })} required>
+                                  <option value="">Select method</option>
+                                  <option value="Surrendered">Surrendered</option>
+                                  <option value="Apprehended">Apprehended</option>
+                                  <option value="Returned voluntarily">Returned voluntarily</option>
+                                </select>
+                              </Field>
+                              <Field label="Termination Date" required>
+                                <input type="date" className="input-field" value={o.terminationDate || ""} onChange={(e) => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { terminationDate: e.target.value })} required />
+                              </Field>
+                              <Field label="Termination Location" required>
+                                <input className="input-field" value={o.terminationLocation || ""} onChange={(e) => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { terminationLocation: e.target.value })} required placeholder="e.g., MCB Camp Pendleton" />
+                              </Field>
+                              <div className="sm:col-span-2 text-xs text-warning flex items-center gap-1">
+                                <AlertTriangle size={12} /> Entry flagged for SJA review.
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {isArt85 && (
+                        <div className="space-y-3">
+                          {!o.intent && (
+                            <div className="text-xs bg-red-50 border border-red-200 rounded-md p-3 text-error">
+                              <AlertOctagon size={12} className="inline mr-1" />
+                              Article 85 requires proof of intent to remain absent permanently or to avoid hazardous duty or shirk important service. Without a confirmed intent element this offense may only be supportable under Article 86. Confirm the correct article with your SJA before proceeding.
+                            </div>
+                          )}
+                          <Field label="A. Intent" required>
+                            <select className="input-field" value={o.intent || ""} onChange={(e) => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { intent: e.target.value })} required>
+                              <option value="">Select intent element</option>
+                              <option value="Intended to remain absent permanently">Intended to remain absent permanently</option>
+                              <option value="Intended to avoid hazardous duty">Intended to avoid hazardous duty</option>
+                              <option value="Intended to shirk important service">Intended to shirk important service</option>
+                            </select>
+                          </Field>
+                          <Field label="B. Termination Method" required>
+                            <select className="input-field" value={o.terminationMethod || ""} onChange={(e) => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { terminationMethod: e.target.value })} required>
+                              <option value="">Select method</option>
+                              <option value="Surrendered">Surrendered</option>
+                              <option value="Apprehended">Apprehended</option>
+                              <option value="Returned voluntarily">Returned voluntarily</option>
+                            </select>
+                          </Field>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <Field label="C. Termination Date" required>
+                              <input type="date" className="input-field" value={o.terminationDate || ""} onChange={(e) => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { terminationDate: e.target.value })} required />
+                            </Field>
+                            <Field label="C. Termination Location" required>
+                              <input className="input-field" value={o.terminationLocation || ""} onChange={(e) => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { terminationLocation: e.target.value })} required placeholder="e.g., HqCo, 1st Bn, 5th Mar, MCB Camp Pendleton" />
+                            </Field>
+                          </div>
+                          <Field label="D. DFR Date" required>
+                            <input type="date" className="input-field" value={o.dfrDate || ""} onChange={(e) => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { dfrDate: e.target.value })} required />
+                          </Field>
+                          <div className="sm:col-span-2 text-xs text-warning flex items-center gap-1">
+                            <AlertTriangle size={12} /> Entry flagged for mandatory SJA review before UPB is finalized.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Victim Demographics */}
                 <div className="mt-3 pt-3 border-t border-border">

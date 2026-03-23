@@ -52,8 +52,8 @@ export function generateChargeSheet(data: CaseData): string {
       `  Charge ${offense.letter}: Violation of UCMJ Article ${offense.ucmjArticle}`
     );
     lines.push(`    Offense Type: ${offense.offenseType}`);
-    lines.push(`    Date: ${fmtFull(offense.offenseDate)}`);
-    if (offense.offenseTime) lines.push(`    Time: ${offense.offenseTime}`);
+    lines.push(`    From: ${fmtFull(offense.fromDate)} ${offense.fromTime}`);
+    lines.push(`    To: ${fmtFull(offense.toDate)} ${offense.toTime}`);
     lines.push(`    Place: ${offense.offensePlace}`);
     lines.push(`    Summary: ${offense.summary}`);
     lines.push("");
