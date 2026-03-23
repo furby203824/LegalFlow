@@ -8,7 +8,15 @@ import {
   Home, LogOut, HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getSession, logout as doLogout, type SessionUser } from "@/lib/auth";
+import { getSession, logout as doLogout, login, seedDefaultUser, type SessionUser } from "@/lib/auth";
+
+/* ── Demo accounts for quick switching ── */
+const DEMO_ACCOUNTS = [
+  { username: "admin", password: "admin", label: "System Admin", rank: "" },
+  { username: "preparer", password: "preparer", label: "NJP Preparer", rank: "Sgt Rodriguez" },
+  { username: "reviewer", password: "reviewer", label: "Certifier Reviewer", rank: "GySgt Mitchell" },
+  { username: "certifier", password: "certifier", label: "Certifier", rank: "LtCol Chen" },
+];
 
 type User = SessionUser;
 
@@ -208,6 +216,8 @@ function SidebarLinkItem({
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [switching, setSwitching] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -294,8 +304,62 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div className="text-white/40 text-[10px] leading-tight">LegalFlow Suite</div>
           </div>
         </div>
-        <div className="hidden sm:block text-white/60 text-xs">
-          User: {user.firstName} {user.lastName}
+        <div className="hidden sm:block relative">
+          <button
+            onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+            className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs transition-colors px-2 py-1 rounded hover:bg-white/10"
+          >
+            User: <span className="font-medium text-white">{user.firstName} {user.lastName}</span>
+            <ChevronDown size={12} className={cn("transition-transform", userDropdownOpen && "rotate-180")} />
+          </button>
+          {userDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setUserDropdownOpen(false)} />
+              <div className="absolute right-0 top-full mt-1 z-50 w-64 bg-white rounded-md shadow-lg border border-border overflow-hidden">
+                <div className="px-3 py-2 bg-surface border-b border-border">
+                  <div className="text-[10px] font-semibold text-neutral-mid uppercase tracking-wider">Switch Account</div>
+                </div>
+                {DEMO_ACCOUNTS.map((acct) => {
+                  const isActive = user.username === acct.username;
+                  return (
+                    <button
+                      key={acct.username}
+                      disabled={switching || isActive}
+                      onClick={async () => {
+                        setSwitching(true);
+                        try {
+                          await seedDefaultUser();
+                          await login(acct.username, acct.password);
+                          setUserDropdownOpen(false);
+                          window.location.reload();
+                        } catch {
+                          setSwitching(false);
+                        }
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2 text-left text-sm transition-colors",
+                        isActive
+                          ? "bg-primary/5 border-l-2 border-primary"
+                          : "hover:bg-surface border-l-2 border-transparent"
+                      )}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className={cn("text-xs font-medium", isActive ? "text-primary" : "text-neutral-dark")}>
+                          {acct.label}
+                        </div>
+                        {acct.rank && (
+                          <div className="text-[10px] text-neutral-mid">{acct.rank}</div>
+                        )}
+                      </div>
+                      {isActive && (
+                        <span className="text-[10px] text-primary font-medium">Active</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
