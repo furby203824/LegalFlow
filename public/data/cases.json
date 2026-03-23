@@ -1136,6 +1136,18 @@
         "signatureMethod": "ELECTRONIC",
         "refusalNoted": false,
         "coSignedInstead": false
+      },
+      {
+        "id": "sig-1774273757903-ljxkd",
+        "createdAt": "2026-03-23T13:49:17.903Z",
+        "itemNumber": "9",
+        "signerRole": "CERTIFIER",
+        "signerUserId": "user-1774232429695-5pl19",
+        "signerName": "Chen, Michael",
+        "signedDate": "2026-03-23",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
       }
     ],
     "evidence": [],
