@@ -223,6 +223,12 @@ export async function performPhaseAction(caseId: string, action: string, data: R
   }
 
   switch (action) {
+    case "ACK_RIGHTS": {
+      await casesStore.upsertRightsAcknowledgement(caseId, { acknowledged: true, acknowledgedAt: new Date().toISOString() });
+      await audit("UPDATE", "Member rights acknowledged");
+      return { message: "Rights acknowledged — member may now elect NJP or court-martial" };
+    }
+
     case "SIGN_ITEM_2": {
       const { acceptsNjp, refusedToSign, signerName } = data;
       if ((!acceptsNjp || refusedToSign) && !njpCase.vesselException) {

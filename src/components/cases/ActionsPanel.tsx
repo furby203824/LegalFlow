@@ -35,7 +35,8 @@ function canPerformAction(role: UserRole, action: string): boolean {
     SIGN_ITEM_16: ["NJP_PREPARER", "ADMIN", "IPAC_ADMIN", "SUITE_ADMIN"],
     CONFIRM_OMPF: ["NJP_PREPARER", "ADMIN", "IPAC_ADMIN", "SUITE_ADMIN"],
 
-    // Accused: rights, appeal election
+    // Accused: rights acknowledgement, NJP election, appeal election
+    ACK_RIGHTS: ["ACCUSED", "NJP_PREPARER", "SUITE_ADMIN"],
     SIGN_ITEM_2: ["ACCUSED", "NJP_PREPARER", "SUITE_ADMIN"],
     SIGN_ITEM_12: ["ACCUSED", "NJP_PREPARER", "SUITE_ADMIN"],
 
@@ -60,6 +61,7 @@ function canPerformAction(role: UserRole, action: string): boolean {
 // Map action to the role label that should perform it
 function actionOwnerLabel(action: string): string {
   const ownerMap: Record<string, string> = {
+    ACK_RIGHTS: "Accused Marine",
     SIGN_ITEM_2: "Accused Marine",
     SIGN_ITEM_3: "Certifier (Commander)",
     ENTER_FINDINGS: "Certifier (Commander)",
@@ -105,11 +107,14 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
   const pr = caseData.punishmentRecord;
   const appeal = caseData.appealRecord;
 
+  const rightsAcked = !!caseData.rightsAcknowledgement?.acknowledged;
+
   // Determine current action
   let currentActionKey = "";
   let currentAction = "";
   if (!isClosed && !isReferred) {
-    if (!hasSig("2")) { currentActionKey = "SIGN_ITEM_2"; currentAction = "Sign Item 2 - Rights Advisement"; }
+    if (!rightsAcked) { currentActionKey = "ACK_RIGHTS"; currentAction = "Acknowledge Rights — Member must be advised of rights"; }
+    else if (!hasSig("2")) { currentActionKey = "SIGN_ITEM_2"; currentAction = "Sign Item 2 — NJP Election (Accept or Demand Court-Martial)"; }
     else if (!hasSig("3")) { currentActionKey = "SIGN_ITEM_3"; currentAction = "Sign Item 3 - CO Certification"; }
     else if (!offenses.every((o: { finding: string | null }) => o.finding)) { currentActionKey = "ENTER_FINDINGS"; currentAction = "Enter Findings (Item 5)"; }
     else if (!pr) { currentActionKey = "ENTER_PUNISHMENT"; currentAction = "Enter Punishment (Item 6)"; }
@@ -200,11 +205,16 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
       {/* Action Forms - shown based on current state AND role permission */}
       {!isClosed && !isReferred && (
         <div className="space-y-3">
-          {/* Item 2 */}
-          {!hasSig("2") && canPerformAction(userRole, "SIGN_ITEM_2") && (
-            <ActionSection title="Item 2 - Rights Advisement">
+          {/* Step 1: Rights Acknowledgement */}
+          {!rightsAcked && canPerformAction(userRole, "SIGN_ITEM_2") && (
+            <RightsAckAction caseData={caseData} loading={loading} onAcknowledge={() => performAction("ACK_RIGHTS")} />
+          )}
+
+          {/* Step 2: NJP Election (only after rights acknowledged) */}
+          {rightsAcked && !hasSig("2") && canPerformAction(userRole, "SIGN_ITEM_2") && (
+            <ActionSection title="Item 2 — NJP Election">
               <p className="text-xs text-neutral-mid mb-3">
-                Accused must accept NJP or demand court-martial.
+                Member has acknowledged their rights. Now elect to accept NJP or demand court-martial.
               </p>
               <div className="flex flex-col gap-2">
                 <button onClick={() => performAction("SIGN_ITEM_2", { acceptsNjp: true, counselProvided: true, signerName: `${caseData.accused.lastName}, ${caseData.accused.firstName}` })} disabled={loading} className="btn-primary text-xs">
@@ -214,7 +224,7 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
                   Demand Court-Martial
                 </button>
                 <button onClick={() => performAction("SIGN_ITEM_2", { acceptsNjp: false, counselProvided: true, refusedToSign: true, signerName: "CO" })} disabled={loading} className="btn-warning text-xs">
-                  Accused Refuses
+                  Accused Refuses to Sign
                 </button>
               </div>
             </ActionSection>
@@ -491,6 +501,51 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
           suspensionMonths: suspImposed && suspMo ? parseInt(suspMo) : undefined,
         }})} disabled={loading || !date || !hasPun} className="btn-primary text-xs flex-1">
           Submit
+        </button>
+      </div>
+    </ActionSection>
+  );
+}
+
+function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseData; loading: boolean; onAcknowledge: () => void }) {
+  const [checked, setChecked] = useState(false);
+  const accused = caseData.accused || {};
+  const vesselException = !!caseData.vesselException;
+
+  return (
+    <ActionSection title="Rights Advisement">
+      <div className="space-y-3">
+        <p className="text-xs text-neutral-mid">
+          Before electing NJP or court-martial, the member must be advised of the following rights per MCO 5800.16:
+        </p>
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-xs space-y-2">
+          <p className="font-semibold text-sm text-neutral-dark">
+            Rights of {accused.rank} {accused.lastName}, {accused.firstName}
+          </p>
+          <ol className="list-decimal ml-4 space-y-1.5 text-neutral-dark">
+            <li>The nature of the offense(s) alleged against you.</li>
+            <li>Your right to consult with an independent lawyer (military or civilian at no expense to the government) before deciding how to proceed.</li>
+            <li>Your right to examine all evidence the command intends to present.</li>
+            {!vesselException && (
+              <li>Your right to <strong>demand trial by court-martial</strong> instead of accepting NJP.</li>
+            )}
+            {vesselException && (
+              <li className="text-warning">Because you are attached to or embarked upon a vessel, you <strong>do not</strong> have the right to refuse NJP and demand trial by court-martial.</li>
+            )}
+            <li>If NJP is accepted, your right to a personal appearance before the commanding officer.</li>
+            <li>Your right to bring witnesses and present evidence on your behalf.</li>
+            <li>Your right to have a spokesperson (not necessarily a lawyer) present during the hearing.</li>
+            <li>Your right to appeal any punishment imposed within 5 calendar days.</li>
+          </ol>
+        </div>
+        <label className="flex items-start gap-3 p-3 bg-surface border border-border rounded-md cursor-pointer">
+          <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} className="mt-0.5" />
+          <span className="text-xs text-neutral-dark">
+            I confirm that {accused.rank} {accused.lastName} has been advised of the above rights and understands them.
+          </span>
+        </label>
+        <button onClick={onAcknowledge} disabled={loading || !checked} className="btn-primary text-xs w-full">
+          Confirm Rights Acknowledged
         </button>
       </div>
     </ActionSection>
