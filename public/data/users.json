@@ -52,5 +52,23 @@
     "rank": "GySgt",
     "grade": "E7",
     "edipi": "2345678901"
+  },
+  {
+    "id": "user-1774232429695-5pl19",
+    "createdAt": "2026-03-23T02:20:29.695Z",
+    "updatedAt": "2026-03-23T02:20:29.695Z",
+    "isActive": true,
+    "lastLogin": null,
+    "username": "certifier",
+    "passwordHash": "certifier",
+    "firstName": "Michael",
+    "lastName": "Chen",
+    "email": "michael.chen@usmc.mil",
+    "role": "CERTIFIER",
+    "unitId": "unit-1bn5mar",
+    "unitName": "1st Bn, 5th Marines",
+    "rank": "LtCol",
+    "grade": "O5",
+    "edipi": "3456789012"
   }
 ]
