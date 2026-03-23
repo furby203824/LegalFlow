@@ -274,6 +274,29 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
                 caseData={caseData}
                 onUpdate={onUpdate}
               />
+
+              {/* Submit hearing results when guide is complete */}
+              {caseData.hearingRecord?.completed && !offenses.every((o: { finding: string | null }) => o.finding) && (
+                <SubmitHearingResults caseData={caseData} loading={loading} onSubmit={async () => {
+                  const hr = caseData.hearingRecord;
+                  const resp = hr?.responses || {};
+
+                  // Build findings from checklist responses
+                  const findings = offenses.map((o: { id: string; offenseLetter: string }) => ({
+                    offenseId: o.id,
+                    finding: resp[`finding_${o.offenseLetter}`] === "GUILTY" ? "GUILTY" : "NOT_GUILTY",
+                  }));
+
+                  await performAction("ENTER_FINDINGS", { findings });
+                }} />
+              )}
+
+              {/* Submit punishment after findings are entered */}
+              {offenses.every((o: { finding: string | null }) => o.finding) && !pr && caseData.hearingRecord?.completed && (
+                <SubmitPunishmentFromGuide caseData={caseData} loading={loading} onSubmit={async (punishmentData) => {
+                  await performAction("ENTER_PUNISHMENT", punishmentData);
+                }} />
+              )}
             </>
           )}
 
@@ -502,6 +525,90 @@ function ContextDocButton({ caseId, pdfType, label, description }: { caseId: str
         </div>
       )}
     </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function SubmitHearingResults({ caseData, loading, onSubmit }: { caseData: any; loading: boolean; onSubmit: () => Promise<void> }) {
+  const resp = caseData.hearingRecord?.responses || {};
+  const offenses = caseData.offenses || [];
+  const guiltyCount = offenses.filter((o: { offenseLetter: string }) => resp[`finding_${o.offenseLetter}`] === "GUILTY").length;
+
+  return (
+    <ActionSection title="Submit Findings (Item 5)">
+      <p className="text-xs text-neutral-mid mb-2">
+        The hearing guide is complete. Submit the findings to record them on the UPB.
+      </p>
+      <div className="text-xs mb-3 p-2 rounded bg-surface border border-border">
+        <span className="font-medium">{guiltyCount}</span> of {offenses.length} offense(s) found guilty
+      </div>
+      <button onClick={onSubmit} disabled={loading} className="btn-primary text-xs w-full">
+        {loading ? "Submitting..." : "Submit Findings"}
+      </button>
+    </ActionSection>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function SubmitPunishmentFromGuide({ caseData, loading, onSubmit }: { caseData: any; loading: boolean; onSubmit: (data: any) => Promise<void> }) {
+  const resp = caseData.hearingRecord?.responses || {};
+  const accused = caseData.accused || {};
+
+  // Build punishment from hearing guide responses
+  const punKeys = ["pun_reduction", "pun_forfeiture", "pun_extra_duties", "pun_restriction", "pun_corr_custody", "pun_reprimand", "pun_admonition"];
+  const imposed = punKeys.filter((k) => resp[k] === "imposed");
+  const suspMonths = resp["susp_months"] ? Number(resp["susp_months"]) : null;
+
+  const punishmentSummary = imposed.map((k) => {
+    const label = k.replace("pun_", "").replace(/_/g, " ");
+    const detail = resp[`${k}_detail`] || "";
+    const susp = resp[`${k}_susp`] === "yes" && suspMonths ? ` (susp ${suspMonths} mos)` : "";
+    return `${label}${detail ? `: ${detail}` : ""}${susp}`;
+  });
+
+  function handleSubmit() {
+    const punishment = {
+      punishmentDate: new Date().toISOString().slice(0, 10),
+      reduction: resp["pun_reduction"] === "imposed",
+      reductionDetail: resp["pun_reduction_detail"] || null,
+      forfeiture: resp["pun_forfeiture"] === "imposed",
+      forfeitureDetail: resp["pun_forfeiture_detail"] || null,
+      extraDuties: resp["pun_extra_duties"] === "imposed",
+      extraDutiesDetail: resp["pun_extra_duties_detail"] || null,
+      restriction: resp["pun_restriction"] === "imposed",
+      restrictionDetail: resp["pun_restriction_detail"] || null,
+      correctionalCustody: resp["pun_corr_custody"] === "imposed",
+      correctionalCustodyDetail: resp["pun_corr_custody_detail"] || null,
+      reprimand: resp["pun_reprimand"] === "imposed",
+      admonition: resp["pun_admonition"] === "imposed",
+      suspensionMonths: suspMonths,
+      suspendedPunishments: punKeys.filter((k) => resp[`${k}_susp`] === "yes").map((k) => k.replace("pun_", "")),
+      accusedGrade: accused.grade,
+      accusedRank: accused.rank,
+    };
+    onSubmit({ punishment, noPunishment: imposed.length === 0 });
+  }
+
+  return (
+    <ActionSection title="Submit Punishment (Item 6)">
+      <p className="text-xs text-neutral-mid mb-2">
+        Review and submit the punishment selected during the hearing.
+      </p>
+      {imposed.length > 0 ? (
+        <div className="text-xs mb-3 p-2 rounded bg-surface border border-border space-y-1">
+          {punishmentSummary.map((line, i) => (
+            <div key={i} className="capitalize">{line}</div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-xs mb-3 p-2 rounded bg-amber-50 border border-amber-200 text-amber-700">
+          No punishment selected — case will be destroyed
+        </div>
+      )}
+      <button onClick={handleSubmit} disabled={loading} className="btn-primary text-xs w-full">
+        {loading ? "Submitting..." : imposed.length > 0 ? "Submit Punishment" : "Destroy Case (No Punishment)"}
+      </button>
+    </ActionSection>
   );
 }
 
