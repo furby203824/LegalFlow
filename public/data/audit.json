@@ -900,5 +900,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated PDF: navmc_10132_pdf"
+  },
+  {
+    "id": "audit-1774294103199-tua2e",
+    "timestamp": "2026-03-23T19:28:23.199Z",
+    "caseId": "case-1774294101445-2c51m",
+    "caseNumber": "CASE-2026-0005",
+    "userId": "user-co-preparer",
+    "userRole": "NJP_PREPARER",
+    "userName": "co-preparer",
+    "action": "INSERT",
+    "notes": "Case CASE-2026-0005 initiated"
   }
 ]
