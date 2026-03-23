@@ -1112,6 +1112,11 @@
     "njpDate": null,
     "appealNotFiled": false,
     "accusedTransferred": false,
-    "initiatedById": "user-1774232428029-skhw5"
+    "initiatedById": "user-1774232428029-skhw5",
+    "rightsAcknowledgement": {
+      "id": "ra-1774273071041-0f8cj",
+      "acknowledged": true,
+      "acknowledgedAt": "2026-03-23T13:37:51.041Z"
+    }
   }
 ]
