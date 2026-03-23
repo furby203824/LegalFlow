@@ -404,26 +404,22 @@ export default function NewCasePage() {
 
           {/* NJP Authority */}
           <Section title="NJP Authority">
-            <Field label="Commander Grade Level" required>
-              <div className="flex flex-col gap-3">
-                {[
-                  { v: "O3", l: "Company Grade (O-3 and below)", desc: "Limits: Custody 7d, Forfeiture 7d pay, Extra 14d, Restriction 14d" },
-                  { v: "O4", l: "Field Grade and Above (O-4+, all WO)", desc: "Limits: Custody 30d, Forfeiture 2mo half pay, Extra 45d, Restriction 60d" },
-                ].map((opt) => (
-                  <label key={opt.v} className={cn(
-                    "flex items-start gap-3 rounded-md border p-3 cursor-pointer transition-colors",
-                    commanderGrade === opt.v ? "border-primary bg-blue-50" : "border-border hover:bg-surface"
-                  )}>
-                    <input type="radio" name="cmdGrade" value={opt.v} checked={commanderGrade === opt.v} onChange={(e) => setCommanderGrade(e.target.value)} className="mt-1" />
-                    <div>
-                      <div className="text-sm font-medium">{opt.l}</div>
-                      <div className="text-xs text-neutral-mid mt-0.5">{opt.desc}</div>
-                    </div>
-                  </label>
-                ))}
+            <Field label="Commander Grade Level">
+              <div className={cn(
+                "rounded-md border p-3",
+                commanderGrade === "O3" ? "border-primary bg-blue-50" : commanderGrade === "O4" ? "border-primary bg-blue-50" : "border-border"
+              )}>
+                <div className="text-sm font-medium">
+                  {commanderGrade === "O3" ? "Company Grade (O-3 and below)" : "Field Grade and Above (O-4+, all WO)"}
+                </div>
+                <div className="text-xs text-neutral-mid mt-0.5">
+                  {commanderGrade === "O3"
+                    ? "Limits: Custody 7d, Forfeiture 7d pay, Extra 14d, Restriction 14d"
+                    : "Limits: Custody 30d, Forfeiture 2mo half pay, Extra 45d, Restriction 60d"}
+                </div>
               </div>
               <p className="text-xs text-neutral-mid mt-2">
-                This selection sets punishment limits and cannot be changed after case creation.
+                Automatically set based on your unit level. Punishment limits are locked at case creation.
               </p>
             </Field>
           </Section>
