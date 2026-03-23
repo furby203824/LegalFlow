@@ -54,6 +54,7 @@ function canPerformAction(role: UserRole, action: string): boolean {
     SIGN_ITEM_14: ["APPEAL_AUTHORITY", "SUITE_ADMIN"],
     ENTER_APPEAL_DATE: ["NJP_PREPARER", "ADMIN", "SUITE_ADMIN"],
     LOG_JA_REVIEW: ["NJP_PREPARER", "ADMIN", "SUITE_ADMIN"],
+    VACATE_SUSPENSION: ["CERTIFIER", "NJP_AUTHORITY", "SUITE_ADMIN"],
   };
 
   const allowed = permissions[action];
@@ -202,6 +203,16 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             Review this package for completeness and accuracy before it is routed to the Certifier (Commander).
             You may add remarks or flag issues but cannot perform case actions directly.
           </p>
+        </div>
+      )}
+
+      {/* ═══ CLOSED CASE: Document Access & Suspension Vacation ═══ */}
+      {isClosed && (
+        <div className="space-y-3">
+          <ClosedCaseDocumentsPanel caseData={caseData} />
+          {caseData.status === "CLOSED_SUSPENSION_ACTIVE" && pr?.suspensionStatus === "ACTIVE" && (
+            <VacateSuspensionAction caseData={caseData} loading={loading} onSubmit={(data) => performAction("VACATE_SUSPENSION", data)} />
+          )}
         </div>
       )}
 
@@ -1388,6 +1399,260 @@ function Item9Action({ caseData, loading, onSubmit }: { caseData: CaseData; load
       }} disabled={loading || !name} className="btn-primary text-xs w-full mt-3">
         Sign Item 9
       </button>
+    </ActionSection>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Closed Case: Document Print/Download Panel
+// ═══════════════════════════════════════════════════════════════════
+
+function ClosedCaseDocumentsPanel({ caseData }: { caseData: CaseData }) {
+  const [generating, setGenerating] = useState<string | null>(null);
+  const [pdfData, setPdfData] = useState<{ pdfBytes: Uint8Array; filename: string } | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+  async function handleGenerate(pdfType: string) {
+    setGenerating(pdfType);
+    setPdfData(null);
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await generatePdfDocument(caseData.id, pdfType as any);
+      setPdfData({ pdfBytes: result.pdfBytes, filename: result.filename });
+      const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
+      setPdfUrl(URL.createObjectURL(blob));
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setGenerating(null);
+    }
+  }
+
+  function handleDownload() {
+    if (!pdfUrl || !pdfData) return;
+    const a = window.document.createElement("a");
+    a.href = pdfUrl;
+    a.download = pdfData.filename;
+    a.click();
+  }
+
+  function handlePrint() {
+    if (!pdfUrl) return;
+    const printWindow = window.open(pdfUrl, "_blank");
+    if (printWindow) {
+      printWindow.addEventListener("load", () => printWindow.print());
+    }
+  }
+
+  const hasSuspension = caseData.punishmentRecord?.suspensionImposed;
+  const hasAppealFiled = caseData.appealRecord?.appealFiledDate;
+
+  const docButtons: { key: string; label: string; desc: string }[] = [
+    { key: "navmc_10132_pdf", label: "NAVMC 10132 (Final)", desc: "Unit Punishment Book entry" },
+    { key: "notification_election_rights", label: "Notification & Election of Rights", desc: "A-1-c/A-1-d signed form" },
+    { key: "appeal_rights_ack", label: "Appeal Rights Acknowledgement", desc: "A-1-g appeal election" },
+  ];
+  if (hasAppealFiled) {
+    docButtons.push({ key: "suspects_rights_ack", label: "Suspect's Rights Ack", desc: "Rights acknowledgement" });
+  }
+
+  return (
+    <div className="card p-4">
+      <h3 className="text-xs font-medium text-neutral-mid uppercase tracking-wide mb-3">
+        Case Documents
+      </h3>
+      <p className="text-xs text-neutral-mid mb-3">
+        Generate, print, or download any document from this completed package.
+      </p>
+      <div className="space-y-2">
+        {docButtons.map((doc) => (
+          <button
+            key={doc.key}
+            onClick={() => handleGenerate(doc.key)}
+            disabled={!!generating}
+            className="w-full flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-surface transition-colors text-left"
+          >
+            <FileText size={16} className="text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium text-neutral-dark">{doc.label}</div>
+              <div className="text-[10px] text-neutral-mid">{doc.desc}</div>
+            </div>
+            {generating === doc.key && <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent shrink-0" />}
+          </button>
+        ))}
+      </div>
+
+      {/* PDF Preview and Actions */}
+      {pdfData && pdfUrl && (
+        <div className="mt-3 border border-border rounded-lg overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 bg-surface border-b border-border">
+            <span className="text-xs font-medium truncate">{pdfData.filename}</span>
+            <div className="flex gap-2 shrink-0">
+              <button onClick={handlePrint} className="btn-ghost text-xs gap-1">
+                <Printer size={12} /> Print
+              </button>
+              <button onClick={handleDownload} className="btn-primary text-xs gap-1">
+                <Download size={12} /> Download
+              </button>
+            </div>
+          </div>
+          <PdfViewer pdfBytes={pdfData.pdfBytes} className="h-[350px]" />
+        </div>
+      )}
+
+      {hasSuspension && (
+        <div className="mt-3 text-[10px] text-neutral-mid">
+          Suspension documents (Figure 14-1) can be generated after initiating a vacation proceeding below.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Vacate Suspension Action (for CLOSED_SUSPENSION_ACTIVE cases)
+// ═══════════════════════════════════════════════════════════════════
+
+function VacateSuspensionAction({ caseData, loading, onSubmit }: { caseData: CaseData; loading: boolean; onSubmit: (d: Record<string, unknown>) => void }) {
+  const pr = caseData.punishmentRecord;
+  const njpDate = caseData.njpDate || "";
+
+  // Calculate suspension end date from NJP date + suspension months
+  const suspensionMonths = pr?.suspensionMonths || 6;
+  const suspensionEndDate = njpDate ? (() => {
+    const d = new Date(njpDate);
+    d.setMonth(d.getMonth() + suspensionMonths);
+    return d.toISOString().split("T")[0];
+  })() : "";
+
+  const today = new Date().toISOString().split("T")[0];
+  const suspensionExpired = suspensionEndDate && today > suspensionEndDate;
+
+  const [vacationDate, setVacationDate] = useState(today);
+  const [triggeringArticle, setTriggeringArticle] = useState("");
+  const [triggeringSummary, setTriggeringSummary] = useState("");
+  const [triggeringDate, setTriggeringDate] = useState("");
+  const [vacateInFull, setVacateInFull] = useState(true);
+  const [vacatedPortion, setVacatedPortion] = useState("");
+  const [coName, setCoName] = useState(caseData.njpAuthorityName || "");
+  const [coTitle, setCoTitle] = useState(caseData.njpAuthorityTitle || "Commanding Officer");
+  const [confirmed, setConfirmed] = useState(false);
+
+  // Suspended punishment description
+  const suspendedDesc = pr?.suspensionPunishment
+    ? pr.suspensionPunishment.split(", ").map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(", ")
+    : "Suspended punishment";
+
+  // Validate triggering offense date is within suspension window
+  const triggeringDateOutOfScope = triggeringDate && suspensionEndDate && triggeringDate > suspensionEndDate;
+
+  const canSubmit = vacationDate && triggeringArticle && triggeringSummary && triggeringDate
+    && coName && confirmed && !triggeringDateOutOfScope && !suspensionExpired;
+
+  return (
+    <ActionSection title="Vacate Suspension of Punishment">
+      <div className="space-y-3">
+        {/* Suspension summary */}
+        <div className="bg-orange-50 border border-orange-200 rounded-md p-3 text-xs space-y-1">
+          <div className="flex items-center gap-2 text-orange-700 font-medium">
+            <Clock size={14} /> Active Suspension
+          </div>
+          <p className="text-orange-600">
+            <strong>Suspended:</strong> {suspendedDesc}
+          </p>
+          <p className="text-orange-600">
+            <strong>Period:</strong> {suspensionMonths} months
+            {njpDate && <> (from {njpDate})</>}
+            {suspensionEndDate && <> — <strong>Ends: {suspensionEndDate}</strong></>}
+          </p>
+          {suspensionExpired && (
+            <p className="text-error font-medium mt-1">
+              Suspension period has expired. Vacation is no longer available.
+            </p>
+          )}
+        </div>
+
+        {!suspensionExpired && (
+          <>
+            {/* Triggering offense */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-mid mb-1">Triggering UCMJ Article</label>
+              <input type="text" value={triggeringArticle} onChange={(e) => setTriggeringArticle(e.target.value)} className="input-field" placeholder="e.g., 86, 92, 134" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-mid mb-1">Triggering Offense Summary</label>
+              <textarea value={triggeringSummary} onChange={(e) => setTriggeringSummary(e.target.value)} className="input-field h-16" placeholder="Brief description of the subsequent offense" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-mid mb-1">Triggering Offense Date</label>
+              <input type="date" value={triggeringDate} onChange={(e) => setTriggeringDate(e.target.value)} className="input-field" max={suspensionEndDate || undefined} />
+              {triggeringDateOutOfScope && (
+                <p className="text-xs text-error mt-1">
+                  Offense date is after the suspension end date ({suspensionEndDate}). The offense must occur within the suspension period.
+                </p>
+              )}
+            </div>
+
+            {/* Vacation details */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-mid mb-1">Vacation Date</label>
+              <input type="date" value={vacationDate} onChange={(e) => setVacationDate(e.target.value)} className="input-field" />
+            </div>
+            <div>
+              <label className="flex items-center gap-2 text-xs">
+                <input type="radio" name="vacateScope" checked={vacateInFull} onChange={() => { setVacateInFull(true); setVacatedPortion(""); }} /> Vacate in full
+              </label>
+              <label className="flex items-center gap-2 text-xs mt-1">
+                <input type="radio" name="vacateScope" checked={!vacateInFull} onChange={() => setVacateInFull(false)} /> Vacate in part
+              </label>
+              {!vacateInFull && (
+                <input type="text" value={vacatedPortion} onChange={(e) => setVacatedPortion(e.target.value)} className="input-field mt-1" placeholder="Specify portion to vacate" />
+              )}
+            </div>
+
+            {/* CO info */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs font-medium text-neutral-mid mb-1">CO Name</label>
+                <input type="text" value={coName} onChange={(e) => setCoName(e.target.value)} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-mid mb-1">CO Title</label>
+                <input type="text" value={coTitle} onChange={(e) => setCoTitle(e.target.value)} className="input-field" />
+              </div>
+            </div>
+
+            {/* Confirmation */}
+            <label className="flex items-start gap-2 text-xs">
+              <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-0.5" />
+              <span>I confirm this Marine committed a subsequent offense within the suspension period and the vacation proceedings are authorized per MCO 5800.16 Vol 14.</span>
+            </label>
+
+            <button
+              onClick={() => onSubmit({
+                vacationDate,
+                triggeringUcmjArticle: triggeringArticle,
+                triggeringOffenseSummary: triggeringSummary,
+                triggeringOffenseDate: triggeringDate,
+                vacateInFull: vacateInFull,
+                vacatedPortion: vacateInFull ? undefined : vacatedPortion,
+                coName,
+                coTitle,
+                originalSuspendedPunishment: suspendedDesc,
+                originalSuspensionDate: njpDate,
+                suspensionEndDate,
+              })}
+              disabled={loading || !canSubmit}
+              className="btn-danger text-xs w-full gap-1"
+            >
+              <AlertTriangle size={14} />
+              {loading ? "Processing..." : "Vacate Suspension"}
+            </button>
+          </>
+        )}
+      </div>
     </ActionSection>
   );
 }
