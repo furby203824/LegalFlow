@@ -868,12 +868,49 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
 }
 
 function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseData; loading: boolean; onSubmit: (d: Record<string, unknown>) => void }) {
-  const [step, setStep] = useState<"decision" | "upload" | "confirm">("decision");
+  const [step, setStep] = useState<"generate" | "upload" | "confirm">("generate");
+  const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfFilename, setPdfFilename] = useState("");
+  const [generating, setGenerating] = useState(false);
   const [outcome, setOutcome] = useState("DENIED");
   const [item15Date, setItem15Date] = useState("");
   const [authorityName, setAuthorityName] = useState(caseData.hearingRecord?.appealAuthority || "");
   const [fileName, setFileName] = useState("");
   const accused = caseData.accused || {};
+
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      const result = await generatePdfDocument(caseData.id, "navmc_10132_pdf");
+      setPdfBytes(result.pdfBytes);
+      const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+      setPdfFilename(result.filename);
+      setStep("upload");
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function handleDownload() {
+    if (!pdfUrl) return;
+    const a = window.document.createElement("a");
+    a.href = pdfUrl;
+    a.download = pdfFilename;
+    a.click();
+  }
+
+  function handlePrint() {
+    if (!pdfUrl) return;
+    const printWindow = window.open(pdfUrl, "_blank");
+    if (printWindow) {
+      printWindow.addEventListener("load", () => printWindow.print());
+    }
+  }
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -888,27 +925,86 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
       <div className="space-y-4">
         {/* Step indicator */}
         <div className="flex items-center gap-2 text-xs">
-          <span className={cn("flex items-center gap-1 font-medium", step === "decision" ? "text-primary" : "text-success")}>
-            {step !== "decision" ? <CheckCircle size={14} /> : <span className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center text-[10px] font-bold">1</span>}
-            Decision
+          <span className={cn("flex items-center gap-1 font-medium", step === "generate" ? "text-primary" : "text-success")}>
+            {step !== "generate" ? <CheckCircle size={14} /> : <span className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center text-[10px] font-bold">1</span>}
+            Print Document
           </span>
           <span className="w-6 border-t border-border" />
           <span className={cn("flex items-center gap-1 font-medium", step === "upload" ? "text-primary" : step === "confirm" ? "text-success" : "text-neutral-mid")}>
             {step === "confirm" ? <CheckCircle size={14} /> : <span className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold", step === "upload" ? "border-primary" : "border-neutral-mid/40")}>2</span>}
-            Print &amp; Sign
+            Sign &amp; Upload
           </span>
           <span className="w-6 border-t border-border" />
           <span className={cn("flex items-center gap-1 font-medium", step === "confirm" ? "text-primary" : "text-neutral-mid")}>
             <span className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold", step === "confirm" ? "border-primary" : "border-neutral-mid/40")}>3</span>
-            Upload &amp; Validate
+            Validate Decision
           </span>
         </div>
 
-        {/* Step 1: Enter Decision */}
-        {step === "decision" && (
+        {/* Step 1: Generate & Print */}
+        {step === "generate" && (
           <div className="space-y-3">
             <p className="text-xs text-neutral-mid">
-              The next higher commander reviews the appeal and renders a decision. Enter the appeal authority information and decision below.
+              Print the appeal document for the next higher commander to review the appeal, render a decision, and sign.
+            </p>
+            <button onClick={handleGenerate} disabled={generating} className="btn-primary text-xs w-full gap-1">
+              <FileText size={14} />
+              {generating ? "Generating PDF..." : "Generate Appeal Document"}
+            </button>
+          </div>
+        )}
+
+        {/* Step 2: Print, Sign & Upload */}
+        {step === "upload" && (
+          <div className="space-y-3">
+            {pdfUrl && (
+              <div className="border border-border rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-2 bg-surface border-b border-border">
+                  <span className="text-xs font-medium">{pdfFilename}</span>
+                  <div className="flex gap-2">
+                    <button onClick={handlePrint} className="btn-ghost text-xs gap-1">
+                      <Printer size={12} /> Print
+                    </button>
+                    <button onClick={handleDownload} className="btn-primary text-xs gap-1">
+                      <Download size={12} /> Download PDF
+                    </button>
+                  </div>
+                </div>
+                {pdfBytes && <PdfViewer pdfBytes={pdfBytes} className="h-[350px]" />}
+              </div>
+            )}
+
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800 space-y-1">
+              <p className="font-medium flex items-center gap-1"><AlertTriangle size={12} /> Instructions:</p>
+              <ol className="list-decimal ml-5 space-y-0.5">
+                <li>Download or print the document above</li>
+                <li>Route to the next higher commander for review and decision</li>
+                <li>Have the appeal authority sign the document with their decision</li>
+                <li>Scan/photograph the signed document and upload below</li>
+              </ol>
+            </div>
+
+            <label className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-blue-50/30 transition-colors">
+              <Upload size={20} className="text-neutral-mid" />
+              <span className="text-xs text-neutral-mid">Upload signed appeal decision document</span>
+              <span className="text-[10px] text-neutral-mid">PDF, JPG, or PNG</span>
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileUpload} className="hidden" />
+            </label>
+          </div>
+        )}
+
+        {/* Step 3: Record decision from signed document */}
+        {step === "confirm" && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+              <CheckCircle size={16} className="text-success shrink-0" />
+              <div>
+                <p className="text-xs font-medium text-success">Signed document uploaded</p>
+                <p className="text-[10px] text-neutral-mid">{fileName}</p>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-mid">
+              Record the decision from the signed appeal document for {accused.rank} {accused.lastName}.
             </p>
             <div>
               <label className="block text-xs font-medium text-neutral-mid mb-1">Appeal Authority (Next Higher Commander)</label>
@@ -928,56 +1024,7 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
               <label className="block text-xs font-medium text-neutral-mid mb-1">Date Notice of Appeal Decision (Item 15)</label>
               <input type="date" value={item15Date} onChange={(e) => setItem15Date(e.target.value)} className="input-field" />
             </div>
-            <button onClick={() => setStep("upload")} disabled={!authorityName} className="btn-primary text-xs w-full">
-              Continue — Print for Signature
-            </button>
-          </div>
-        )}
-
-        {/* Step 2: Print & Upload */}
-        {step === "upload" && (
-          <div className="space-y-3">
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800 space-y-1">
-              <p className="font-medium flex items-center gap-1"><AlertTriangle size={12} /> Instructions:</p>
-              <ol className="list-decimal ml-5 space-y-0.5">
-                <li>Print the appeal decision document</li>
-                <li>Have the appeal authority ({authorityName}) sign the document</li>
-                <li>Scan/photograph the signed document and upload below</li>
-              </ol>
-            </div>
-
-            <label className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-blue-50/30 transition-colors">
-              <Upload size={20} className="text-neutral-mid" />
-              <span className="text-xs text-neutral-mid">Upload signed appeal decision document</span>
-              <span className="text-[10px] text-neutral-mid">PDF, JPG, or PNG</span>
-              <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileUpload} className="hidden" />
-            </label>
-
-            <button onClick={() => setStep("decision")} className="btn-ghost text-xs w-full">
-              Back to Decision
-            </button>
-          </div>
-        )}
-
-        {/* Step 3: Confirm */}
-        {step === "confirm" && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
-              <CheckCircle size={16} className="text-success shrink-0" />
-              <div>
-                <p className="text-xs font-medium text-success">Signed document uploaded</p>
-                <p className="text-[10px] text-neutral-mid">{fileName}</p>
-              </div>
-            </div>
-            <div className="text-xs p-2 rounded bg-surface border border-border space-y-1">
-              <p><span className="font-medium">Appeal Authority:</span> {authorityName}</p>
-              <p><span className="font-medium">Decision:</span> {outcome.replace(/_/g, " ")}</p>
-              {item15Date && <p><span className="font-medium">Notice Date:</span> {item15Date}</p>}
-            </div>
-            <p className="text-xs text-neutral-mid">
-              Confirm that the signed appeal decision for {accused.rank} {accused.lastName} has been received from the next higher commander.
-            </p>
-            <button onClick={() => onSubmit({ outcome, item15Date, authorityName })} disabled={loading} className="btn-primary text-xs w-full gap-1">
+            <button onClick={() => onSubmit({ outcome, item15Date, authorityName })} disabled={loading || !authorityName} className="btn-primary text-xs w-full gap-1">
               <CheckCircle size={14} />
               {loading ? "Processing..." : "Validate Appeal Decision"}
             </button>
