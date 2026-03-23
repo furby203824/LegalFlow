@@ -23,26 +23,59 @@ type Rec = Record<string, any>;
 
 export function buildPunishmentList(pr: Rec): CaseData["item6Punishments"] {
   const list: CaseData["item6Punishments"] = [];
-  if (pr.corrCustodyDays) list.push({ type: "CORRECTIONAL_CUSTODY", duration: pr.corrCustodyDays, suspended: false });
-  if (pr.forfeitureAmount) list.push({ type: "FORFEITURE", amount: pr.forfeitureAmount, months: pr.forfeitureMonths || undefined, suspended: false });
-  if (pr.reductionImposed) list.push({ type: "REDUCTION", reducedToGrade: pr.reductionToGrade || undefined, reducedToRank: pr.reductionToRank || undefined, reducedFromGrade: pr.reductionFromGrade || undefined, suspended: false });
-  if (pr.extraDutiesDays) list.push({ type: "EXTRA_DUTIES", duration: pr.extraDutiesDays, suspended: false });
-  if (pr.restrictionDays) list.push({ type: "RESTRICTION", duration: pr.restrictionDays, suspended: false });
+
+  // Correctional custody
+  const ccDays = pr.corrCustodyDays || (pr.correctionalCustody && pr.correctionalCustodyDetail ? parseInt(pr.correctionalCustodyDetail) : 0);
+  if (ccDays) list.push({ type: "CORRECTIONAL_CUSTODY", duration: ccDays, suspended: false });
+
+  // Forfeiture — new format: forfeitureAmount; old format: forfeiture + forfeitureDetail
+  const forfAmt = pr.forfeitureAmount || (pr.forfeiture && pr.forfeitureDetail ? parseInt(pr.forfeitureDetail) : 0);
+  if (forfAmt) list.push({ type: "FORFEITURE", amount: forfAmt, months: pr.forfeitureMonths || undefined, suspended: false });
+
+  // Reduction
+  if (pr.reductionImposed || pr.reduction) {
+    list.push({ type: "REDUCTION", reducedToGrade: pr.reductionToGrade || pr.reductionDetail || undefined, reducedToRank: pr.reductionToRank || undefined, reducedFromGrade: pr.reductionFromGrade || undefined, suspended: false });
+  }
+
+  // Extra duties — new format: extraDutiesDays; old format: extraDuties + extraDutiesDetail
+  const edDays = pr.extraDutiesDays || (pr.extraDuties && pr.extraDutiesDetail ? parseInt(pr.extraDutiesDetail) : 0);
+  if (edDays) list.push({ type: "EXTRA_DUTIES", duration: edDays, suspended: false });
+
+  // Restriction — new format: restrictionDays; old format: restriction + restrictionDetail
+  const restDays = pr.restrictionDays || (pr.restriction && pr.restrictionDetail ? parseInt(pr.restrictionDetail) : 0);
+  if (restDays) list.push({ type: "RESTRICTION", duration: restDays, suspended: false });
+
   if (pr.arrestQuartersDays) list.push({ type: "ARREST_IN_QUARTERS", duration: pr.arrestQuartersDays, suspended: false });
   if (pr.detentionDays) list.push({ type: "DETENTION_OF_PAY", duration: pr.detentionDays, suspended: false });
-  if (pr.reprimandType || pr.admonitionReprimand === "reprimand") list.push({ type: "REPRIMAND", suspended: false });
-  if (pr.admonitionType || pr.admonitionReprimand === "admonition") list.push({ type: "ADMONITION", suspended: false });
+
+  // Reprimand / Admonition
+  if (pr.reprimandType || pr.admonitionReprimand === "reprimand" || pr.reprimand) list.push({ type: "REPRIMAND", suspended: false });
+  if (pr.admonitionType || pr.admonitionReprimand === "admonition" || pr.admonition) list.push({ type: "ADMONITION", suspended: false });
+
+  // Mark suspended punishments
   if (pr.suspensionImposed && pr.suspensionPunishment) {
     const sp = (pr.suspensionPunishment as string).toLowerCase();
     for (let i = 0; i < list.length; i++) {
       const typeKey = list[i].type.toLowerCase().replace(/_/g, " ");
-      // Match full type name or abbreviated key (e.g. "forfeiture", "extra", "restriction", "custody")
       if (sp.includes(typeKey) || sp.split(",").some((s) => typeKey.includes(s.trim()))) {
         list[i].suspended = true;
         list[i].suspensionMonths = pr.suspensionMonths || undefined;
       }
     }
   }
+
+  // Also handle suspendedPunishments array from old format
+  if (pr.suspendedPunishments && Array.isArray(pr.suspendedPunishments) && pr.suspendedPunishments.length > 0) {
+    const sp = pr.suspendedPunishments.map((s: string) => s.toLowerCase());
+    for (let i = 0; i < list.length; i++) {
+      const typeKey = list[i].type.toLowerCase().replace(/_/g, " ");
+      if (sp.some((s: string) => typeKey.includes(s) || s.includes(typeKey))) {
+        list[i].suspended = true;
+        list[i].suspensionMonths = pr.suspensionMonths || undefined;
+      }
+    }
+  }
+
   return list;
 }
 
