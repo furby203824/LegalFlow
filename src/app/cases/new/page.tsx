@@ -11,6 +11,7 @@ import { casesStore, caseWithIncludes, auditStore } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getCommanderGradeLevel } from "@/types";
 import type { Grade } from "@/types";
+import { getUnit } from "@/lib/units";
 
 const VICTIM_STATUSES = [
   "Military", "Military (spouse)", "Civilian (spouse)", "Civilian (dependent)",
@@ -163,7 +164,12 @@ export default function NewCasePage() {
   });
   const [serviceBranch, setServiceBranch] = useState(initial.serviceBranch as string);
   const [component, setComponent] = useState("ACTIVE");
-  const [commanderGrade, setCommanderGrade] = useState("");
+  const [commanderGrade, setCommanderGrade] = useState(() => {
+    const s = getSession();
+    if (!s) return "";
+    const unit = getUnit(s.unitId);
+    return unit?.echelon === "COMPANY" ? "O3" : unit?.echelon === "BATTALION" ? "O4" : "";
+  });
   const [vesselException, setVesselException] = useState(false);
   const [statuteAck, setStatuteAck] = useState(false);
 
