@@ -1019,7 +1019,7 @@
         "toTime": "04:31",
         "offensePlace": "MCBH",
         "finding": null,
-        "locked": false
+        "locked": true
       },
       {
         "id": "off-1774273009599-B",
@@ -1031,7 +1031,7 @@
         "offenseTime": "10:39",
         "offensePlace": "MCBH",
         "finding": null,
-        "locked": false
+        "locked": true
       }
     ],
     "victims": [
@@ -1043,7 +1043,7 @@
         "victimSex": "Unknown",
         "victimRace": "Unknown",
         "victimEthnicity": "Unknown",
-        "locked": false
+        "locked": true
       },
       {
         "id": "v-1774273009599-B",
@@ -1053,7 +1053,7 @@
         "victimSex": "Unknown",
         "victimRace": "Unknown",
         "victimEthnicity": "Unknown",
-        "locked": false
+        "locked": true
       }
     ],
     "punishment": null,
