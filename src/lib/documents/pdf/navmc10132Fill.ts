@@ -355,7 +355,9 @@ export async function fillNavmc10132Pdf(
     ].filter(Boolean).join(", ");
     setText(form, "8 NJP AUTHORITY NAME TITLE SERVICE", authParts);
     setText(form, "8A NJP AUTHORITY GRADE", data.njpAuthorityGrade || "");
-    // 8B EDIPI — we don't store NJP authority EDIPI separately, leave blank
+    if (data.njpAuthorityEdipi) {
+      setText(form, "8B NJP AUTHORITY EDIPI", data.njpAuthorityEdipi);
+    }
   }
 
   // ═══ Item 10: Date of Notice (HEARING and FINAL) ═══

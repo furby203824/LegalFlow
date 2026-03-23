@@ -28,6 +28,7 @@ export interface CaseData {
   njpAuthorityUnit?: string;
   njpAuthorityRank?: string;
   njpAuthorityGrade?: string;
+  njpAuthorityEdipi?: string;
   commanderGradeLevel: CommanderGradeLevel;
 
   // -- Vessel exception --
