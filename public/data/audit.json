@@ -911,5 +911,16 @@
     "userName": "co-preparer",
     "action": "INSERT",
     "notes": "Case CASE-2026-0005 initiated"
+  },
+  {
+    "id": "audit-1774294109471-obwvm",
+    "timestamp": "2026-03-23T19:28:29.471Z",
+    "caseId": "case-1774294101445-2c51m",
+    "caseNumber": "CASE-2026-0005",
+    "userId": "user-co-preparer",
+    "userRole": "NJP_PREPARER",
+    "userName": "co-preparer",
+    "action": "GENERATE",
+    "notes": "Generated PDF: notification_election_rights"
   }
 ]
