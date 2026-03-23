@@ -14,7 +14,7 @@ import {
   generateRightsAcknowledgement,
   createVersionedDocument,
 } from "@/lib/documents";
-import { generateNotificationElectionRightsPdf, generateAppealRightsAckPdf } from "@/lib/documents/pdf";
+import { generateNotificationElectionRightsPdf, generateAppealRightsAckPdf, generateSuspectsRightsAckPdf } from "@/lib/documents/pdf";
 import type { CaseData, Navmc10132Version } from "@/lib/documents";
 import type { Rank, Grade, CommanderGradeLevel } from "@/types";
 
@@ -160,7 +160,7 @@ export async function generateDocumentContent(
   return { document, caseNumber: rawCase.caseNumber };
 }
 
-export type PdfDocType = "notification_election_rights" | "appeal_rights_ack";
+export type PdfDocType = "suspects_rights_ack" | "notification_election_rights" | "appeal_rights_ack";
 
 /**
  * Generate a PDF document from case data.
@@ -258,6 +258,10 @@ export async function generatePdfDocument(
   const cn = rawCase.caseNumber || "case";
 
   switch (type) {
+    case "suspects_rights_ack":
+      pdfBytes = await generateSuspectsRightsAckPdf(caseData);
+      filename = `${cn}_Suspects_Rights_Acknowledgement.pdf`;
+      break;
     case "notification_election_rights":
       pdfBytes = await generateNotificationElectionRightsPdf(caseData);
       filename = `${cn}_Notification_Election_Rights${rawCase.vesselException ? "_Vessel" : ""}.pdf`;
