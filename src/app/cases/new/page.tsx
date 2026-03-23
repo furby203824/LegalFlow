@@ -68,6 +68,44 @@ function generateRandomAccused() {
   };
 }
 
+// Simulate MCTFS DOB lookup — generate realistic DOB based on grade
+function generateDOB(g: string): string {
+  const ageRanges: Record<string, [number, number]> = {
+    E1: [18, 21], E2: [18, 22], E3: [18, 23], E4: [20, 27], E5: [22, 30],
+    E6: [26, 35], E7: [30, 40], E8: [34, 45], E9: [38, 50],
+    W1: [26, 35], W2: [28, 38], W3: [32, 42], W4: [36, 48], W5: [40, 52],
+    O1: [22, 28], O2: [24, 30], O3: [26, 34], O4: [30, 40], O5: [34, 45], O6: [38, 50],
+  };
+  const [minAge, maxAge] = ageRanges[g] || [20, 30];
+  const age = minAge + Math.floor(Math.random() * (maxAge - minAge + 1));
+  const now = new Date();
+  const year = now.getFullYear() - age;
+  const month = Math.floor(Math.random() * 12) + 1;
+  const day = Math.floor(Math.random() * 28) + 1;
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+// Simulate MCTFS AFADBD lookup — generate realistic Active Federal Active
+// Duty Base Date based on grade (years of service ranges by pay grade)
+function generateAFADBD(g: string): string {
+  // Typical years-of-service ranges for each enlisted/officer grade
+  const yosRanges: Record<string, [number, number]> = {
+    E1: [0, 1],   E2: [0, 1],    E3: [1, 3],    E4: [2, 5],    E5: [4, 8],
+    E6: [6, 12],  E7: [10, 18],  E8: [14, 22],  E9: [18, 28],
+    W1: [6, 12],  W2: [8, 16],   W3: [12, 20],  W4: [16, 24],  W5: [20, 28],
+    O1: [0, 2],   O2: [2, 4],    O3: [4, 8],    O4: [8, 14],   O5: [14, 20], O6: [18, 26],
+  };
+  const [minYos, maxYos] = yosRanges[g] || [2, 6];
+  const yos = minYos + Math.random() * (maxYos - minYos);
+  const now = new Date();
+  const msPerYear = 365.25 * 24 * 60 * 60 * 1000;
+  const afadbdDate = new Date(now.getTime() - yos * msPerYear);
+  const year = afadbdDate.getFullYear();
+  const month = afadbdDate.getMonth() + 1;
+  const day = afadbdDate.getDate();
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 interface OffenseInput {
   ucmjArticle: string;
   offenseType: string;
@@ -89,7 +127,10 @@ export default function NewCasePage() {
   const [middleName, setMiddleName] = useState(initial.middleName);
   const [rankGrade, setRankGrade] = useState(initial.rankGrade);
   const [edipi, setEdipi] = useState(initial.edipi);
-  const [afadbd, setAfadbd] = useState("");
+  const [afadbd, setAfadbd] = useState(() => {
+    const g = initial.rankGrade ? initial.rankGrade.split("/")[0] : "";
+    return g ? generateAFADBD(g) : "";
+  });
   const [serviceBranch, setServiceBranch] = useState(initial.serviceBranch as string);
   const [component, setComponent] = useState("ACTIVE");
   const [commanderGrade, setCommanderGrade] = useState("");
@@ -129,6 +170,8 @@ export default function NewCasePage() {
     setRankGrade(a.rankGrade);
     setEdipi(a.edipi);
     setServiceBranch(a.serviceBranch);
+    const g = a.rankGrade ? a.rankGrade.split("/")[0] : "";
+    setAfadbd(g ? generateAFADBD(g) : "");
   }
 
   // Enlisted rank options filtered by current service branch
@@ -143,23 +186,6 @@ export default function NewCasePage() {
     if (!validOptions.some((o) => o.label === rankGrade)) {
       setRankGrade("");
     }
-  }
-
-  // Simulate MCTFS DOB lookup — generate realistic DOB based on grade
-  function generateDOB(g: string): string {
-    const ageRanges: Record<string, [number, number]> = {
-      E1: [18, 21], E2: [18, 22], E3: [18, 23], E4: [20, 27], E5: [22, 30],
-      E6: [26, 35], E7: [30, 40], E8: [34, 45], E9: [38, 50],
-      W1: [26, 35], W2: [28, 38], W3: [32, 42], W4: [36, 48], W5: [40, 52],
-      O1: [22, 28], O2: [24, 30], O3: [26, 34], O4: [30, 40], O5: [34, 45], O6: [38, 50],
-    };
-    const [minAge, maxAge] = ageRanges[g] || [20, 30];
-    const age = minAge + Math.floor(Math.random() * (maxAge - minAge + 1));
-    const now = new Date();
-    const year = now.getFullYear() - age;
-    const month = Math.floor(Math.random() * 12) + 1;
-    const day = Math.floor(Math.random() * 28) + 1;
-    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   }
 
   function updateOffense(idx: number, field: keyof OffenseInput, value: string) {
@@ -220,7 +246,7 @@ export default function NewCasePage() {
         accusedLastName: lastName, accusedFirstName: firstName, accusedMiddleName: middleName || null,
         accusedRank: rank, accusedGrade: grade, accusedEdipi: edipi,
         accusedDateOfBirth: generateDOB(grade),
-        accusedAfadbd: afadbd || null,
+        accusedAfadbd: afadbd || generateAFADBD(grade) || null,
         accusedServiceBranch: serviceBranch,
         component: component || "ACTIVE",
         vesselException: vesselException || false,
@@ -306,7 +332,7 @@ export default function NewCasePage() {
                 <input className="input-field" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
               </Field>
               <Field label="Rank / Grade" required>
-                <select className="input-field" value={rankGrade} onChange={(e) => setRankGrade(e.target.value)} required>
+                <select className="input-field" value={rankGrade} onChange={(e) => { setRankGrade(e.target.value); const g = e.target.value ? e.target.value.split("/")[0] : ""; setAfadbd(g ? generateAFADBD(g) : ""); }} required>
                   <option value="">Select rank/grade</option>
                   {enlistedRankOptions.map((o) => <option key={o.label} value={o.label}>{o.label}</option>)}
                 </select>

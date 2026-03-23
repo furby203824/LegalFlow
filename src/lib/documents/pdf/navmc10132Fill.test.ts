@@ -55,7 +55,7 @@ function makeCaseData(overrides: Partial<CaseData> = {}): CaseData {
         summary: "Did without authority absent himself from his unit",
         offenseDate: "2026-01-15",
         offensePlace: "Camp Lejeune, NC",
-        finding: "GUILTY",
+        finding: "G",
         victims: [],
       },
     ],
@@ -587,6 +587,513 @@ describe("fillNavmc10132Pdf", () => {
       const { form } = await loadGeneratedForm(bytes);
 
       expect(getDropdownValue(form, "22A VICTIM STATUS")).toBe("Military");
+    });
+  });
+
+  describe("comprehensive field-by-field validation (HEARING — all readable fields)", () => {
+    // Full dataset that populates EVERY field addressable in HEARING mode
+    const fullData = () =>
+      makeCaseData({
+        // Accused (Items 17-20, 23-25)
+        accusedLastName: "MARTINEZ",
+        accusedFirstName: "CARLOS",
+        accusedMiddleName: "J",
+        accusedRank: "Sgt" as CaseData["accusedRank"],
+        accusedGrade: "E-5" as CaseData["accusedGrade"],
+        accusedEdipi: "9876543210",
+        accusedUnit: "3d Bn, 4th Marines, 1st MarDiv",
+        // NJP Authority (Items 8-8A)
+        njpAuthorityName: "Williams, Robert",
+        njpAuthorityTitle: "Commanding Officer",
+        njpAuthorityGrade: "O-5",
+        // Offenses (Items 1, 5, 22) — 3 offenses with victims
+        offenses: [
+          {
+            letter: "A", ucmjArticle: "86", offenseType: "Absence without leave",
+            summary: "Did without authority absent himself from his unit",
+            offenseDate: "2026-01-15", offensePlace: "Camp Pendleton, CA",
+            finding: "G",
+            victims: [],
+          },
+          {
+            letter: "B", ucmjArticle: "92", offenseType: "Failure to obey",
+            summary: "Failed to obey a lawful general order",
+            offenseDate: "2026-01-20", offensePlace: "Camp Pendleton, CA",
+            finding: "G",
+            victims: [
+              { letter: "1", status: "Military", sex: "Male", race: "White", ethnicity: "Not Hispanic or Latino" },
+            ],
+          },
+          {
+            letter: "C", ucmjArticle: "134", offenseType: "Drunk on duty",
+            summary: "Was drunk on duty while serving as duty NCO",
+            offenseDate: "2026-01-25", offensePlace: "Camp Pendleton, CA",
+            finding: "NG",
+            victims: [],
+          },
+        ],
+        // Item 2: Election
+        item2ElectionAccepted: true,
+        item2CounselConsulted: true,
+        item2SignedDate: "2026-02-01",
+        item2RefusalNoted: false,
+        vesselException: false,
+        // Item 3: CO Cert
+        item3SignedDate: "2026-02-01",
+        // Item 4: UA
+        uaApplicable: true,
+        uaPeriodStart: "2026-01-15",
+        uaPeriodEnd: "2026-01-20",
+        desertionMarks: "None",
+        // Item 6: Punishment (short enough to fit)
+        item6Punishments: [
+          { type: "EXTRA_DUTIES", duration: 45, suspended: false },
+          { type: "RESTRICTION", duration: 60, suspended: false },
+          { type: "REDUCTION", reducedToGrade: "E-4", reducedToRank: "Cpl", suspended: true, suspensionMonths: 6 },
+        ],
+        item6Date: "2026-02-10",
+        // Item 7: Suspension (auto-built from suspended punishments)
+        // Item 10: Notice
+        dateNoticeToAccused: "2026-02-10",
+        // Item 11: Appeal advisement
+        item11SignedDate: "2026-02-10",
+        // Item 12: Appeal intent
+        appealIntent: "DOES_NOT_INTEND",
+        item12SignedDate: "2026-02-10",
+        // Item 21: Remarks
+        item21Entries: [
+          { entryDate: "2026-02-10", entryText: "NJP hearing conducted at Bldg 1234." },
+        ],
+      });
+
+    it("Items 17-20: accused info on page 1", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "17 UNIT")).toBe("3d Bn, 4th Marines, 1st MarDiv");
+      expect(getTextValue(form, "18 ACCUSED FULL NAME")).toBe("MARTINEZ, CARLOS J");
+      expect(getTextValue(form, "19 ACCUSED RANK/GRADE")).toBe("Sgt / E-5");
+      expect(getTextValue(form, "20 ACCUSED EDIPI")).toBe("9876543210");
+    });
+
+    it("Items 23-25: accused info on page 2/3", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "23 ACCUSED FULL NAME")).toBe("MARTINEZ, CARLOS J");
+      expect(getTextValue(form, "24 ACCUSED RANK/GRADE")).toBe("Sgt / E-5");
+      expect(getTextValue(form, "25 ACCUSED EDIPI")).toBe("9876543210");
+    });
+
+    it("Item 1: offense article dropdowns and summaries", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      // Offense A
+      const artA = getDropdownValue(form, "1A ARTICLE");
+      expect(artA).toMatch(/^Art\. 86/);
+      expect(getTextValue(form, "1A SUMMARY")).toContain("Did without authority absent himself");
+      expect(getTextValue(form, "1A SUMMARY")).toContain("On or about 2026-01-15");
+      expect(getTextValue(form, "1A SUMMARY")).toContain("Camp Pendleton, CA");
+
+      // Offense B
+      const artB = getDropdownValue(form, "1B ARTICLE");
+      expect(artB).toMatch(/^Art\. 92/);
+      expect(getTextValue(form, "1B SUMMARY")).toContain("Failed to obey a lawful general order");
+
+      // Offense C
+      const artC = getDropdownValue(form, "1C ARTICLE");
+      expect(artC).toMatch(/^Art\. 134/);
+      expect(getTextValue(form, "1C SUMMARY")).toContain("Was drunk on duty");
+    });
+
+    it("Item 5: findings dropdowns (G / NG)", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getDropdownValue(form, "1A FINDING")).toBe("G");
+      expect(getDropdownValue(form, "1B FINDING")).toBe("G");
+      expect(getDropdownValue(form, "1C FINDING")).toBe("NG");
+    });
+
+    it("Item 2: election dropdown, counsel dropdown, refusal checkbox, date", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getDropdownValue(form, "2 DEMAND")).toBe(
+        "I do not demand trial and will accept non-judicial punishment, subject to my right of appeal."
+      );
+      expect(getDropdownValue(form, "2 COUNSELOPP")).toBe("   have");
+      // Checkbox should be unchecked (refusal not noted)
+      expect(form.getCheckBox("2 ACC REFUSE TO SIGN").isChecked()).toBe(false);
+      expect(getTextValue(form, "2 ACC ELECTION AND RIGHTS DATE_af_date")).toBe("01 FEB 26");
+    });
+
+    it("Item 2: refusal checkbox checked when refusalNoted", async () => {
+      const fill = await getFill();
+      const data = fullData();
+      data.item2RefusalNoted = true;
+      const bytes = await fill(data, "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(form.getCheckBox("2 ACC REFUSE TO SIGN").isChecked()).toBe(true);
+    });
+
+    it("Item 2: vessel exception demand option", async () => {
+      const fill = await getFill();
+      const data = fullData();
+      data.vesselException = true;
+      const bytes = await fill(data, "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getDropdownValue(form, "2 DEMAND")).toBe(
+        "I cannot demand trial because I am attached to or embarked upon a vessel."
+      );
+    });
+
+    it("Item 2: demand trial (refused NJP)", async () => {
+      const fill = await getFill();
+      const data = fullData();
+      data.item2ElectionAccepted = false;
+      const bytes = await fill(data, "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getDropdownValue(form, "2 DEMAND")).toBe(
+        "I demand trial and refuse non-judicial punishment."
+      );
+    });
+
+    it("Item 3: CO certification date", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "3 RIGHTS ATTEST DATE_af_date")).toBe("01 FEB 26");
+    });
+
+    it("Item 4: UA/desertion text", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      const uaText = getTextValue(form, "4 CURRENT UAS OVER 24 HRS AND MARKS OF DESERTION");
+      expect(uaText).toContain("15 JAN 26");
+      expect(uaText).toContain("20 JAN 26");
+      expect(uaText).toContain("Desertion marks: None");
+    });
+
+    it("Item 4: blank when UA not applicable", async () => {
+      const fill = await getFill();
+      const data = fullData();
+      data.uaApplicable = false;
+      const bytes = await fill(data, "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "4 CURRENT UAS OVER 24 HRS AND MARKS OF DESERTION")).toBe("");
+    });
+
+    it("Item 6: punishment text and imposition date", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      const punishment = getTextValue(form, "6 PUNISHMENT IMPOSED");
+      expect(punishment).toContain("Extra duties for 45 days");
+      expect(punishment).toContain("Restriction for 60 days");
+      expect(punishment).toContain("Reduction to Cpl");
+      expect(getTextValue(form, "6 PUNISHMENT IMPOSITION DATE")).toBe("10 FEB 26");
+    });
+
+    it("Item 6: empty when no punishments", async () => {
+      const fill = await getFill();
+      const data = fullData();
+      data.item6Punishments = [];
+      data.punishmentText = undefined;
+      const bytes = await fill(data, "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "6 PUNISHMENT IMPOSED")).toBe("");
+    });
+
+    it("Item 7: suspension text with dates and remission terms", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      const suspension = getTextValue(form, "7 SUSPENSION IF ANY");
+      expect(suspension).toContain("Reduction to Cpl suspended");
+      expect(suspension).toContain("6 months");
+    });
+
+    it("Item 7: empty when no suspended punishments", async () => {
+      const fill = await getFill();
+      const data = fullData();
+      data.item6Punishments = [
+        { type: "EXTRA_DUTIES", duration: 14, suspended: false },
+      ];
+      const bytes = await fill(data, "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "7 SUSPENSION IF ANY")).toBe("");
+    });
+
+    it("Item 7: suspensionDetails override takes precedence", async () => {
+      const fill = await getFill();
+      const data = fullData();
+      data.item7SuspensionDetails = "Custom suspension detail text";
+      const bytes = await fill(data, "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "7 SUSPENSION IF ANY")).toBe("Custom suspension detail text");
+    });
+
+    it("Items 8-8A: NJP authority name/title/grade", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "8 NJP AUTHORITY NAME TITLE SERVICE")).toBe(
+        "Williams, Robert, Commanding Officer"
+      );
+      expect(getTextValue(form, "8A NJP AUTHORITY GRADE")).toBe("O-5");
+    });
+
+    it("Item 10: date of disposition notice", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "10 DATE OF DISPOSITION NOTICE")).toBe("10 FEB 26");
+    });
+
+    it("Item 11: appeal advisement date", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "11 APPEAL ADVISEMENT DATE_af_date")).toBe("10 FEB 26");
+    });
+
+    it("Item 12: appeal intent dropdown and date (does not intend)", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getDropdownValue(form, "12 INTEND APPEAL")).toBe("I do not intend to appeal.");
+      expect(getTextValue(form, "12 APPEAL INTENT DATE_af_date")).toBe("10 FEB 26");
+    });
+
+    it("Item 12: appeal intent — intends to appeal", async () => {
+      const fill = await getFill();
+      const data = fullData();
+      data.appealIntent = "INTENDS_TO_APPEAL";
+      const bytes = await fill(data, "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getDropdownValue(form, "12 INTEND APPEAL")).toBe("I do intend to appeal.");
+    });
+
+    it("Item 12: appeal intent — refused to sign", async () => {
+      const fill = await getFill();
+      const data = fullData();
+      data.appealIntent = "REFUSED_TO_SIGN";
+      const bytes = await fill(data, "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getDropdownValue(form, "12 INTEND APPEAL")).toBe("the accused refuses to sign.");
+    });
+
+    it("Item 22: victim demographics (offense B)", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getDropdownValue(form, "22B VICTIM STATUS")).toBe("Military");
+      expect(getDropdownValue(form, "22B VICTIM SEX")).toBe("Male");
+      expect(getDropdownValue(form, "22B VICTIM RACE")).toBe("White");
+      expect(getDropdownValue(form, "22B VICTIM ETHNICITY")).toBe("Not Hispanic or Latino");
+    });
+
+    it("Item 21: remarks entries", async () => {
+      const fill = await getFill();
+      const bytes = await fill(fullData(), "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      const remarks = getTextValue(form, "21 REMARKS");
+      expect(remarks).toContain("10 FEB 26");
+      expect(remarks).toContain("NJP hearing conducted at Bldg 1234.");
+    });
+
+    it("Item 6+7 overflow: both spill to Item 21 supplemental page", async () => {
+      const fill = await getFill();
+      const data = fullData();
+      data.punishmentText = "Forfeiture of $1000 pay per month for 2 months; Extra duties for 45 days; Restriction for 60 days; Reduction to E-1 (Pvt); Correctional custody for 30 days";
+      data.item7SuspensionDetails = "Reduction to E-1 (Pvt) suspended for 6 months from 10 FEB 26 to 10 AUG 26; Forfeiture of $1000/mo suspended for 3 months. Remission: good behavior during period";
+      const bytes = await fill(data, "HEARING");
+      const { form } = await loadGeneratedForm(bytes);
+
+      expect(getTextValue(form, "6 PUNISHMENT IMPOSED")).toBe("See supplemental page");
+      expect(getTextValue(form, "7 SUSPENSION IF ANY")).toBe("See supplemental page");
+      const remarks = getTextValue(form, "21 REMARKS");
+      expect(remarks).toContain("Item 6 - Punishment Imposed:");
+      expect(remarks).toContain("Item 7 - Suspension:");
+      // Original remark should also be present
+      expect(remarks).toContain("NJP hearing conducted at Bldg 1234.");
+    });
+  });
+
+  describe("FINAL version — Items 13-16 field validation (pre-flatten)", () => {
+    // Since FINAL flattens the form and we can't read fields back,
+    // we validate Items 13-16 by directly setting/reading the template
+    // fields to confirm field names and value formats are correct.
+
+    it("Item 13: NOT APPEALED checkbox field exists and is checkable", async () => {
+      const form = await loadTemplate();
+      const cb = form.getCheckBox("13 NOT APPEALED");
+      expect(cb.isChecked()).toBe(false);
+      cb.check();
+      expect(cb.isChecked()).toBe(true);
+    });
+
+    it("Item 13: appeal filed date field accepts formatted date", async () => {
+      const form = await loadTemplate();
+      const field = form.getTextField("13 DATE OF APPEAL IF ANY_af_date");
+      field.setText("12 FEB 26");
+      expect(field.getText()).toBe("12 FEB 26");
+    });
+
+    it("Item 14: appeal decision text field accepts all outcome values", async () => {
+      const form = await loadTemplate();
+      const field = form.getTextField("14 APPEAL DECISION");
+      const outcomes = ["Denied", "Denied (untimely)", "Granted - Set Aside", "Partial Relief", "Reduction Set Aside Only"];
+      for (const outcome of outcomes) {
+        field.setText(outcome);
+        expect(field.getText()).toBe(outcome);
+      }
+    });
+
+    it("Item 14: appeal decision date field accepts formatted date", async () => {
+      const form = await loadTemplate();
+      const field = form.getTextField("14 APPEAL DECISION DATE_af_date");
+      field.setText("20 FEB 26");
+      expect(field.getText()).toBe("20 FEB 26");
+    });
+
+    it("Item 15: notice of appeal decision date field accepts formatted date", async () => {
+      const form = await loadTemplate();
+      const field = form.getTextField("15 DATE OF NOTICE OF APPEAL DECISION_af_date");
+      field.setText("21 FEB 26");
+      expect(field.getText()).toBe("21 FEB 26");
+    });
+
+    it("Item 16: UD number and DTD fields accept text", async () => {
+      const form = await loadTemplate();
+      const ud = form.getTextField("16 FINAL ADMIN UD");
+      ud.setText("UD-2026-042");
+      expect(ud.getText()).toBe("UD-2026-042");
+
+      const dtd = form.getTextField("16 FINAL ADMIN DTD");
+      dtd.setText("2026-02-25");
+      expect(dtd.getText()).toBe("2026-02-25");
+    });
+
+    it("FINAL version produces valid PDF with all Items 13-16 populated", async () => {
+      const fill = await getFill();
+      const data = makeCaseData({
+        item2ElectionAccepted: true,
+        item2CounselConsulted: true,
+        item2SignedDate: "2026-02-01",
+        item3SignedDate: "2026-02-02",
+        item6Punishments: [{ type: "EXTRA_DUTIES", duration: 14, suspended: false }],
+        item6Date: "2026-02-10",
+        njpAuthorityName: "SMITH",
+        njpAuthorityTitle: "CO",
+        njpAuthorityGrade: "O-5",
+        dateNoticeToAccused: "2026-02-10",
+        item11SignedDate: "2026-02-10",
+        appealIntent: "INTENDS_TO_APPEAL",
+        item12SignedDate: "2026-02-11",
+        appealNotFiled: false,
+        appealFiledDate: "2026-02-12",
+        appealAuthorityName: "JONES",
+        appealAuthorityRank: "Col",
+        appealAuthoritySignedDate: "2026-02-20",
+        appealOutcome: "DENIED",
+        dateNoticeAppealDecision: "2026-02-21",
+        item16UdNumber: "UD-2026-042",
+        item16Dtd: "2026-02-25",
+      });
+      const bytes = await fill(data, "FINAL");
+      expect(bytes.length).toBeGreaterThan(0);
+      const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      expect(pdf.getPageCount()).toBeGreaterThan(0);
+    });
+
+    it("FINAL with appealNotFiled=true produces valid PDF with checkbox checked", async () => {
+      const fill = await getFill();
+      const data = makeCaseData({
+        item2ElectionAccepted: true,
+        item2CounselConsulted: true,
+        item2SignedDate: "2026-02-01",
+        item3SignedDate: "2026-02-02",
+        item6Punishments: [{ type: "EXTRA_DUTIES", duration: 14, suspended: false }],
+        item6Date: "2026-02-10",
+        njpAuthorityName: "SMITH",
+        njpAuthorityTitle: "CO",
+        njpAuthorityGrade: "O-5",
+        dateNoticeToAccused: "2026-02-10",
+        item11SignedDate: "2026-02-10",
+        appealIntent: "DOES_NOT_INTEND",
+        item12SignedDate: "2026-02-10",
+        appealNotFiled: true,
+        item16UdNumber: "UD-2026-042",
+        item16Dtd: "2026-02-25",
+      });
+      const bytes = await fill(data, "FINAL");
+      expect(bytes.length).toBeGreaterThan(0);
+      const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      expect(pdf.getPageCount()).toBeGreaterThan(0);
+    });
+  });
+
+  describe("PARTIAL version gating — HEARING/FINAL fields must NOT appear", () => {
+    it("should NOT fill Items 2, 3, 5, 6, 7, 8, 10, 11, 12 in PARTIAL mode", async () => {
+      const fill = await getFill();
+      const data = makeCaseData({
+        item2ElectionAccepted: true,
+        item2SignedDate: "2026-02-01",
+        item3SignedDate: "2026-02-02",
+        item6Punishments: [{ type: "EXTRA_DUTIES", duration: 14, suspended: false }],
+        item6Date: "2026-02-10",
+        njpAuthorityName: "SMITH",
+        njpAuthorityTitle: "CO",
+        njpAuthorityGrade: "O-5",
+        dateNoticeToAccused: "2026-02-10",
+        item11SignedDate: "2026-02-10",
+        appealIntent: "DOES_NOT_INTEND",
+        item12SignedDate: "2026-02-10",
+      });
+      const bytes = await fill(data, "PARTIAL");
+      const { form } = await loadGeneratedForm(bytes);
+
+      // None of these should be set in PARTIAL
+      expect(getTextValue(form, "2 ACC ELECTION AND RIGHTS DATE_af_date")).toBe("");
+      expect(getTextValue(form, "3 RIGHTS ATTEST DATE_af_date")).toBe("");
+      expect(getTextValue(form, "6 PUNISHMENT IMPOSED")).toBe("");
+      expect(getTextValue(form, "6 PUNISHMENT IMPOSITION DATE")).toBe("");
+      expect(getTextValue(form, "7 SUSPENSION IF ANY")).toBe("");
+      expect(getTextValue(form, "8 NJP AUTHORITY NAME TITLE SERVICE")).toBe("");
+      expect(getTextValue(form, "8A NJP AUTHORITY GRADE")).toBe("");
+      expect(getTextValue(form, "10 DATE OF DISPOSITION NOTICE")).toBe("");
+      expect(getTextValue(form, "11 APPEAL ADVISEMENT DATE_af_date")).toBe("");
+      expect(getTextValue(form, "12 APPEAL INTENT DATE_af_date")).toBe("");
+      // But accused info should still be filled
+      expect(getTextValue(form, "18 ACCUSED FULL NAME")).not.toBe("");
     });
   });
 

@@ -381,6 +381,70 @@ export async function performPhaseAction(caseId: string, action: string, data: R
       return { message: "Case closed", status: finalStatus };
     }
 
+    case "VACATE_SUSPENSION": {
+      if (njpCase.status !== "CLOSED_SUSPENSION_ACTIVE") throw new Error("Case must have an active suspension");
+      if (!njpCase.punishment?.suspensionImposed) throw new Error("No suspension on record");
+
+      // Enforce suspension end date scope
+      const suspMonths = njpCase.punishment.suspensionMonths || 6;
+      const njpDateStr = njpCase.njpDate;
+      if (njpDateStr) {
+        const endDate = new Date(njpDateStr);
+        endDate.setMonth(endDate.getMonth() + suspMonths);
+        const trigDate = new Date(data.triggeringOffenseDate);
+        if (trigDate > endDate) {
+          throw new Error(`Triggering offense date is after the suspension end date (${endDate.toISOString().split("T")[0]})`);
+        }
+      }
+
+      // Create vacation record
+      const vacationRecord = {
+        id: `vac-${Date.now()}`,
+        vacationDate: data.vacationDate,
+        coName: data.coName,
+        coTitle: data.coTitle,
+        originalSuspendedPunishment: data.originalSuspendedPunishment,
+        originalSuspensionDate: data.originalSuspensionDate,
+        vacatedInFull: data.vacateInFull,
+        vacatedPortion: data.vacatedPortion || null,
+        triggeringUcmjArticle: data.triggeringUcmjArticle,
+        triggeringOffenseSummary: data.triggeringOffenseSummary,
+        triggeringOffenseDate: data.triggeringOffenseDate,
+        suspensionEndDate: data.suspensionEndDate,
+        createdAt: new Date().toISOString(),
+        createdBy: u.userId,
+      };
+
+      const existingVacations = njpCase.vacationRecordsAsParent || [];
+      await casesStore.update(caseId, {
+        vacationRecordsAsParent: [...existingVacations, vacationRecord],
+        status: "CLOSED_SUSPENSION_VACATED",
+        currentPhase: "CLOSED",
+      });
+
+      // Update punishment record to reflect vacation
+      await casesStore.upsertPunishment(caseId, {
+        suspensionStatus: "VACATED",
+        suspensionVacatedDate: data.vacationDate,
+      });
+
+      // Auto-generate Item 21 remark for the vacation
+      const entries = njpCase.item21Entries || [];
+      const maxSeq = entries.reduce((max: number, e: Rec) => Math.max(max, e.entrySequence || 0), 0);
+      await casesStore.addItem21Entry(caseId, {
+        entryDate: data.vacationDate,
+        entrySequence: maxSeq + 1,
+        entryType: "SUSPENSION_VACATED",
+        entryText: `ITEM 7: ${data.originalSuspendedPunishment} susp on ${njpDateStr || "NJP date"} vacated${data.vacateInFull ? " in full" : " in part: " + (data.vacatedPortion || "")}. Triggering offense: Art. ${data.triggeringUcmjArticle} on ${data.triggeringOffenseDate}.`,
+        systemGenerated: true,
+        confirmed: true,
+        locked: true,
+      });
+
+      await audit("UPDATE", `Suspension vacated${data.vacateInFull ? " in full" : " in part"} - Art. ${data.triggeringUcmjArticle}`);
+      return { message: "Suspension vacated", status: "CLOSED_SUSPENSION_VACATED" };
+    }
+
     default:
       throw new Error(`Unknown action: ${action}`);
   }

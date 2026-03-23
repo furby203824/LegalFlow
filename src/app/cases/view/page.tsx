@@ -26,6 +26,8 @@ const STATUS_LABEL: Record<string, string> = {
   APPEAL_COMPLETE: "Appeal Complete",
   CLOSED: "Closed",
   CLOSED_SUSPENSION_ACTIVE: "Closed - Suspension Active",
+  CLOSED_SUSPENSION_VACATED: "Closed - Suspension Vacated",
+  CLOSED_SUSPENSION_REMITTED: "Closed - Suspension Remitted",
   DESTROYED: "Destroyed",
 };
 
