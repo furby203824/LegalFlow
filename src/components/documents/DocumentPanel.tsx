@@ -19,7 +19,7 @@ interface DocDef {
 
 const DOCS: DocDef[] = [
   { key: "navmc_10132", label: "NAVMC 10132", desc: "Unit Punishment Book", hasVersions: true },
-  { key: "charge_sheet", label: "Charge Sheet", desc: "Pre-hearing charges" },
+  { key: "charge_sheet", label: "DD 458", desc: "Charge Sheet" },
   { key: "office_hours_script", label: "Office Hours Script", desc: "Commander hearing guidance" },
   { key: "figure_14_1", label: "Figure 14-1", desc: "Vacation notice", requiresVacation: true },
   { key: "mmrp_notification", label: "MMRP Notification", desc: "Set-aside email", requiresRemedial: true },

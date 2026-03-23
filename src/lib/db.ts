@@ -157,6 +157,20 @@ export const casesStore = {
     await this.save();
   },
 
+  async upsertRightsAcknowledgement(caseId: string, rightsAcknowledgement: Rec): Promise<void> {
+    const cases = await this.load();
+    const idx = cases.findIndex((c) => c.id === caseId);
+    if (idx === -1) return;
+    if (cases[idx].rightsAcknowledgement) {
+      cases[idx].rightsAcknowledgement = { ...cases[idx].rightsAcknowledgement, ...rightsAcknowledgement };
+    } else {
+      cases[idx].rightsAcknowledgement = { id: generateId("ra"), ...rightsAcknowledgement };
+    }
+    cases[idx].updatedAt = new Date().toISOString().split("T")[0];
+    casesCache = cases;
+    await this.save();
+  },
+
   async upsertHearingRecord(caseId: string, hearingRecord: Rec): Promise<void> {
     const cases = await this.load();
     const idx = cases.findIndex((c) => c.id === caseId);

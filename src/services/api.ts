@@ -441,6 +441,33 @@ export async function updateChargeSheet(caseId: string, data: Rec) {
 }
 
 // =============================================================================
+// Rights Acknowledgement (JAGINST 5800.7G)
+// =============================================================================
+
+export async function updateRightsAcknowledgement(caseId: string, data: Rec) {
+  const u = user();
+  const c = await casesStore.findById(caseId);
+  if (!c) throw new Error("Case not found");
+  await casesStore.upsertRightsAcknowledgement(caseId, {
+    ...data,
+    lastUpdatedBy: u.userId,
+    lastUpdatedByName: u.username,
+    lastUpdatedAt: new Date().toISOString(),
+  });
+  await auditStore.append({
+    caseId,
+    caseNumber: c.caseNumber,
+    userId: u.userId,
+    userRole: u.role,
+    userName: u.username,
+    action: "UPDATE",
+    notes: "Rights Acknowledgement updated",
+  });
+  const updated = await casesStore.findById(caseId);
+  return { rightsAcknowledgement: updated?.rightsAcknowledgement };
+}
+
+// =============================================================================
 // Evidence
 // =============================================================================
 
