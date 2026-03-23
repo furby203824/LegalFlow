@@ -845,5 +845,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated PDF: appeal_rights_ack"
+  },
+  {
+    "id": "audit-1774277597028-7j4j2",
+    "timestamp": "2026-03-23T14:53:17.028Z",
+    "caseId": "case-1774273010844-6nplg",
+    "caseNumber": "CASE-2026-0004",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "SIGN",
+    "notes": "Item 12 - appeal initiated"
   }
 ]
