@@ -310,14 +310,17 @@ export async function fillNavmc10132Pdf(
 
   if (version !== "PARTIAL") {
     const punishmentText = buildPunishmentText(data);
-    if (punishmentText.length > FIELD_MAX_LENGTH) {
+    const dateStr = data.item6Date ? fmtStandard(data.item6Date) : (data.njpDate ? fmtStandard(data.njpDate) : "");
+    // Item 6: date first, then punishment description
+    const item6Full = dateStr && punishmentText ? `${dateStr} — ${punishmentText}` : punishmentText;
+    if (item6Full.length > FIELD_MAX_LENGTH) {
       setText(form, "6 PUNISHMENT IMPOSED", "See supplemental page");
       supplementalEntries.push({
         entryDate: data.item6Date || data.njpDate || new Date().toISOString().split("T")[0],
-        entryText: `Item 6 - Punishment Imposed: ${punishmentText}`,
+        entryText: `Item 6 - Punishment Imposed: ${item6Full}`,
       });
     } else {
-      setText(form, "6 PUNISHMENT IMPOSED", punishmentText);
+      setText(form, "6 PUNISHMENT IMPOSED", item6Full);
     }
     if (data.item6Date) {
       setText(form, "6 PUNISHMENT IMPOSITION DATE", fmtStandard(data.item6Date));
@@ -326,14 +329,22 @@ export async function fillNavmc10132Pdf(
 
   if (version !== "PARTIAL") {
     const suspensionText = buildSuspensionText(data);
-    if (suspensionText.length > FIELD_MAX_LENGTH) {
+    const dateStr = data.item6Date ? fmtStandard(data.item6Date) : (data.njpDate ? fmtStandard(data.njpDate) : "");
+    // Item 7: suspension text, then date at end; or "NONE" with no date
+    let item7Full: string;
+    if (!suspensionText) {
+      item7Full = "NONE";
+    } else {
+      item7Full = dateStr ? `${suspensionText}. ${dateStr}` : suspensionText;
+    }
+    if (item7Full.length > FIELD_MAX_LENGTH) {
       setText(form, "7 SUSPENSION IF ANY", "See supplemental page");
       supplementalEntries.push({
         entryDate: data.item6Date || data.njpDate || new Date().toISOString().split("T")[0],
-        entryText: `Item 7 - Suspension: ${suspensionText}`,
+        entryText: `Item 7 - Suspension: ${item7Full}`,
       });
     } else {
-      setText(form, "7 SUSPENSION IF ANY", suspensionText);
+      setText(form, "7 SUSPENSION IF ANY", item7Full);
     }
   }
 

@@ -841,7 +841,7 @@ describe("fillNavmc10132Pdf", () => {
       const bytes = await fill(data, "HEARING");
       const { form } = await loadGeneratedForm(bytes);
 
-      expect(getTextValue(form, "7 SUSPENSION IF ANY")).toBe("");
+      expect(getTextValue(form, "7 SUSPENSION IF ANY")).toBe("NONE");
     });
 
     it("Item 7: suspensionDetails override takes precedence", async () => {
@@ -851,7 +851,9 @@ describe("fillNavmc10132Pdf", () => {
       const bytes = await fill(data, "HEARING");
       const { form } = await loadGeneratedForm(bytes);
 
-      expect(getTextValue(form, "7 SUSPENSION IF ANY")).toBe("Custom suspension detail text");
+      expect(getTextValue(form, "7 SUSPENSION IF ANY")).toContain("Custom suspension detail text");
+      // Date should be appended at end
+      expect(getTextValue(form, "7 SUSPENSION IF ANY")).toMatch(/Custom suspension detail text\. \d+ \w+ \d+/);
     });
 
     it("Items 8-8A: NJP authority name/title/grade", async () => {
@@ -1088,7 +1090,7 @@ describe("fillNavmc10132Pdf", () => {
       expect(getTextValue(form, "3 RIGHTS ATTEST DATE_af_date")).toBe("");
       expect(getTextValue(form, "6 PUNISHMENT IMPOSED")).toBe("");
       expect(getTextValue(form, "6 PUNISHMENT IMPOSITION DATE")).toBe("");
-      expect(getTextValue(form, "7 SUSPENSION IF ANY")).toBe("");
+      expect(getTextValue(form, "7 SUSPENSION IF ANY")).toBe(""); // PARTIAL — not filled
       expect(getTextValue(form, "8 NJP AUTHORITY NAME TITLE SERVICE")).toBe("");
       expect(getTextValue(form, "8A NJP AUTHORITY GRADE")).toBe("");
       expect(getTextValue(form, "10 DATE OF DISPOSITION NOTICE")).toBe("");
