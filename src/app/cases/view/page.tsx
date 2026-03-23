@@ -8,8 +8,6 @@ import UPBItemsPanel from "@/components/cases/UPBItemsPanel";
 import ActionsPanel from "@/components/cases/ActionsPanel";
 import RemarksPanel from "@/components/cases/RemarksPanel";
 import EvidencePanel from "@/components/cases/EvidencePanel";
-import RightsAcknowledgementPanel from "@/components/cases/RightsAcknowledgementPanel";
-import HearingGuidePanel from "@/components/cases/HearingGuidePanel";
 import AuditLogPanel from "@/components/cases/AuditLogPanel";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, AlertOctagon, Info } from "lucide-react";
@@ -76,9 +74,7 @@ function CaseViewContent() {
 
   const TABS = [
     { key: "personnel", label: "Personnel Data" },
-    { key: "upb", label: "UPB Form Items" },
     { key: "evidence", label: "Evidence" },
-    { key: "hearing", label: "Mast Guide" },
     { key: "tracking", label: "Tracking History" },
   ];
 
@@ -181,46 +177,32 @@ function CaseViewContent() {
               <PersonnelDataTab caseData={caseData} />
             )}
 
-            {/* UPB Form Items Tab — existing NJP functionality */}
-            {activeTab === "upb" && (
-              <div className="space-y-4">
-                <UPBItemsPanel caseData={caseData} onUpdate={loadCase} />
-                <RemarksPanel
+            {/* Evidence Tab — includes uploaded evidence, UPB form items, and remarks */}
+            {activeTab === "evidence" && (
+              <div className="space-y-6">
+                <EvidencePanel
                   caseId={caseData.id}
-                  remarks={(caseData.item21Entries || []).map((e: { id: string; entryDate: string; entryType: string; entryText: string; confirmedAt: string | null; systemGenerated: boolean }) => ({
-                    id: e.id, date: e.entryDate, itemReference: e.entryType,
-                    text: e.entryText, confirmed: !!e.confirmedAt, systemGenerated: e.systemGenerated,
-                  }))}
+                  evidence={caseData.evidence || []}
                   onUpdate={loadCase}
                   locked={caseData.formLocked}
+                  currentPhase={caseData.currentPhase}
                 />
-              </div>
-            )}
 
-            {/* Evidence Tab */}
-            {activeTab === "evidence" && (
-              <EvidencePanel
-                caseId={caseData.id}
-                evidence={caseData.evidence || []}
-                onUpdate={loadCase}
-                locked={caseData.formLocked}
-                currentPhase={caseData.currentPhase}
-              />
-            )}
+                <div className="border-t border-border pt-4">
+                  <UPBItemsPanel caseData={caseData} onUpdate={loadCase} />
+                </div>
 
-            {/* Hearing / Mast Guide Tab */}
-            {activeTab === "hearing" && (
-              <div className="space-y-4">
-                <RightsAcknowledgementPanel
-                  caseId={caseData.id}
-                  caseData={caseData}
-                  onUpdate={loadCase}
-                />
-                <HearingGuidePanel
-                  caseId={caseData.id}
-                  caseData={caseData}
-                  onUpdate={loadCase}
-                />
+                <div className="border-t border-border pt-4">
+                  <RemarksPanel
+                    caseId={caseData.id}
+                    remarks={(caseData.item21Entries || []).map((e: { id: string; entryDate: string; entryType: string; entryText: string; confirmedAt: string | null; systemGenerated: boolean }) => ({
+                      id: e.id, date: e.entryDate, itemReference: e.entryType,
+                      text: e.entryText, confirmed: !!e.confirmedAt, systemGenerated: e.systemGenerated,
+                    }))}
+                    onUpdate={loadCase}
+                    locked={caseData.formLocked}
+                  />
+                </div>
               </div>
             )}
 
