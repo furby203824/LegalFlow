@@ -777,7 +777,7 @@
     "isOverdue": false,
     "caseNumber": "CASE-2026-0003",
     "status": "PUNISHMENT_IMPOSED",
-    "currentPhase": "HEARING",
+    "currentPhase": "NOTIFICATION",
     "unitId": "unit-1bn5mar",
     "unitFullString": "1st Bn, 5th Marines",
     "accusedName": "Sanchez, Thomas D",
@@ -812,6 +812,7 @@
     "njpAuthorityUnit": "1st Bn, 5th Marines",
     "njpAuthorityRank": "LtCol",
     "njpAuthorityGrade": "O5",
-    "njpAuthorityEdipi": "3456789012"
+    "njpAuthorityEdipi": "3456789012",
+    "dateNoticeToAccused": "2026-03-23"
   }
 ]
