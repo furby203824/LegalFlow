@@ -5,7 +5,7 @@ import Link from "next/link";
 import AppShell from "@/components/ui/AppShell";
 import {
   FolderOpen, ClipboardCheck, Timer, AlertTriangle,
-  ChevronRight, Scale, Inbox, FileCheck,
+  ChevronRight, ChevronUp, ChevronDown, Plus, X, Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDashboard } from "@/services/api";
@@ -35,6 +35,31 @@ interface Stats {
   jaReviewPending: number;
   activeSuspensions: number;
 }
+
+interface BroadcastMessage {
+  id: string;
+  date: string;
+  message: string;
+}
+
+// Default broadcast messages — in a real system these would come from an API
+const DEFAULT_BROADCASTS: BroadcastMessage[] = [
+  {
+    id: "1",
+    date: "2026/03/23",
+    message: "LegalFlow Suite v1.0 is now available. This system replaces the legacy CLA application for NJP case management. ADSEP module is under development.",
+  },
+  {
+    id: "2",
+    date: "2026/03/20",
+    message: "Reminder: All NJP packages must be processed in accordance with MCO 5800.16 and JAGINST 5800.7G. Ensure all required signatures are obtained before routing packages.",
+  },
+  {
+    id: "3",
+    date: "2026/03/15",
+    message: "System maintenance is scheduled for 2026/03/28 from 0200-0400 CST. Anticipate the application will be unavailable during this window.",
+  },
+];
 
 const STATUS_BADGE: Record<string, string> = {
   INITIATED: "bg-gray-100 text-gray-700",
@@ -70,6 +95,10 @@ export default function DashboardPage() {
   const [cases, setCases] = useState<DashboardCase[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [broadcasts, setBroadcasts] = useState<BroadcastMessage[]>(DEFAULT_BROADCASTS);
+  const [broadcastSort, setBroadcastSort] = useState<"asc" | "desc">("desc");
+  const [showAddBroadcast, setShowAddBroadcast] = useState(false);
+  const [newBroadcastMsg, setNewBroadcastMsg] = useState("");
 
   useEffect(() => {
     getDashboard()
@@ -94,15 +123,113 @@ export default function DashboardPage() {
     .filter((c) => c.suspensionActive)
     .sort((a, b) => a.daysInCurrentPhase - b.daysInCurrentPhase);
 
+  const sortedBroadcasts = [...broadcasts].sort((a, b) =>
+    broadcastSort === "desc" ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date)
+  );
+
+  function addBroadcast() {
+    if (!newBroadcastMsg.trim()) return;
+    const newMsg: BroadcastMessage = {
+      id: Date.now().toString(),
+      date: new Date().toISOString().slice(0, 10).replace(/-/g, "/"),
+      message: newBroadcastMsg.trim(),
+    };
+    setBroadcasts([newMsg, ...broadcasts]);
+    setNewBroadcastMsg("");
+    setShowAddBroadcast(false);
+  }
+
   return (
     <AppShell>
       <div className="space-y-6">
-        {/* Header */}
+        {/* ── Broadcast Message Table — CLA main feature ── */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-lg font-bold text-neutral-dark flex items-center gap-2">
+              <Megaphone size={20} className="text-primary" />
+              View Broadcast Message Table
+            </h1>
+            <div className="flex items-center gap-3 text-xs text-neutral-mid">
+              <span>Currently sorted by: <strong>Broadcast Date</strong></span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              onClick={() => setShowAddBroadcast(!showAddBroadcast)}
+              className="btn-secondary text-xs py-1 px-3 flex items-center gap-1"
+            >
+              <Plus size={12} /> Add Record
+            </button>
+          </div>
+
+          {/* Add broadcast form */}
+          {showAddBroadcast && (
+            <div className="card p-4 mb-3 border-primary/20">
+              <div className="flex items-start gap-3">
+                <textarea
+                  value={newBroadcastMsg}
+                  onChange={(e) => setNewBroadcastMsg(e.target.value)}
+                  placeholder="Enter broadcast message..."
+                  className="input-field flex-1 min-h-[80px] text-sm"
+                  maxLength={1000}
+                />
+                <div className="flex flex-col gap-1">
+                  <button onClick={addBroadcast} className="btn-primary text-xs py-1.5 px-3">Save</button>
+                  <button onClick={() => { setShowAddBroadcast(false); setNewBroadcastMsg(""); }} className="btn-ghost text-xs py-1.5 px-3">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Broadcast table */}
+          <div className="card overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-primary/20 bg-surface">
+                  <th className="text-left px-4 py-2.5 w-36">
+                    <button
+                      onClick={() => setBroadcastSort(broadcastSort === "desc" ? "asc" : "desc")}
+                      className="flex items-center gap-1 font-semibold text-neutral-dark text-xs"
+                    >
+                      {broadcastSort === "desc" ? <ChevronDown size={12} className="text-accent" /> : <ChevronUp size={12} className="text-accent" />}
+                      Broadcast Date
+                    </button>
+                  </th>
+                  <th className="text-left px-4 py-2.5">
+                    <span className="font-semibold text-neutral-dark text-xs">Broadcast Message</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedBroadcasts.map((msg) => (
+                  <tr key={msg.id} className="border-b border-border hover:bg-surface/50 align-top">
+                    <td className="px-4 py-3 text-primary font-medium text-xs whitespace-nowrap">
+                      {msg.date}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-neutral-dark whitespace-pre-wrap leading-relaxed">
+                      {msg.message}
+                    </td>
+                  </tr>
+                ))}
+                {sortedBroadcasts.length === 0 && (
+                  <tr>
+                    <td colSpan={2} className="px-4 py-8 text-center text-neutral-mid text-sm">
+                      No broadcast messages.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* ── Dashboard Stats + Actions ── */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-dark">
-            Dashboard
-          </h1>
-          <Link href="/cases/new" className="btn-primary">
+          <h2 className="text-lg font-bold text-neutral-dark">Dashboard</h2>
+          <Link href="/cases/new" className="btn-primary text-sm">
             + New Case
           </Link>
         </div>
