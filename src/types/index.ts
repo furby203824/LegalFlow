@@ -48,6 +48,19 @@ export type CasePhase =
 // --- Commander Grade Level ---
 export type CommanderGradeLevel = "FIELD_GRADE_AND_ABOVE" | "COMPANY_GRADE";
 
+// --- Unit Echelon ---
+export type UnitEchelon = "COMPANY" | "BATTALION" | "REGIMENT" | "INSTALLATION";
+
+// --- Unit Definition ---
+export interface UnitDef {
+  id: string;
+  name: string;
+  echelon: UnitEchelon;
+  parentUnitId: string | null;
+  /** Installation units do not initiate NJP — they only receive appeals */
+  canInitiateNjp: boolean;
+}
+
 // --- Component ---
 export type Component = "ACTIVE" | "SMCR" | "IRR";
 
