@@ -420,6 +420,8 @@ export function caseWithIncludes(c: Rec): Rec {
     rank: c.accusedRank,
     grade: c.accusedGrade,
     edipi: c.accusedEdipi,
+    dateOfBirth: c.accusedDateOfBirth || null,
+    serviceBranch: c.accusedServiceBranch || "USMC",
     unitFullString: c.unitFullString || c.accusedUnit || "",
     component: c.component,
   };

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
 import { Save, Printer, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { updateChargeSheet } from "@/services/api";
 import ChargeSheetPrint from "./ChargeSheetPrint";
@@ -23,12 +22,12 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
   const locked = cs.locked || false;
   const [showPrint, setShowPrint] = useState(false);
 
-  // Section I: Personal Data (auto-populated from case, editable overrides)
-  const [accusedName, setAccusedName] = useState(cs.accusedName || `${accused.lastName || ""}, ${accused.firstName || ""}${accused.middleName ? " " + accused.middleName.charAt(0) + "." : ""}`);
-  const [ssn, setSsn] = useState(cs.ssn || "");
-  const [gradeOrRank, setGradeOrRank] = useState(cs.gradeOrRank || `${accused.grade || ""}/${accused.rank || ""}`);
-  const [payGrade, setPayGrade] = useState(cs.payGrade || accused.grade || "");
-  const [unitOrOrg, setUnitOrOrg] = useState(cs.unitOrOrg || accused.unitFullString || "");
+  // Section I: Personal Data — read from case record (not editable here)
+  const accusedName = `${accused.lastName || ""}, ${accused.firstName || ""}${accused.middleName ? " " + accused.middleName.charAt(0) + "." : ""}`;
+  const edipi = accused.edipi || "";
+  const gradeOrRank = accused.rank ? `${accused.grade || ""}/${accused.rank}` : accused.grade || "";
+  const payGrade = accused.grade || "";
+  const unitOrOrg = accused.unitFullString || "";
   const [serviceInitialDate, setServiceInitialDate] = useState(cs.serviceInitialDate || "");
   const [serviceTerm, setServiceTerm] = useState(cs.serviceTerm || "");
   const [payBasic, setPayBasic] = useState(cs.payBasic || "");
@@ -37,13 +36,11 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
   const [natureOfRestraint, setNatureOfRestraint] = useState(cs.natureOfRestraint || "None");
   const [datesImposed, setDatesImposed] = useState(cs.datesImposed || "");
 
-  // Section II: Charges and Specifications
-  const [charges, setCharges] = useState<{ article: string; specification: string }[]>(
-    cs.charges || offenses.map((o: Rec) => ({
-      article: o.ucmjArticle || "",
-      specification: o.offenseSummary || o.summary || "",
-    }))
-  );
+  // Section II: Charges and Specifications — read from case offenses
+  const charges = offenses.map((o: Rec) => ({
+    article: o.ucmjArticle || "",
+    specification: o.offenseSummary || o.summary || "",
+  }));
 
   // Section III: Preferral
   const [accuserName, setAccuserName] = useState(cs.accuserName || "");
@@ -102,23 +99,14 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  function updateCharge(idx: number, field: "article" | "specification", value: string) {
-    const updated = [...charges];
-    updated[idx] = { ...updated[idx], [field]: value };
-    setCharges(updated);
-  }
-
   async function saveAll() {
     setSaving(true);
     try {
       await updateChargeSheet(caseId, {
-        // Section I
-        accusedName, ssn, gradeOrRank, payGrade, unitOrOrg,
+        // Section I (form-specific fields only; accused data comes from case record)
         serviceInitialDate, serviceTerm,
         payBasic, paySeaForeign, payTotal,
         natureOfRestraint, datesImposed,
-        // Section II
-        charges,
         // Section III
         accuserName, accuserGrade, accuserOrg, accuserSignedDate,
         oathOfficerName, oathOfficerOrg, oathOfficerGrade, oathOfficerCapacity,
@@ -154,7 +142,7 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         </div>
         <ChargeSheetPrint
           data={{
-            accusedName, ssn, gradeOrRank, payGrade, unitOrOrg,
+            accusedName, edipi, gradeOrRank, payGrade, unitOrOrg,
             serviceInitialDate, serviceTerm,
             payBasic, paySeaForeign, payTotal,
             natureOfRestraint, datesImposed,
@@ -202,26 +190,27 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         open={openSections.personalData}
         onToggle={() => toggleSection("personalData")}
       >
+        <p className="text-xs text-neutral-mid mb-3 italic">Fields 1&ndash;5 are populated from the case record.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="sm:col-span-2">
             <Label>1. Name of Accused (Last, First, Middle Initial)</Label>
-            <input className="input-field" value={accusedName} onChange={(e) => setAccusedName(e.target.value)} disabled={locked} />
+            <input className="input-field bg-gray-50" value={accusedName} disabled />
           </div>
           <div>
-            <Label>2. SSN (last 4 only)</Label>
-            <input className="input-field font-mono" value={ssn} onChange={(e) => setSsn(e.target.value)} maxLength={4} placeholder="XXXX" disabled={locked} />
+            <Label>2. EDIPI</Label>
+            <input className="input-field font-mono bg-gray-50" value={edipi || "Not provided"} disabled />
           </div>
           <div>
             <Label>3. Grade or Rank</Label>
-            <input className="input-field" value={gradeOrRank} onChange={(e) => setGradeOrRank(e.target.value)} disabled={locked} />
+            <input className="input-field bg-gray-50" value={gradeOrRank} disabled />
           </div>
           <div>
             <Label>4. Pay Grade</Label>
-            <input className="input-field" value={payGrade} onChange={(e) => setPayGrade(e.target.value)} disabled={locked} />
+            <input className="input-field bg-gray-50" value={payGrade} disabled />
           </div>
           <div>
             <Label>5. Unit or Organization</Label>
-            <input className="input-field" value={unitOrOrg} onChange={(e) => setUnitOrOrg(e.target.value)} disabled={locked} />
+            <input className="input-field bg-gray-50" value={unitOrOrg} disabled />
           </div>
           <div>
             <Label>6a. Initial Date of Current Service</Label>
@@ -267,47 +256,28 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         open={openSections.charges}
         onToggle={() => toggleSection("charges")}
       >
-        {charges.map((c, i) => (
+        <p className="text-xs text-neutral-mid mb-3 italic">Charges are populated from case offenses. Edit offenses on the case to update.</p>
+        {charges.map((c: { article: string; specification: string }, i: number) => (
           <div key={i} className="border border-border rounded-lg p-4 mb-3">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-sm font-medium">Charge {charges.length > 1 ? String.fromCharCode(73 + i) : ""}</h4>
-              {charges.length > 1 && !locked && (
-                <button
-                  type="button"
-                  onClick={() => setCharges(charges.filter((_, ci) => ci !== i))}
-                  className="text-error text-xs hover:underline"
-                >
-                  Remove
-                </button>
-              )}
             </div>
             <div className="space-y-3">
               <div>
                 <Label>10. Charge: Violation of the UCMJ, Article</Label>
-                <input className="input-field" value={c.article} onChange={(e) => updateCharge(i, "article", e.target.value)} placeholder="e.g., 86" disabled={locked} />
+                <input className="input-field bg-gray-50" value={c.article} disabled />
               </div>
               <div>
                 <Label>Specification</Label>
                 <textarea
-                  className="input-field min-h-[120px]"
+                  className="input-field min-h-[120px] bg-gray-50"
                   value={c.specification}
-                  onChange={(e) => updateCharge(i, "specification", e.target.value)}
-                  placeholder="In that [rank] [name], [unit], did, [on/between dates], at [place], [description of offense]..."
-                  disabled={locked}
+                  disabled
                 />
               </div>
             </div>
           </div>
         ))}
-        {!locked && (
-          <button
-            type="button"
-            onClick={() => setCharges([...charges, { article: "", specification: "" }])}
-            className="btn-ghost text-xs"
-          >
-            + Add Additional Charge
-          </button>
-        )}
       </CollapsibleSection>
 
       {/* Section III: Preferral */}
