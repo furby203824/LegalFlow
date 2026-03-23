@@ -92,9 +92,178 @@ function getDropdownValue(form: ReturnType<PDFDocument["getForm"]>, name: string
   }
 }
 
+// ── Helper: load the raw template for field validation ──
+async function loadTemplate() {
+  const pdf = await PDFDocument.load(templateBuffer, { ignoreEncryption: true });
+  return pdf.getForm();
+}
+
+function hasTextField(form: ReturnType<PDFDocument["getForm"]>, name: string): boolean {
+  try { form.getTextField(name); return true; } catch { return false; }
+}
+
+function hasDropdown(form: ReturnType<PDFDocument["getForm"]>, name: string): boolean {
+  try { form.getDropdown(name); return true; } catch { return false; }
+}
+
+function hasCheckbox(form: ReturnType<PDFDocument["getForm"]>, name: string): boolean {
+  try { form.getCheckBox(name); return true; } catch { return false; }
+}
+
+function dropdownOptions(form: ReturnType<PDFDocument["getForm"]>, name: string): string[] {
+  try { return form.getDropdown(name).getOptions(); } catch { return []; }
+}
+
 // ═══════════════════════════════════════════════════════════
 // TESTS
 // ═══════════════════════════════════════════════════════════
+
+describe("NAVMC 10132 template validation", () => {
+  it("should load the PDF template from public/forms/", async () => {
+    const form = await loadTemplate();
+    const fields = form.getFields();
+    expect(fields.length).toBeGreaterThan(0);
+  });
+
+  describe("text fields required by fillNavmc10132Pdf", () => {
+    const REQUIRED_TEXT_FIELDS = [
+      // Items 17-20: Accused info
+      "17 UNIT",
+      "18 ACCUSED FULL NAME",
+      "19 ACCUSED RANK/GRADE",
+      "20 ACCUSED EDIPI",
+      // Items 23-25: Repeat accused (page 2/3)
+      "23 ACCUSED FULL NAME",
+      "24 ACCUSED RANK/GRADE",
+      "25 ACCUSED EDIPI",
+      // Item 1: Offense summaries (A-E)
+      "1A SUMMARY", "1B SUMMARY", "1C SUMMARY", "1D SUMMARY", "1E SUMMARY",
+      // Item 2: Election date
+      "2 ACC ELECTION AND RIGHTS DATE_af_date",
+      // Item 3: CO certification date
+      "3 RIGHTS ATTEST DATE_af_date",
+      // Item 4: UA/Desertion
+      "4 CURRENT UAS OVER 24 HRS AND MARKS OF DESERTION",
+      // Item 6: Punishment
+      "6 PUNISHMENT IMPOSED",
+      "6 PUNISHMENT IMPOSITION DATE",
+      // Item 7: Suspension
+      "7 SUSPENSION IF ANY",
+      // Items 8-8A: NJP Authority
+      "8 NJP AUTHORITY NAME TITLE SERVICE",
+      "8A NJP AUTHORITY GRADE",
+      // Item 10: Notice date
+      "10 DATE OF DISPOSITION NOTICE",
+      // Item 11: Appeal advisement date
+      "11 APPEAL ADVISEMENT DATE_af_date",
+      // Item 12: Appeal intent date
+      "12 APPEAL INTENT DATE_af_date",
+      // Item 13: Appeal filed date
+      "13 DATE OF APPEAL IF ANY_af_date",
+      // Item 14: Appeal decision
+      "14 APPEAL DECISION",
+      "14 APPEAL DECISION DATE_af_date",
+      // Item 15: Notice of appeal decision
+      "15 DATE OF NOTICE OF APPEAL DECISION_af_date",
+      // Item 16: Admin closure
+      "16 FINAL ADMIN UD",
+      "16 FINAL ADMIN DTD",
+      // Item 21: Remarks
+      "21 REMARKS",
+    ];
+
+    it.each(REQUIRED_TEXT_FIELDS)("should have text field: %s", async (fieldName) => {
+      const form = await loadTemplate();
+      expect(hasTextField(form, fieldName)).toBe(true);
+    });
+  });
+
+  describe("dropdown fields required by fillNavmc10132Pdf", () => {
+    const REQUIRED_DROPDOWNS = [
+      // Item 1: Article dropdowns (A-E)
+      "1A ARTICLE", "1B ARTICLE", "1C ARTICLE", "1D ARTICLE", "1E ARTICLE",
+      // Item 1: Finding dropdowns (A-E)
+      "1A FINDING", "1B FINDING", "1C FINDING", "1D FINDING", "1E FINDING",
+      // Item 2: Election
+      "2 DEMAND",
+      "2 COUNSELOPP",
+      // Item 12: Appeal intent
+      "12 INTEND APPEAL",
+      // Item 22: Victim demographics (A-E)
+      "22A VICTIM STATUS", "22A VICTIM SEX", "22A VICTIM RACE", "22A VICTIM ETHNICITY",
+      "22B VICTIM STATUS", "22B VICTIM SEX", "22B VICTIM RACE", "22B VICTIM ETHNICITY",
+      "22C VICTIM STATUS", "22C VICTIM SEX", "22C VICTIM RACE", "22C VICTIM ETHNICITY",
+      "22D VICTIM STATUS", "22D VICTIM SEX", "22D VICTIM RACE", "22D VICTIM ETHNICITY",
+      "22E VICTIM STATUS", "22E VICTIM SEX", "22E VICTIM RACE", "22E VICTIM ETHNICITY",
+    ];
+
+    it.each(REQUIRED_DROPDOWNS)("should have dropdown field: %s", async (fieldName) => {
+      const form = await loadTemplate();
+      expect(hasDropdown(form, fieldName)).toBe(true);
+    });
+  });
+
+  describe("checkbox fields required by fillNavmc10132Pdf", () => {
+    const REQUIRED_CHECKBOXES = [
+      "2 ACC REFUSE TO SIGN",
+      "13 NOT APPEALED",
+    ];
+
+    it.each(REQUIRED_CHECKBOXES)("should have checkbox field: %s", async (fieldName) => {
+      const form = await loadTemplate();
+      expect(hasCheckbox(form, fieldName)).toBe(true);
+    });
+  });
+
+  describe("dropdown options contain expected values", () => {
+    it("should have article options starting with 'Art.'", async () => {
+      const form = await loadTemplate();
+      const options = dropdownOptions(form, "1A ARTICLE");
+      expect(options.length).toBeGreaterThan(0);
+      const artOptions = options.filter((o) => o.startsWith("Art."));
+      expect(artOptions.length).toBeGreaterThan(0);
+    });
+
+    it("should have finding options G and NG", async () => {
+      const form = await loadTemplate();
+      const options = dropdownOptions(form, "1A FINDING");
+      expect(options).toContain("G");
+      expect(options).toContain("NG");
+    });
+
+    it("should have appeal intent options matching mapAppealIntent values", async () => {
+      const form = await loadTemplate();
+      const options = dropdownOptions(form, "12 INTEND APPEAL");
+      expect(options).toContain("I do intend to appeal.");
+      expect(options).toContain("I do not intend to appeal.");
+    });
+
+    it("should have demand options matching mapDemand values", async () => {
+      const form = await loadTemplate();
+      const options = dropdownOptions(form, "2 DEMAND");
+      expect(options).toContain(
+        "I do not demand trial and will accept non-judicial punishment, subject to my right of appeal."
+      );
+      expect(options).toContain(
+        "I demand trial and refuse non-judicial punishment."
+      );
+    });
+
+    it("should have counsel opportunity options", async () => {
+      const form = await loadTemplate();
+      const options = dropdownOptions(form, "2 COUNSELOPP");
+      expect(options.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("should have victim status options matching mapVictimStatus values", async () => {
+      const form = await loadTemplate();
+      const options = dropdownOptions(form, "22A VICTIM STATUS");
+      expect(options).toContain("Military");
+      expect(options).toContain("Civilian (other)");
+      expect(options).toContain("Unknown");
+    });
+  });
+});
 
 describe("fillNavmc10132Pdf", () => {
   describe("template loading", () => {
