@@ -502,7 +502,7 @@
     "chargeSheet": null,
     "hearingRecord": {
       "id": "hr-1774246638759-tr3kg",
-      "currentStep": 16,
+      "currentStep": 20,
       "responses": {
         "finding_A": "GUILTY",
         "pun_forfeiture": "imposed",
@@ -514,14 +514,17 @@
         "pun_restriction_susp": "yes",
         "pun_corr_custody": "",
         "pun_corr_custody_susp": "",
-        "pun_corr_custody_susp_months": ""
+        "pun_corr_custody_susp_months": "",
+        "susp_months": "6",
+        "accusedUnderstandsAppeal": "yes"
       },
       "appealAuthority": "",
       "appellateRightsReader": "",
-      "completed": false,
+      "completed": true,
       "lastUpdatedBy": "user-1774232428029-skhw5",
       "lastUpdatedByName": "admin",
-      "lastUpdatedAt": "2026-03-23T06:17:18.759Z"
+      "lastUpdatedAt": "2026-03-23T06:23:09.464Z",
+      "completedAt": "2026-03-23T06:23:09.463Z"
     },
     "item21Entries": [],
     "signatures": [
