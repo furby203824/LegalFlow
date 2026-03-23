@@ -182,6 +182,19 @@ const DEMO_USERS = [
     grade: "O5",
     edipi: "3456789012",
   },
+  {
+    username: "appeal",
+    passwordHash: "appeal",
+    firstName: "Robert",
+    lastName: "Hayes",
+    email: "robert.hayes@usmc.mil",
+    role: "APPEAL_AUTHORITY",
+    unitId: "unit-5mar",
+    unitName: "5th Marine Regiment",
+    rank: "Col",
+    grade: "O6",
+    edipi: "4567890123",
+  },
 ];
 
 // Seed default users if users.json is empty

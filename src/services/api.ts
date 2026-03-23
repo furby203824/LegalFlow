@@ -54,6 +54,9 @@ export async function getDashboard() {
     cases = cases.filter((c) => c.accusedEdipi === u.edipi);
   } else if (u.role === "IPAC_ADMIN") {
     cases = cases.filter((c) => c.item16SignedDate);
+  } else if (u.role === "APPEAL_AUTHORITY") {
+    // Appeal authorities see cases in appeal status from subordinate units
+    cases = cases.filter((c) => c.status === "APPEAL_PENDING" || c.status === "APPEAL_COMPLETE" || c.unitId === u.unitId);
   } else if (u.role !== "SUITE_ADMIN") {
     cases = cases.filter((c) => c.unitId === u.unitId);
   }
@@ -129,6 +132,8 @@ export async function getCases(filters?: { status?: string; name?: string; pendi
     cases = cases.filter(
       (c) => c.status?.startsWith("CLOSED") || c.item16SignedDate
     );
+  } else if (u.role === "APPEAL_AUTHORITY") {
+    cases = cases.filter((c) => c.status === "APPEAL_PENDING" || c.status === "APPEAL_COMPLETE" || c.unitId === u.unitId);
   } else if (u.role !== "SUITE_ADMIN") {
     cases = cases.filter((c) => c.unitId === u.unitId);
   }
