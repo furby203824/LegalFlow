@@ -20,9 +20,9 @@
   {
     "id": "user-co-preparer",
     "createdAt": "2026-03-23T00:00:00.000Z",
-    "updatedAt": "2026-03-23T19:11:39.367Z",
+    "updatedAt": "2026-03-23T19:22:41.488Z",
     "isActive": true,
-    "lastLogin": "2026-03-23T19:11:39.367Z",
+    "lastLogin": "2026-03-23T19:22:41.488Z",
     "username": "co-preparer",
     "passwordHash": "co-preparer",
     "firstName": "James",
