@@ -585,6 +585,19 @@
         "distributionOmpf": false,
         "distributionFiles": false,
         "distributionMember": false
+      },
+      {
+        "id": "doc-1774240661784-1jpx8",
+        "documentVersion": 1,
+        "isCurrent": true,
+        "createdAt": "2026-03-23T04:37:41.784Z",
+        "documentType": "NOTIFICATION_ELECTION_RIGHTS",
+        "generatedById": "user-1774232428029-skhw5",
+        "generatedAt": "2026-03-23T04:37:41.784Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
       }
     ],
     "remedialActions": [],
