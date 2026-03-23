@@ -306,5 +306,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated PDF: appeal_rights_ack"
+  },
+  {
+    "id": "audit-1774240462968-6h0ma",
+    "timestamp": "2026-03-23T04:34:22.968Z",
+    "caseId": "case-1774237256718-s3m2a",
+    "caseNumber": "CASE-2026-0003",
+    "userId": "user-1774232428029-skhw5",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated office_hours_script"
   }
 ]
