@@ -19,6 +19,19 @@ import { getCase } from "@/services/api";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CaseDetail = any;
 
+const STATUS_LABEL: Record<string, string> = {
+  INITIATED: "Draft",
+  REFERRED_COURT_MARTIAL: "Referred Court-Martial",
+  RIGHTS_ADVISED: "Rights Advised",
+  PUNISHMENT_IMPOSED: "Punishment Imposed",
+  NOTIFICATION_COMPLETE: "Post-Notification",
+  APPEAL_PENDING: "Appeal Pending",
+  APPEAL_COMPLETE: "Appeal Complete",
+  CLOSED: "Closed",
+  CLOSED_SUSPENSION_ACTIVE: "Closed - Suspension Active",
+  DESTROYED: "Destroyed",
+};
+
 export default function CaseViewPage() {
   return (
     <Suspense fallback={<AppShell><div className="flex items-center justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div></AppShell>}>
@@ -32,7 +45,7 @@ function CaseViewContent() {
   const id = searchParams.get("id") || "";
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"remarks" | "evidence" | "hearing" | "rights" | "documents" | "audit">("rights");
+  const [activeTab, setActiveTab] = useState<string>("personnel");
   const router = useRouter();
 
   function loadCase() {
@@ -62,86 +75,96 @@ function CaseViewContent() {
 
   const accused = caseData.accused;
 
-  const STATUS_COLORS: Record<string, string> = {
-    INITIATED: "bg-gray-100 text-gray-700",
-    REFERRED_COURT_MARTIAL: "bg-purple-100 text-purple-700",
-    RIGHTS_ADVISED: "bg-blue-100 text-blue-700",
-    PUNISHMENT_IMPOSED: "bg-orange-100 text-orange-700",
-    NOTIFICATION_COMPLETE: "bg-blue-100 text-blue-700",
-    APPEAL_PENDING: "bg-yellow-100 text-yellow-700",
-    APPEAL_COMPLETE: "bg-green-100 text-green-700",
-    CLOSED: "bg-gray-200 text-gray-600",
-    CLOSED_SUSPENSION_ACTIVE: "bg-orange-100 text-orange-700",
-    DESTROYED: "bg-red-100 text-red-600",
-  };
+  const TABS = [
+    { key: "personnel", label: "Personnel Data" },
+    { key: "upb", label: "UPB Form Items" },
+    { key: "evidence", label: "Evidence" },
+    { key: "hearing", label: "Mast Guide" },
+    { key: "documents", label: "Documents" },
+    { key: "tracking", label: "Tracking History" },
+  ];
 
   return (
     <AppShell>
       <div className="space-y-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-neutral-dark">
-              Case <span className="font-mono">{caseData.caseNumber}</span>
-            </h1>
-            <p className="text-sm text-neutral-mid mt-0.5">
-              {accused.rank} {accused.lastName}, {accused.firstName} {accused.middleName || ""} ({accused.grade}) &middot; EDIPI: <span className="font-mono">{accused.edipi}</span>
-            </p>
-            <p className="text-xs text-neutral-mid mt-0.5">{accused.unitFullString}</p>
+        {/* Required field note */}
+        <p className="text-xs text-neutral-mid italic">A &quot;*&quot; denotes a required field before it can be routed.</p>
+
+        {/* CLA-style Package Header Banner */}
+        <div className="card bg-surface border border-border">
+          <div className="grid grid-cols-3 gap-x-6 gap-y-1.5 px-5 py-3 text-xs">
+            <div>
+              <span className="font-semibold text-neutral-dark">Package ID: </span>
+              <span className="font-mono">{caseData.caseNumber}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-neutral-dark">Respondent: </span>
+              <span>{accused.lastName}, {accused.firstName} {accused.middleName || ""}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-neutral-dark">Package Status: </span>
+              <span>{STATUS_LABEL[caseData.status] || caseData.status.replace(/_/g, " ")}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-neutral-dark">EDIPI: </span>
+              <span className="font-mono">{accused.edipi}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-neutral-dark">Rank/Grade: </span>
+              <span>{accused.rank} / {accused.grade}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-neutral-dark">Component: </span>
+              <span>{caseData.component}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-neutral-dark">Unit: </span>
+              <span>{accused.unitFullString}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-neutral-dark">Service: </span>
+              <span>{caseData.serviceBranch || "USMC"}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-neutral-dark">Current Phase: </span>
+              <span className="font-medium text-secondary">{caseData.currentPhase.replace(/_/g, " ")}</span>
+            </div>
           </div>
-          <span className={cn("badge text-xs px-3 py-1", STATUS_COLORS[caseData.status] || "bg-gray-100")}>
-            {caseData.status.replace(/_/g, " ")}
-          </span>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {caseData.jaReviewRequired && !caseData.jaReviewComplete && (
-            <span className="badge bg-warning/10 text-warning gap-1"><AlertTriangle size={12} /> JA REVIEW REQUIRED</span>
-          )}
-          {caseData.punishmentRecord?.suspensionStatus === "ACTIVE" && (
-            <span className="badge bg-orange-100 text-orange-700 gap-1"><Info size={12} /> SUSPENSION ACTIVE</span>
-          )}
-          {caseData.statuteWarningAcknowledged && (
-            <span className="badge bg-warning/10 text-warning gap-1"><AlertTriangle size={12} /> STATUTE WARNING</span>
-          )}
-          {caseData.doublePunishmentChecked && (
-            <span className="badge bg-error/10 text-error gap-1"><AlertOctagon size={12} /> DOUBLE PUNISHMENT FLAG</span>
-          )}
-        </div>
+        {/* Alert badges */}
+        {(caseData.jaReviewRequired || caseData.punishmentRecord?.suspensionStatus === "ACTIVE" || caseData.statuteWarningAcknowledged || caseData.doublePunishmentChecked) && (
+          <div className="flex flex-wrap gap-2">
+            {caseData.jaReviewRequired && !caseData.jaReviewComplete && (
+              <span className="badge bg-warning/10 text-warning gap-1"><AlertTriangle size={12} /> JA REVIEW REQUIRED</span>
+            )}
+            {caseData.punishmentRecord?.suspensionStatus === "ACTIVE" && (
+              <span className="badge bg-orange-100 text-orange-700 gap-1"><Info size={12} /> SUSPENSION ACTIVE</span>
+            )}
+            {caseData.statuteWarningAcknowledged && (
+              <span className="badge bg-warning/10 text-warning gap-1"><AlertTriangle size={12} /> STATUTE WARNING</span>
+            )}
+            {caseData.doublePunishmentChecked && (
+              <span className="badge bg-error/10 text-error gap-1"><AlertOctagon size={12} /> DOUBLE PUNISHMENT FLAG</span>
+            )}
+          </div>
+        )}
 
+        {/* Phase Tracker */}
         <PhaseTracker currentPhase={caseData.currentPhase} status={caseData.status} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            <UPBItemsPanel caseData={caseData} onUpdate={loadCase} />
-          </div>
-          <div>
-            <ActionsPanel caseData={caseData} onUpdate={loadCase} />
-          </div>
-        </div>
-
+        {/* Tab navigation — CLA style */}
         <div className="card overflow-hidden">
-          <div className="border-b border-border">
+          <div className="border-b border-border bg-surface">
             <nav className="flex overflow-x-auto scrollbar-hide -mb-px">
-              {([
-                { key: "rights" as const, label: "Rights Ack.", minPhase: "INITIATION" },
-                { key: "remarks" as const, label: "Item 21 Remarks", minPhase: "INITIATION" },
-                { key: "evidence" as const, label: "Evidence", minPhase: "RIGHTS_ADVISEMENT" },
-                { key: "hearing" as const, label: "Mast Guide", minPhase: "HEARING" },
-                { key: "documents" as const, label: "Documents", minPhase: "INITIATION" },
-                { key: "audit" as const, label: "Audit Log", minPhase: "INITIATION" },
-              ] as const).filter((tab) => {
-                const phaseOrder = ["INITIATION", "RIGHTS_ADVISEMENT", "HEARING", "NOTIFICATION", "APPEAL", "REMEDIAL_ACTION", "ADMIN_COMPLETION", "VACATION", "CLOSED"];
-                const currentIdx = phaseOrder.indexOf(caseData.currentPhase);
-                const minIdx = phaseOrder.indexOf(tab.minPhase);
-                return currentIdx >= minIdx;
-              }).map((tab) => (
+              {TABS.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={cn(
                     "px-5 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0",
                     activeTab === tab.key
-                      ? "border-primary text-primary"
+                      ? "border-secondary text-secondary bg-white"
                       : "border-transparent text-neutral-mid hover:text-neutral-dark"
                   )}
                 >
@@ -150,18 +173,26 @@ function CaseViewContent() {
               ))}
             </nav>
           </div>
+
           <div className="p-5">
-            {activeTab === "remarks" && (
-              <RemarksPanel
-                caseId={caseData.id}
-                remarks={(caseData.item21Entries || []).map((e: { id: string; entryDate: string; entryType: string; entryText: string; confirmedAt: string | null; systemGenerated: boolean }) => ({
-                  id: e.id, date: e.entryDate, itemReference: e.entryType,
-                  text: e.entryText, confirmed: !!e.confirmedAt, systemGenerated: e.systemGenerated,
-                }))}
-                onUpdate={loadCase}
-                locked={caseData.formLocked}
-              />
+            {/* Personnel Data Tab — CLA-style fieldsets */}
+            {activeTab === "personnel" && (
+              <PersonnelDataTab caseData={caseData} />
             )}
+
+            {/* UPB Form Items Tab — existing NJP functionality */}
+            {activeTab === "upb" && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-2">
+                  <UPBItemsPanel caseData={caseData} onUpdate={loadCase} />
+                </div>
+                <div>
+                  <ActionsPanel caseData={caseData} onUpdate={loadCase} />
+                </div>
+              </div>
+            )}
+
+            {/* Evidence Tab */}
             {activeTab === "evidence" && (
               <EvidencePanel
                 caseId={caseData.id}
@@ -171,39 +202,169 @@ function CaseViewContent() {
                 currentPhase={caseData.currentPhase}
               />
             )}
+
+            {/* Hearing / Mast Guide Tab */}
             {activeTab === "hearing" && (
-              <HearingGuidePanel
-                caseId={caseData.id}
-                caseData={caseData}
-                onUpdate={loadCase}
-              />
+              <div className="space-y-4">
+                <RightsAcknowledgementPanel
+                  caseId={caseData.id}
+                  caseData={caseData}
+                  onUpdate={loadCase}
+                />
+                <HearingGuidePanel
+                  caseId={caseData.id}
+                  caseData={caseData}
+                  onUpdate={loadCase}
+                />
+              </div>
             )}
-            {activeTab === "rights" && (
-              <RightsAcknowledgementPanel
-                caseId={caseData.id}
-                caseData={caseData}
-                onUpdate={loadCase}
-              />
-            )}
+
+            {/* Documents Tab */}
             {activeTab === "documents" && (
-              <DocumentPanel
-                caseId={caseData.id}
-                component={caseData.component}
-                commanderGradeCategory={caseData.commanderGradeLevel}
-                currentPhase={caseData.currentPhase}
-                hasVacationRecords={caseData.vacationRecordsAsParent?.length > 0}
-                hasMmrpPending={caseData.remedialActions?.some(
-                  (ra: { mmrpNotificationRequired: boolean; mmrpNotificationSent: boolean }) =>
-                    ra.mmrpNotificationRequired && !ra.mmrpNotificationSent
-                )}
-              />
+              <div className="space-y-4">
+                <DocumentPanel
+                  caseId={caseData.id}
+                  component={caseData.component}
+                  commanderGradeCategory={caseData.commanderGradeLevel}
+                  currentPhase={caseData.currentPhase}
+                  hasVacationRecords={caseData.vacationRecordsAsParent?.length > 0}
+                  hasMmrpPending={caseData.remedialActions?.some(
+                    (ra: { mmrpNotificationRequired: boolean; mmrpNotificationSent: boolean }) =>
+                      ra.mmrpNotificationRequired && !ra.mmrpNotificationSent
+                  )}
+                />
+                <RemarksPanel
+                  caseId={caseData.id}
+                  remarks={(caseData.item21Entries || []).map((e: { id: string; entryDate: string; entryType: string; entryText: string; confirmedAt: string | null; systemGenerated: boolean }) => ({
+                    id: e.id, date: e.entryDate, itemReference: e.entryType,
+                    text: e.entryText, confirmed: !!e.confirmedAt, systemGenerated: e.systemGenerated,
+                  }))}
+                  onUpdate={loadCase}
+                  locked={caseData.formLocked}
+                />
+              </div>
             )}
-            {activeTab === "audit" && (
+
+            {/* Tracking History Tab */}
+            {activeTab === "tracking" && (
               <AuditLogPanel auditLogs={caseData.auditLogs || []} />
             )}
           </div>
         </div>
       </div>
     </AppShell>
+  );
+}
+
+/* ── Personnel Data Tab — CLA-style fieldsets ── */
+
+function PersonnelDataTab({ caseData }: { caseData: CaseDetail }) {
+  const accused = caseData.accused;
+
+  return (
+    <div className="space-y-5">
+      {/* Assigned Command */}
+      <fieldset className="border border-border rounded-md px-4 py-3">
+        <legend className="text-sm font-semibold text-neutral-dark px-2">Assigned Command</legend>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+          <FieldRow label="Unit" value={accused.unitFullString} />
+          <FieldRow label="Component" value={caseData.component} />
+          <FieldRow label="Service Branch" value={caseData.serviceBranch || "USMC"} />
+        </div>
+      </fieldset>
+
+      {/* Respondent Information */}
+      <fieldset className="border border-border rounded-md px-4 py-3">
+        <legend className="text-sm font-semibold text-neutral-dark px-2">Respondent Information</legend>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+          <FieldRow label="Name" value={`${accused.lastName}, ${accused.firstName} ${accused.middleName || ""}`} />
+          <FieldRow label="Rank" value={accused.rank} />
+          <FieldRow label="Grade" value={accused.grade} />
+          <FieldRow label="EDIPI" value={accused.edipi} mono />
+          <FieldRow label="Date of Birth" value={accused.dateOfBirth || "—"} />
+          <FieldRow label="Commander Grade" value={(caseData.commanderGradeLevel || "").replace(/_/g, " ")} />
+        </div>
+      </fieldset>
+
+      {/* Duty Status */}
+      <fieldset className="border border-border rounded-md px-4 py-3">
+        <legend className="text-sm font-semibold text-neutral-dark px-2">Duty Status</legend>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <FieldRow label="UA Applicable" value={caseData.uaApplicable ? "Yes" : "No"} />
+          <FieldRow label="Vessel Exception" value={caseData.vesselException ? "Yes" : "No"} />
+        </div>
+      </fieldset>
+
+      {/* Jurisdiction & Validation */}
+      <fieldset className="border border-border rounded-md px-4 py-3">
+        <legend className="text-sm font-semibold text-neutral-dark px-2">Jurisdiction &amp; Validation</legend>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+          <FieldRow label="Jurisdiction Confirmed" value={caseData.jurisdictionConfirmed ? "Yes" : "No"} />
+          <FieldRow label="JA Review Required" value={caseData.jaReviewRequired ? "Yes" : "No"} />
+          <FieldRow label="JA Review Complete" value={caseData.jaReviewComplete ? "Yes" : "No"} />
+          <FieldRow label="Statute Warning" value={caseData.statuteWarningAcknowledged ? "Yes" : "No"} />
+          <FieldRow label="Double Punishment Check" value={caseData.doublePunishmentChecked ? "Yes" : "No"} />
+          <FieldRow label="Form Locked" value={caseData.formLocked ? "Yes" : "No"} />
+        </div>
+      </fieldset>
+
+      {/* Offenses Summary */}
+      <fieldset className="border border-border rounded-md px-4 py-3">
+        <legend className="text-sm font-semibold text-neutral-dark px-2">UCMJ Offenses Alleged</legend>
+        <div className="space-y-2">
+          {(caseData.offenses || []).map((o: { offenseLetter: string; ucmjArticle: string; offenseType: string; offenseSummary: string; offenseDate: string; offensePlace: string; finding?: string }) => (
+            <div key={o.offenseLetter} className="text-sm border-b border-border last:border-0 pb-2 last:pb-0">
+              <div className="font-medium text-neutral-dark">
+                {o.offenseLetter}. Art. {o.ucmjArticle} — {o.offenseType}
+              </div>
+              <div className="text-neutral-mid text-xs mt-0.5">{o.offenseSummary}</div>
+              <div className="text-neutral-mid text-xs">{o.offenseDate} at {o.offensePlace}</div>
+              {o.finding && (
+                <div className={cn(
+                  "text-xs font-medium mt-1",
+                  o.finding === "G" || o.finding === "GUILTY" ? "text-error" : "text-success"
+                )}>
+                  Finding: {o.finding === "G" || o.finding === "GUILTY" ? "GUILTY" : "NOT GUILTY"}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </fieldset>
+
+      {/* Victim Demographics */}
+      {caseData.offenses?.some((o: { victims?: unknown[] }) => o.victims?.length) && (
+        <fieldset className="border border-border rounded-md px-4 py-3">
+          <legend className="text-sm font-semibold text-neutral-dark px-2">Victim Demographics</legend>
+          <div className="space-y-1">
+            {(caseData.offenses || []).map((o: { offenseLetter: string; victims?: { victimStatus: string; victimSex: string; victimRace: string; victimEthnicity: string }[] }) =>
+              o.victims?.map((v, vi) => (
+                <div key={`${o.offenseLetter}-${vi}`} className="text-xs text-neutral-mid">
+                  {o.offenseLetter}. {v.victimStatus} / {v.victimSex} / {v.victimRace} / {v.victimEthnicity}
+                </div>
+              ))
+            )}
+          </div>
+        </fieldset>
+      )}
+
+      {/* Case Dates */}
+      <fieldset className="border border-border rounded-md px-4 py-3">
+        <legend className="text-sm font-semibold text-neutral-dark px-2">Case Dates</legend>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+          <FieldRow label="Created" value={caseData.createdAt?.slice(0, 10) || "—"} />
+          <FieldRow label="Updated" value={caseData.updatedAt?.slice(0, 10) || "—"} />
+        </div>
+      </fieldset>
+    </div>
+  );
+}
+
+function FieldRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div>
+      <span className="text-neutral-mid">{label}:</span>{" "}
+      <span className={cn("text-neutral-dark", mono && "font-mono")}>{value}</span>
+    </div>
   );
 }
