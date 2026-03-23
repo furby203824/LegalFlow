@@ -368,6 +368,21 @@
     "njpDate": null,
     "appealNotFiled": false,
     "accusedTransferred": false,
-    "initiatedById": "user-1774218618690-02z7m"
+    "initiatedById": "user-1774218618690-02z7m",
+    "rightsAcknowledgement": {
+      "id": "ra-1774229199303-8uqg8",
+      "interviewerName": "",
+      "interviewerRateRank": "",
+      "interviewerService": "USMC",
+      "interviewerOrg": "",
+      "interviewerBillet": "",
+      "interviewLocation": "",
+      "interviewTime": "",
+      "interviewDate": "",
+      "suspectedOffenses": "Violation of UCMJ, Article 100 (Motivation): Beat up people and things ",
+      "lastUpdatedBy": "user-1774218618690-02z7m",
+      "lastUpdatedByName": "admin",
+      "lastUpdatedAt": "2026-03-23T01:26:39.303Z"
+    }
   }
 ]
