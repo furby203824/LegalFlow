@@ -472,6 +472,65 @@ export async function performPhaseAction(caseId: string, action: string, data: R
       return { message: "Suspension vacated", status: "CLOSED_SUSPENSION_VACATED" };
     }
 
+    // ── Certifier Reviewer Actions ──
+
+    case "REVIEWER_COMMENT": {
+      const comments = njpCase.reviewComments || [];
+      comments.push({
+        id: `rc-${Date.now()}`,
+        userId: u.userId,
+        userName: `${u.rank ? u.rank + " " : ""}${u.lastName}`,
+        role: u.role,
+        text: data.comment,
+        createdAt: new Date().toISOString(),
+      });
+      await casesStore.update(caseId, { reviewComments: comments });
+      await audit("COMMENT", `Reviewer comment: ${data.comment.substring(0, 80)}`);
+      return { message: "Comment added" };
+    }
+
+    case "REVIEWER_RETURN": {
+      const comments = njpCase.reviewComments || [];
+      comments.push({
+        id: `rc-${Date.now()}`,
+        userId: u.userId,
+        userName: `${u.rank ? u.rank + " " : ""}${u.lastName}`,
+        role: u.role,
+        text: data.comment || "Returned for corrections",
+        createdAt: new Date().toISOString(),
+        action: "RETURNED",
+      });
+      await casesStore.update(caseId, {
+        reviewStatus: "RETURNED",
+        reviewComments: comments,
+        reviewReturnedAt: new Date().toISOString(),
+        reviewReturnedBy: u.userId,
+      });
+      await audit("REVIEW", `Package returned to preparer: ${(data.comment || "").substring(0, 80)}`);
+      return { message: "Package returned to preparer for corrections" };
+    }
+
+    case "REVIEWER_FORWARD": {
+      const comments = njpCase.reviewComments || [];
+      comments.push({
+        id: `rc-${Date.now()}`,
+        userId: u.userId,
+        userName: `${u.rank ? u.rank + " " : ""}${u.lastName}`,
+        role: u.role,
+        text: data.comment || "Reviewed and forwarded to Certifier",
+        createdAt: new Date().toISOString(),
+        action: "FORWARDED",
+      });
+      await casesStore.update(caseId, {
+        reviewStatus: "FORWARDED",
+        reviewComments: comments,
+        reviewForwardedAt: new Date().toISOString(),
+        reviewForwardedBy: u.userId,
+      });
+      await audit("REVIEW", "Package reviewed and forwarded to Certifier");
+      return { message: "Package forwarded to Certifier" };
+    }
+
     default:
       throw new Error(`Unknown action: ${action}`);
   }
