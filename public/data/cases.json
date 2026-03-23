@@ -482,7 +482,7 @@
         "offenseDate": "2026-03-03",
         "offensePlace": "MCBH",
         "finding": null,
-        "locked": false
+        "locked": true
       }
     ],
     "victims": [
@@ -494,7 +494,7 @@
         "victimSex": "Unknown",
         "victimRace": "Unknown",
         "victimEthnicity": "Unknown",
-        "locked": false
+        "locked": true
       }
     ],
     "punishment": null,
