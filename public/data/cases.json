@@ -518,13 +518,13 @@
         "susp_months": "6",
         "accusedUnderstandsAppeal": "yes"
       },
-      "appealAuthority": "",
-      "appellateRightsReader": "",
+      "appealAuthority": "Commanding officer, MCBH",
+      "appellateRightsReader": "Capt Smith",
       "completed": true,
       "lastUpdatedBy": "user-1774232428029-skhw5",
       "lastUpdatedByName": "admin",
-      "lastUpdatedAt": "2026-03-23T06:23:09.464Z",
-      "completedAt": "2026-03-23T06:23:09.463Z"
+      "lastUpdatedAt": "2026-03-23T06:23:37.910Z",
+      "completedAt": "2026-03-23T06:23:37.909Z"
     },
     "item21Entries": [],
     "signatures": [
