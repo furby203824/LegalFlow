@@ -497,7 +497,30 @@
         "locked": true
       }
     ],
-    "punishment": null,
+    "punishment": {
+      "id": "pun-1774247339357-4at1l",
+      "punishmentDate": "2026-03-23",
+      "reduction": false,
+      "reductionDetail": null,
+      "forfeiture": true,
+      "forfeitureDetail": null,
+      "extraDuties": true,
+      "extraDutiesDetail": null,
+      "restriction": true,
+      "restrictionDetail": null,
+      "correctionalCustody": false,
+      "correctionalCustodyDetail": null,
+      "reprimand": false,
+      "admonition": false,
+      "suspensionMonths": 6,
+      "suspendedPunishments": [
+        "forfeiture",
+        "extra_duties",
+        "restriction"
+      ],
+      "accusedGrade": "E5",
+      "accusedRank": "Sgt"
+    },
     "appeal": null,
     "chargeSheet": null,
     "hearingRecord": {
