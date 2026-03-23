@@ -421,6 +421,7 @@ export function caseWithIncludes(c: Rec): Rec {
     grade: c.accusedGrade,
     edipi: c.accusedEdipi,
     dateOfBirth: c.accusedDateOfBirth || null,
+    yearsOfService: c.accusedYearsOfService ?? null,
     serviceBranch: c.accusedServiceBranch || "USMC",
     unitFullString: c.unitFullString || c.accusedUnit || "",
     component: c.component,

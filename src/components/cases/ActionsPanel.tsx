@@ -574,7 +574,7 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
   };
 
   const effectiveGrade = reduction && redGrade ? redGrade : accusedGrade;
-  const maxForf = getMaxForfeiture(effectiveGrade, caseData.commanderGradeLevel as CommanderGradeLevel);
+  const maxForf = getMaxForfeiture(effectiveGrade, caseData.commanderGradeLevel as CommanderGradeLevel, caseData.accused?.yearsOfService ?? undefined);
 
   return (
     <ActionSection title="Item 6 - Punishment">

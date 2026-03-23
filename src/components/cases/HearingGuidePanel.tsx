@@ -244,17 +244,19 @@ const PHASE_ORDER = ["opening", "examination", "evidence_review", "mitigation", 
 function PunishmentChecklist({
   commanderGradeLevel,
   accusedGrade,
+  yearsOfService,
   responses,
   setResponse,
 }: {
   commanderGradeLevel: CommanderGradeLevel;
   accusedGrade: string;
+  yearsOfService?: number;
   responses: Record<string, string>;
   setResponse: (key: string, value: string) => void;
 }) {
   const limits = PUNISHMENT_LIMITS[commanderGradeLevel] || PUNISHMENT_LIMITS.COMPANY_GRADE;
   const isField = commanderGradeLevel === "FIELD_GRADE_AND_ABOVE";
-  const maxForfeit = getMaxForfeiture(accusedGrade, commanderGradeLevel);
+  const maxForfeit = getMaxForfeiture(accusedGrade, commanderGradeLevel, yearsOfService);
 
   const punishments = [
     {
@@ -266,8 +268,8 @@ function PunishmentChecklist({
       key: "pun_forfeiture",
       label: "Forfeiture of Pay",
       limit: isField
-        ? `Up to 1/2 of 1 month's pay per month for ${(limits as typeof PUNISHMENT_LIMITS.FIELD_GRADE_AND_ABOVE).forfeitureMonths} months${maxForfeit ? ` ($${maxForfeit}/mo)` : ""}`
-        : `${(limits as typeof PUNISHMENT_LIMITS.COMPANY_GRADE).forfeitureDays} days' pay${maxForfeit ? ` ($${maxForfeit})` : ""}`,
+        ? `Up to 1/2 of 1 month's pay per month for ${(limits as typeof PUNISHMENT_LIMITS.FIELD_GRADE_AND_ABOVE).forfeitureMonths} months${maxForfeit ? ` (max $${maxForfeit.toLocaleString()}/mo — CY26)` : ""}`
+        : `${(limits as typeof PUNISHMENT_LIMITS.COMPANY_GRADE).forfeitureDays} days' pay${maxForfeit ? ` (max $${maxForfeit.toLocaleString()} — CY26)` : ""}`,
     },
     {
       key: "pun_extra_duties",
@@ -552,6 +554,7 @@ export default function HearingGuidePanel({ caseId, caseData, onUpdate }: { case
               <PunishmentChecklist
                 commanderGradeLevel={caseData.commanderGradeLevel}
                 accusedGrade={accused.grade}
+                yearsOfService={accused.yearsOfService ?? undefined}
                 responses={responses}
                 setResponse={setResponse}
               />

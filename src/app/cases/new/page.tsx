@@ -89,6 +89,7 @@ export default function NewCasePage() {
   const [middleName, setMiddleName] = useState(initial.middleName);
   const [rankGrade, setRankGrade] = useState(initial.rankGrade);
   const [edipi, setEdipi] = useState(initial.edipi);
+  const [yearsOfService, setYearsOfService] = useState<number | "">(0);
   const [serviceBranch, setServiceBranch] = useState(initial.serviceBranch as string);
   const [component, setComponent] = useState("ACTIVE");
   const [commanderGrade, setCommanderGrade] = useState("");
@@ -219,6 +220,7 @@ export default function NewCasePage() {
         accusedLastName: lastName, accusedFirstName: firstName, accusedMiddleName: middleName || null,
         accusedRank: rank, accusedGrade: grade, accusedEdipi: edipi,
         accusedDateOfBirth: generateDOB(grade),
+        accusedYearsOfService: yearsOfService === "" ? 0 : yearsOfService,
         accusedServiceBranch: serviceBranch,
         component: component || "ACTIVE",
         vesselException: vesselException || false,
@@ -311,6 +313,9 @@ export default function NewCasePage() {
               </Field>
               <Field label="EDIPI (10 digits)" required>
                 <input className="input-field font-mono" value={edipi} onChange={(e) => setEdipi(e.target.value)} pattern="\d{10}" maxLength={10} required />
+              </Field>
+              <Field label="Years of Service">
+                <input type="number" className="input-field" value={yearsOfService} onChange={(e) => setYearsOfService(e.target.value === "" ? "" : Number(e.target.value))} min={0} max={40} />
               </Field>
               <Field label="Service Branch" required>
                 <select className="input-field" value={serviceBranch} onChange={(e) => handleBranchChange(e.target.value)} required>
