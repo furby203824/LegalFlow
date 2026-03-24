@@ -153,11 +153,13 @@ function buildSuspensionText(data: CaseData): string {
  */
 function mapAppealOutcome(outcome?: string): string {
   switch (outcome) {
-    case "DENIED": return "Denied";
+    case "DENIED": return "I have considered this appeal and deny relief.";
+    case "GRANTED": return "I have considered this appeal and grant relief as follows:";
+    // Legacy values
     case "DENIED_UNTIMELY": return "Denied (untimely)";
-    case "GRANTED_SET_ASIDE": return "Granted - Set Aside";
-    case "PARTIAL_RELIEF": return "Partial Relief";
-    case "REDUCTION_SET_ASIDE_ONLY": return "Reduction Set Aside Only";
+    case "GRANTED_SET_ASIDE": return "I have considered this appeal and grant relief as follows:";
+    case "PARTIAL_RELIEF": return "I have considered this appeal and grant relief as follows:";
+    case "REDUCTION_SET_ASIDE_ONLY": return "I have considered this appeal and grant relief as follows:";
     default: return outcome || "";
   }
 }

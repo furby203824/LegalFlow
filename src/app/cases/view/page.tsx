@@ -23,6 +23,7 @@ const STATUS_LABEL: Record<string, string> = {
   PUNISHMENT_IMPOSED: "Punishment Imposed",
   NOTIFICATION_COMPLETE: "Post-Notification",
   APPEAL_PENDING: "Appeal Pending",
+  APPEAL_DECIDED: "Appeal Decided",
   APPEAL_COMPLETE: "Appeal Complete",
   CLOSED: "Closed",
   CLOSED_SUSPENSION_ACTIVE: "Closed - Suspension Active",

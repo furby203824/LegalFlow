@@ -53,6 +53,7 @@ function canPerformAction(role: UserRole, action: string): boolean {
 
     // Appeal authority
     SIGN_ITEM_14: ["APPEAL_AUTHORITY", "CERTIFIER", "SUITE_ADMIN"],
+    ENTER_ITEM_15: ["CERTIFIER", "NJP_PREPARER", "SUITE_ADMIN"],
     ENTER_APPEAL_DATE: ["NJP_PREPARER", "ADMIN", "SUITE_ADMIN"],
     LOG_JA_REVIEW: ["NJP_PREPARER", "ADMIN", "SUITE_ADMIN"],
     VACATE_SUSPENSION: ["CERTIFIER", "NJP_AUTHORITY", "SUITE_ADMIN"],
@@ -127,6 +128,7 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
     else if (!hasSig("11")) { currentActionKey = "SIGN_ITEM_11"; currentAction = "Notification to Accused (Items 10-11)"; }
     else if (!hasSig("12")) { currentActionKey = "SIGN_ITEM_12"; currentAction = "Appeal Rights Acknowledgement — A-1-g (Item 12)"; }
     else if (appeal?.appealIntent === "INTENDS_TO_APPEAL" && !hasSig("14")) { currentActionKey = "SIGN_ITEM_14"; currentAction = "Appeal Authority Decision (Item 14)"; }
+    else if (hasSig("14") && !caseData.dateNoticeAppealDecision) { currentActionKey = "ENTER_ITEM_15"; currentAction = "Notice of Appeal Decision (Item 15)"; }
     else if (!hasSig("16")) { currentActionKey = "SIGN_ITEM_16"; currentAction = "Administrative Closure (Item 16)"; }
   }
 
@@ -397,8 +399,13 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
             <AppealDecisionAction caseData={caseData} loading={loading} onSubmit={(data) => performAction("SIGN_ITEM_14", data)} />
           )}
 
+          {/* 11. Notice of Appeal Decision (Item 15) — original unit notifies accused */}
+          {hasSig("14") && !caseData.dateNoticeAppealDecision && canPerformAction(userRole, "ENTER_ITEM_15") && (
+            <AppealNoticeAction caseData={caseData} loading={loading} onSubmit={(data) => performAction("ENTER_ITEM_15", data)} />
+          )}
+
           {/* UPB Completion & Administrative Closure (JAGMAN 0119a) */}
-          {((hasSig("12") && appeal?.appealIntent !== "INTENDS_TO_APPEAL") || hasSig("14")) && !hasSig("16") && canPerformAction(userRole, "SIGN_ITEM_16") && (
+          {((hasSig("12") && appeal?.appealIntent !== "INTENDS_TO_APPEAL") || (hasSig("14") && caseData.dateNoticeAppealDecision)) && !hasSig("16") && canPerformAction(userRole, "SIGN_ITEM_16") && (
             <>
               {!caseData.ompfScanConfirmed && (
                 <ActionSection title="Service Record Entry (JAGMAN 0109d)">
@@ -1030,12 +1037,22 @@ function RightsAckAction({ caseData, loading, onAcknowledge }: { caseData: CaseD
 }
 
 function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseData; loading: boolean; onSubmit: (d: Record<string, unknown>) => void }) {
-  const [outcome, setOutcome] = useState("DENIED");
+  const session = getSession();
+  const [outcome, setOutcome] = useState<"DENIED" | "GRANTED">("DENIED");
   const [outcomeDetail, setOutcomeDetail] = useState("");
   const [item14Date, setItem14Date] = useState("");
-  const [item15Date, setItem15Date] = useState("");
-  const [authorityName, setAuthorityName] = useState(caseData.appealRecord?.appealAuthorityName || caseData.hearingRecord?.appealAuthority || getAppealAuthorityLabel(caseData.unitId || "") || "");
-  const [authorityRank, setAuthorityRank] = useState(caseData.appealRecord?.appealAuthorityRank || "");
+  const [authorityName, setAuthorityName] = useState(
+    caseData.appealRecord?.appealAuthorityName
+    || caseData.hearingRecord?.appealAuthority
+    || (session ? `${session.lastName}, ${session.firstName}` : "")
+    || getAppealAuthorityLabel(caseData.unitId || "")
+    || ""
+  );
+  const [authorityRank] = useState(
+    caseData.appealRecord?.appealAuthorityRank
+    || session?.rank
+    || ""
+  );
   const accused = caseData.accused || {};
   const pr = caseData.punishmentRecord;
   const offenses = caseData.offenses || [];
@@ -1051,10 +1068,8 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
   if (pr?.admonitionReprimand === "reprimand") punishmentLines.push(`Letter of Reprimand (${pr.reprimandType || "Written"})`);
   if (pr?.admonitionReprimand === "admonition") punishmentLines.push(`Admonition (${pr.admonitionType || "Oral"})`);
 
-  const needsDetail = outcome === "PARTIAL_RELIEF" || outcome === "GRANTED_SET_ASIDE" || outcome === "REDUCTION_SET_ASIDE_ONLY";
-  const canSubmit = authorityName && authorityRank && item14Date && item15Date
-    && !(item15Date < item14Date)
-    && !(needsDetail && !outcomeDetail);
+  const canSubmit = authorityName && authorityRank && item14Date
+    && !(outcome === "GRANTED" && !outcomeDetail);
 
   return (
     <ActionSection title="Appeal Authority Decision (Item 14)">
@@ -1120,64 +1135,39 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
         <div className="space-y-3">
           <h4 className="text-xs font-semibold text-neutral-dark">Appeal Authority Decision</h4>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-neutral-mid mb-1">Appeal Authority Name *</label>
-              <input type="text" value={authorityName} onChange={(e) => setAuthorityName(e.target.value)} className="input-field text-xs" placeholder="Name of appeal authority" />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-neutral-mid mb-1">Appeal Authority Rank *</label>
-              <select value={authorityRank} onChange={(e) => setAuthorityRank(e.target.value)} className="input-field text-xs">
-                <option value="">Select rank</option>
-                {getRankGradeOptionsByBranch(caseData.serviceBranch || "USMC")
-                  .filter((r) => r.grade.startsWith("O") || r.grade.startsWith("W"))
-                  .map((r) => (
-                    <option key={r.rank} value={r.rank}>{r.label}</option>
-                  ))}
-              </select>
-            </div>
+          {/* Authority info - auto-populated from session */}
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-2.5 text-xs space-y-0.5">
+            <p className="text-neutral-dark"><span className="text-neutral-mid">Appeal Authority:</span> {authorityRank} {authorityName}</p>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-neutral-mid mb-1">Decision *</label>
-            <select value={outcome} onChange={(e) => setOutcome(e.target.value)} className="input-field text-xs">
-              <option value="DENIED">Denied</option>
-              <option value="DENIED_UNTIMELY">Denied - Untimely</option>
-              <option value="GRANTED_SET_ASIDE">Granted - Set Aside</option>
-              <option value="REDUCTION_SET_ASIDE_ONLY">Reduction Set Aside Only</option>
-              <option value="PARTIAL_RELIEF">Partial Relief</option>
+            <select value={outcome} onChange={(e) => setOutcome(e.target.value as "DENIED" | "GRANTED")} className="input-field text-xs">
+              <option value="DENIED">I have considered this appeal and deny relief</option>
+              <option value="GRANTED">I have considered this appeal and grant relief as follows</option>
             </select>
           </div>
 
-          {needsDetail && (
+          {outcome === "GRANTED" && (
             <div>
-              <label className="block text-xs font-medium text-neutral-mid mb-1">Decision Details *</label>
+              <label className="block text-xs font-medium text-neutral-mid mb-1">Relief Granted *</label>
               <textarea
                 value={outcomeDetail}
                 onChange={(e) => setOutcomeDetail(e.target.value)}
                 className="input-field text-xs"
-                rows={2}
-                placeholder={outcome === "PARTIAL_RELIEF" ? "Describe which punishments were modified or set aside..." : outcome === "REDUCTION_SET_ASIDE_ONLY" ? "Reduction in grade set aside; remaining punishments stand." : "Describe the basis for setting aside the punishment..."}
+                rows={3}
+                placeholder="Describe the relief granted (e.g., punishment set aside in whole or in part, reduction set aside, forfeiture reduced to...)."
               />
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-neutral-mid mb-1">Decision Date (Item 14) *</label>
-              <input type="date" value={item14Date} onChange={(e) => setItem14Date(e.target.value)} className="input-field text-xs" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-neutral-mid mb-1">Notice Date (Item 15) *</label>
-              <input type="date" value={item15Date} onChange={(e) => setItem15Date(e.target.value)} className="input-field text-xs" />
-            </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-mid mb-1">Decision Date (Item 14) *</label>
+            <input type="date" value={item14Date} onChange={(e) => setItem14Date(e.target.value)} className="input-field text-xs" />
           </div>
-          {item14Date && item15Date && item15Date < item14Date && (
-            <p className="text-xs text-error">Item 15 date cannot be before Item 14 date</p>
-          )}
 
           <button
-            onClick={() => onSubmit({ outcome, outcomeDetail: outcomeDetail || undefined, item14Date, item15Date, authorityName, authorityRank })}
+            onClick={() => onSubmit({ outcome, outcomeDetail: outcomeDetail || undefined, item14Date, authorityName, authorityRank })}
             disabled={loading || !canSubmit}
             className="btn-primary text-xs w-full gap-1"
           >
@@ -1185,6 +1175,44 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
             {loading ? "Processing..." : "Submit Appeal Decision"}
           </button>
         </div>
+      </div>
+    </ActionSection>
+  );
+}
+
+function AppealNoticeAction({ caseData, loading, onSubmit }: { caseData: CaseData; loading: boolean; onSubmit: (d: Record<string, unknown>) => void }) {
+  const [item15Date, setItem15Date] = useState("");
+  const appeal = caseData.appealRecord;
+  const accused = caseData.accused || {};
+  const outcomeLabel = appeal?.appealOutcome === "GRANTED" ? "Relief granted" : "Relief denied";
+
+  return (
+    <ActionSection title="Notice of Appeal Decision (Item 15)">
+      <div className="space-y-3">
+        <p className="text-xs text-neutral-mid">
+          Notify {accused.rank} {accused.lastName} of the appeal authority&apos;s decision and record the date.
+        </p>
+
+        <div className="bg-surface border border-border rounded-md p-2.5 text-xs space-y-1">
+          <p><span className="text-neutral-mid">Decision:</span> <span className="font-medium">{outcomeLabel}</span></p>
+          {appeal?.appealOutcomeDetail && <p><span className="text-neutral-mid">Details:</span> {appeal.appealOutcomeDetail}</p>}
+          {appeal?.appealAuthoritySignedDate && <p><span className="text-neutral-mid">Decision date:</span> {appeal.appealAuthoritySignedDate}</p>}
+          {appeal?.appealAuthorityName && <p><span className="text-neutral-mid">Authority:</span> {appeal.appealAuthorityRank} {appeal.appealAuthorityName}</p>}
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-neutral-mid mb-1">Date Accused Notified (Item 15) *</label>
+          <input type="date" value={item15Date} onChange={(e) => setItem15Date(e.target.value)} className="input-field text-xs" />
+        </div>
+
+        <button
+          onClick={() => onSubmit({ item15Date })}
+          disabled={loading || !item15Date}
+          className="btn-primary text-xs w-full gap-1"
+        >
+          <CheckCircle size={14} />
+          {loading ? "Processing..." : "Record Notice Date"}
+        </button>
       </div>
     </ActionSection>
   );
