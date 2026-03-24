@@ -25,6 +25,7 @@ export type CaseStatus =
   | "PUNISHMENT_IMPOSED"
   | "NOTIFICATION_COMPLETE"
   | "APPEAL_PENDING"
+  | "APPEAL_DECIDED"
   | "APPEAL_COMPLETE"
   | "REMEDIAL_ACTION_PENDING"
   | "CLOSED"
@@ -439,6 +440,8 @@ export const JA_REVIEW_THRESHOLDS = {
 // --- Appeal Outcome ---
 export type AppealOutcome =
   | "DENIED"
+  | "GRANTED"
+  // Legacy values kept for backward compatibility with existing records
   | "DENIED_UNTIMELY"
   | "GRANTED_SET_ASIDE"
   | "PARTIAL_RELIEF"

@@ -38,6 +38,8 @@ function getNextAction(phase: string, status: string): { action: string; owner: 
       return { action: "Complete admin actions", owner: "ADMIN" };
     case "APPEAL_PENDING":
       return { action: "Process appeal", owner: "APPEAL_AUTHORITY" };
+    case "APPEAL_DECIDED":
+      return { action: "Notify accused of appeal decision (Item 15)", owner: "CERTIFIER" };
     case "APPEAL_COMPLETE":
       return { action: "Complete admin actions", owner: "ADMIN" };
     case "REMEDIAL_ACTION_PENDING":
@@ -61,7 +63,7 @@ export async function getDashboard() {
     const subUnitIds = (u.role === "CERTIFIER" || u.role === "APPEAL_AUTHORITY")
       ? getDescendantUnitIds(u.unitId) : [];
     cases = cases.filter((c) => c.unitId === u.unitId
-      || (subUnitIds.includes(c.unitId) && (c.status === "APPEAL_PENDING" || c.status === "APPEAL_COMPLETE")));
+      || (subUnitIds.includes(c.unitId) && (c.status === "APPEAL_PENDING" || c.status === "APPEAL_DECIDED" || c.status === "APPEAL_COMPLETE")));
   }
 
   const dashboardCases = cases.map((c) => {
@@ -139,7 +141,7 @@ export async function getCases(filters?: { status?: string; name?: string; pendi
     const subUnitIds = (u.role === "CERTIFIER" || u.role === "APPEAL_AUTHORITY")
       ? getDescendantUnitIds(u.unitId) : [];
     cases = cases.filter((c) => c.unitId === u.unitId
-      || (subUnitIds.includes(c.unitId) && (c.status === "APPEAL_PENDING" || c.status === "APPEAL_COMPLETE")));
+      || (subUnitIds.includes(c.unitId) && (c.status === "APPEAL_PENDING" || c.status === "APPEAL_DECIDED" || c.status === "APPEAL_COMPLETE")));
   }
 
   if (filters?.status) cases = cases.filter((c) => c.status === filters.status);
@@ -340,7 +342,7 @@ export async function performPhaseAction(caseId: string, action: string, data: R
     }
 
     case "SIGN_ITEM_14": {
-      const { outcome, outcomeDetail, authorityName: authName, authorityRank: authRank, item14Date, item15Date } = data;
+      const { outcome, outcomeDetail, authorityName: authName, authorityRank: authRank, item14Date } = data;
       await createSignature("14", authName || u.username);
       await casesStore.upsertAppeal(caseId, {
         appealAuthorityName: authName,
@@ -348,12 +350,20 @@ export async function performPhaseAction(caseId: string, action: string, data: R
         appealAuthoritySignedDate: (item14Date as string) || new Date().toISOString().split("T")[0],
         appealOutcome: outcome,
         appealOutcomeDetail: outcomeDetail || null,
-        appealDecisionNoticeDate: item15Date,
         items1314Locked: true,
       });
-      await casesStore.update(caseId, { status: "APPEAL_COMPLETE", dateNoticeAppealDecision: item15Date });
+      // Item 14 signed but Item 15 (notice to accused) happens at the original unit
+      await casesStore.update(caseId, { status: "APPEAL_DECIDED" });
       await audit("SIGN", `Item 14 signed - appeal ${outcome}`);
       return { message: "Appeal decision entered" };
+    }
+
+    case "ENTER_ITEM_15": {
+      const { item15Date } = data;
+      await casesStore.upsertAppeal(caseId, { appealDecisionNoticeDate: item15Date });
+      await casesStore.update(caseId, { status: "APPEAL_COMPLETE", dateNoticeAppealDecision: item15Date });
+      await audit("UPDATE", `Item 15 - accused notified of appeal decision on ${item15Date}`);
+      return { message: "Appeal decision notice recorded" };
     }
 
     case "ENTER_APPEAL_DATE": {
