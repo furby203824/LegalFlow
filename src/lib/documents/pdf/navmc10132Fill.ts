@@ -251,15 +251,18 @@ export async function fillNavmc10132Pdf(
     const o = data.offenses[i];
     const letter = offenseLetters[i];
 
+    // Skip empty offenses to preserve the template's default underline appearance
+    if (!o.ucmjArticle && !o.summary) continue;
+
     // Article dropdown
     const articleValue = matchArticleOption(o.ucmjArticle, o.offenseType, articleOptions);
-    setDropdown(form, `1${letter} ARTICLE`, articleValue);
+    if (articleValue) setDropdown(form, `1${letter} ARTICLE`, articleValue);
 
     // Summary text
-    const summaryParts = [o.summary];
+    const summaryParts = [o.summary].filter(Boolean);
     if (o.offenseDate) summaryParts.push(`On or about ${o.offenseDate}${o.offenseTime ? ` at ${o.offenseTime}` : ""}${o.toDate && o.toDate !== o.offenseDate ? ` through ${o.toDate}${o.toTime ? ` at ${o.toTime}` : ""}` : ""}`);
     if (o.offensePlace) summaryParts.push(`at ${o.offensePlace}`);
-    setText(form, `1${letter} SUMMARY`, summaryParts.join(". "));
+    if (summaryParts.length > 0) setText(form, `1${letter} SUMMARY`, summaryParts.join(". "));
 
     // Findings (HEARING and FINAL only)
     if (version !== "PARTIAL" && o.finding) {
