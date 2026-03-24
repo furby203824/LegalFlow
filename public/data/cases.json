@@ -1452,14 +1452,23 @@
       "id": "hr-1774310880621-6sug1",
       "currentStep": 16,
       "responses": {
-        "finding_A": "GUILTY"
+        "finding_A": "GUILTY",
+        "pun_forfeiture": "imposed",
+        "pun_forfeiture_detail": "1589",
+        "pun_extra_duties": "imposed",
+        "pun_extra_duties_detail": "7",
+        "pun_forfeiture_susp": "yes",
+        "pun_restriction": "imposed",
+        "pun_restriction_susp": "yes",
+        "pun_restriction_detail": "7",
+        "susp_months": "6"
       },
       "appealAuthority": "Commanding Officer, 1st Bn, 5th Marines",
       "appellateRightsReader": "",
       "completed": false,
       "lastUpdatedBy": "user-admin",
       "lastUpdatedByName": "admin",
-      "lastUpdatedAt": "2026-03-24T00:08:00.621Z"
+      "lastUpdatedAt": "2026-03-24T00:08:48.577Z"
     },
     "item21Entries": [],
     "signatures": [
