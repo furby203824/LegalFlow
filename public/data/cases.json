@@ -721,7 +721,7 @@
         "offenseDate": "2026-03-04",
         "offenseTime": "09:46",
         "offensePlace": "Co A, HQBN",
-        "finding": null,
+        "finding": "GUILTY",
         "locked": true
       }
     ],
@@ -841,7 +841,7 @@
     "isOverdue": false,
     "caseNumber": "CASE-2026-0007",
     "status": "RIGHTS_ADVISED",
-    "currentPhase": "RIGHTS_ADVISEMENT",
+    "currentPhase": "HEARING",
     "unitId": "unit-1bn5mar",
     "unitFullString": "1st Bn, 5th Marines",
     "accusedName": "Nelson, Megan B",
