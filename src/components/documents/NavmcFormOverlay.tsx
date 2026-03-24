@@ -224,7 +224,7 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
 
   // Item 16
   vals["16 FINAL ADMIN UD"] = caseData.item16UdNumber || "";
-  vals["16 FINAL ADMIN DTD"] = caseData.item16Dtd || "";
+  vals["16 FINAL ADMIN DTD"] = caseData.item16Dtd ? fmtStandard(caseData.item16Dtd) : "";
 
   // Item 21: Remarks
   const remarks = (caseData.item21Entries || [])
@@ -465,6 +465,7 @@ function FormPage({
         }
 
         const isTextArea = field.h > 100;
+        const isDate = field.type === "date";
 
         return (
           <div
@@ -483,7 +484,11 @@ function FormPage({
             ) : (
               <div
                 className="w-full h-full flex items-center truncate"
-                style={{ ...textStyle, padding: "0 2px" }}
+                style={{
+                  ...textStyle,
+                  padding: "0 2px",
+                  ...(isDate ? { textAlign: "center", justifyContent: "center" } : {}),
+                }}
               >
                   {value || ""}
                 </div>
