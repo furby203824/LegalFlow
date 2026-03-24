@@ -92,9 +92,9 @@
   {
     "id": "user-bn-reviewer",
     "createdAt": "2026-03-23T00:00:00.000Z",
-    "updatedAt": "2026-03-23T00:00:00.000Z",
+    "updatedAt": "2026-03-24T00:11:41.901Z",
     "isActive": true,
-    "lastLogin": null,
+    "lastLogin": "2026-03-24T00:11:41.901Z",
     "username": "bn-reviewer",
     "passwordHash": "bn-reviewer",
     "firstName": "Lisa",
