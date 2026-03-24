@@ -340,12 +340,12 @@ export async function performPhaseAction(caseId: string, action: string, data: R
     }
 
     case "SIGN_ITEM_14": {
-      const { outcome, outcomeDetail, authorityName: authName, authorityRank: authRank, item15Date } = data;
+      const { outcome, outcomeDetail, authorityName: authName, authorityRank: authRank, item14Date, item15Date } = data;
       await createSignature("14", authName || u.username);
       await casesStore.upsertAppeal(caseId, {
         appealAuthorityName: authName,
         appealAuthorityRank: authRank,
-        appealAuthoritySignedDate: new Date().toISOString().split("T")[0],
+        appealAuthoritySignedDate: (item14Date as string) || new Date().toISOString().split("T")[0],
         appealOutcome: outcome,
         appealOutcomeDetail: outcomeDetail || null,
         appealDecisionNoticeDate: item15Date,
