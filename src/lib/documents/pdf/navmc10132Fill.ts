@@ -49,9 +49,13 @@ function matchArticleOption(
   offenseType: string,
   options: string[]
 ): string {
+  // New format: ucmjArticle is the full PDF option string (e.g. "Art. 86  Absence without leave")
+  if (options.includes(ucmjArticle)) return ucmjArticle;
+
+  // Legacy format: ucmjArticle is just the number (e.g. "86")
   const artPrefix = `Art. ${ucmjArticle}`;
 
-  // Try exact match with offense type first
+  // Try match with offense type
   if (offenseType) {
     const typeNorm = offenseType.toLowerCase();
     const exact = options.find((o) => {
@@ -65,7 +69,6 @@ function matchArticleOption(
   const artMatch = options.find((o) => o.startsWith(artPrefix));
   if (artMatch) return artMatch;
 
-  // No match — return empty
   return "";
 }
 
@@ -359,7 +362,7 @@ export async function fillNavmc10132Pdf(
       data.njpAuthorityTitle || "",
     ].filter(Boolean).join(", ");
     setText(form, "8 NJP AUTHORITY NAME TITLE SERVICE", authParts);
-    setText(form, "8A NJP AUTHORITY GRADE", data.njpAuthorityGrade || "");
+    setText(form, "8A NJP AUTHORITY GRADE", [data.njpAuthorityRank, data.njpAuthorityGrade].filter(Boolean).join("/") || "");
     if (data.njpAuthorityEdipi) {
       setText(form, "8B NJP AUTHORITY EDIPI", data.njpAuthorityEdipi);
     }

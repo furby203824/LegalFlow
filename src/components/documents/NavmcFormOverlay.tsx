@@ -123,6 +123,11 @@ const FIELD_DEFS: FieldDef[] = [
 
 // Fields with centered text alignment (matching PDF Q=1)
 const CENTERED_FIELDS = new Set([
+  "1A FINDING",
+  "1B FINDING",
+  "1C FINDING",
+  "1D FINDING",
+  "1E FINDING",
   "8A NJP AUTHORITY GRADE",
   "8B NJP AUTHORITY EDIPI",
   "19 ACCUSED RANK/GRADE",
@@ -152,7 +157,7 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
   const letters = ["A", "B", "C", "D", "E"];
   for (let i = 0; i < Math.min(offenses.length, 5); i++) {
     const o = offenses[i];
-    vals[`1${letters[i]} ARTICLE`] = o.ucmjArticle ? `Art. ${o.ucmjArticle}` : "";
+    vals[`1${letters[i]} ARTICLE`] = o.ucmjArticle || "";
     vals[`1${letters[i]} SUMMARY`] = o.shortDescription || o.summary || "";
     vals[`1${letters[i]} FINDING`] = o.finding === "GUILTY" ? "G" : o.finding === "NOT_GUILTY" ? "NG" : "";
   }
@@ -204,7 +209,7 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
     caseData.njpAuthorityName,
     caseData.njpAuthorityTitle,
   ].filter(Boolean).join(", ") || "";
-  vals["8A NJP AUTHORITY GRADE"] = caseData.njpAuthorityGrade || "";
+  vals["8A NJP AUTHORITY GRADE"] = [caseData.njpAuthorityRank, caseData.njpAuthorityGrade].filter(Boolean).join("/") || "";
   vals["8B NJP AUTHORITY EDIPI"] = caseData.njpAuthorityEdipi || "";
 
   // Item 10: Notice date

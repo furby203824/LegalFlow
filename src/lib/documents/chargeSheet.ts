@@ -49,9 +49,9 @@ export function generateChargeSheet(data: CaseData): string {
 
   for (const offense of data.offenses) {
     lines.push(
-      `  Charge ${offense.letter}: Violation of UCMJ Article ${offense.ucmjArticle}`
+      `  Charge ${offense.letter}: Violation of UCMJ ${offense.ucmjArticle}`
     );
-    lines.push(`    Offense Type: ${offense.offenseType}`);
+    lines.push(`    Offense Type: ${offense.offenseType || ""}`);
     lines.push(`    Date: ${fmtFull(offense.offenseDate)}${offense.offenseTime ? ` at ${offense.offenseTime}` : ""}`);
     if (offense.fromDate && offense.toDate && offense.fromDate !== offense.toDate) {
       lines.push(`    Through: ${fmtFull(offense.toDate)}${offense.toTime ? ` at ${offense.toTime}` : ""}`);

@@ -40,7 +40,7 @@ export function generateNavmc10132(
   // Item 1: Offenses (all versions)
   lines.push("ITEM 1: OFFENSES");
   for (const offense of data.offenses) {
-    let offenseLine = `  ${offense.letter}. Article ${offense.ucmjArticle} - ${offense.offenseType}`;
+    let offenseLine = `  ${offense.letter}. ${offense.ucmjArticle}`;
     if (version !== "PARTIAL" && offense.finding) {
       offenseLine += ` [${offense.finding}]`;
     }
@@ -129,7 +129,7 @@ export function generateNavmc10132(
     lines.push("ITEM 5: FINDINGS");
     for (const offense of data.offenses) {
       const finding = offense.finding === "G" ? "GUILTY" : offense.finding === "NG" ? "NOT GUILTY" : "PENDING";
-      lines.push(`  ${offense.letter}. Article ${offense.ucmjArticle}: ${finding}`);
+      lines.push(`  ${offense.letter}. ${offense.ucmjArticle}: ${finding}`);
     }
     lines.push("");
 
