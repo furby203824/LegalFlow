@@ -1439,5 +1439,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated PDF: navmc_10132_pdf"
+  },
+  {
+    "id": "audit-1774391230764-ev35i",
+    "timestamp": "2026-03-24T22:27:10.764Z",
+    "caseId": "case-1774381671908-9ib50",
+    "caseNumber": "CASE-2026-0007",
+    "userId": "user-admin",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "UPDATE",
+    "notes": "Hearing record updated: step 16"
   }
 ]
