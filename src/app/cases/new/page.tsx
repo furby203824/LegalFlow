@@ -481,29 +481,29 @@ export default function NewCasePage() {
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="UCMJ Article" required>
-                    <select className="input-field" value={o.ucmjArticle} onChange={(e) => { const art = e.target.value; updateOffense(oi, "ucmjArticle", art, { offenseType: UCMJ_ARTICLE_NAMES[art] || "", ...(art === "85" || art === "86" ? { hasDuration: true } : {}) }); }} required>
+                    <select className="input-underline" value={o.ucmjArticle} onChange={(e) => { const art = e.target.value; updateOffense(oi, "ucmjArticle", art, { offenseType: UCMJ_ARTICLE_NAMES[art] || "", ...(art === "85" || art === "86" ? { hasDuration: true } : {}) }); }} required>
                       <option value="">Select article</option>
                       {UCMJ_ARTICLES.map((a) => <option key={a} value={a}>Art. {a} — {UCMJ_ARTICLE_NAMES[a] || a}</option>)}
                     </select>
                   </Field>
                   <Field label="Offense Type" required>
-                    <input className="input-field" value={o.offenseType} onChange={(e) => updateOffense(oi, "offenseType", e.target.value)} required readOnly />
+                    <input className="input-underline" value={o.offenseType} onChange={(e) => updateOffense(oi, "offenseType", e.target.value)} required readOnly />
                   </Field>
 
                   {/* Date/Time — single or FROM/TO range based on hasDuration toggle */}
                   {o.hasDuration ? (
                     <>
                       <Field label="FROM Date" required>
-                        <input type="date" className="input-field" value={o.fromDate} onChange={(e) => updateOffense(oi, "fromDate", e.target.value)} required />
+                        <input type="date" className="input-underline" value={o.fromDate} onChange={(e) => updateOffense(oi, "fromDate", e.target.value)} required />
                       </Field>
                       <Field label="FROM Time" required>
-                        <input type="time" className="input-field" value={o.fromTime} onChange={(e) => updateOffense(oi, "fromTime", e.target.value)} required />
+                        <input type="time" className="input-underline" value={o.fromTime} onChange={(e) => updateOffense(oi, "fromTime", e.target.value)} required />
                       </Field>
                       <Field label="TO Date" required>
-                        <input type="date" className="input-field" value={o.toDate} onChange={(e) => updateOffense(oi, "toDate", e.target.value)} required />
+                        <input type="date" className="input-underline" value={o.toDate} onChange={(e) => updateOffense(oi, "toDate", e.target.value)} required />
                       </Field>
                       <Field label="TO Time" required>
-                        <input type="time" className="input-field" value={o.toTime} onChange={(e) => updateOffense(oi, "toTime", e.target.value)} required />
+                        <input type="time" className="input-underline" value={o.toTime} onChange={(e) => updateOffense(oi, "toTime", e.target.value)} required />
                       </Field>
                       {/* Duration display */}
                       {(() => {
@@ -529,10 +529,10 @@ export default function NewCasePage() {
                   ) : (
                     <>
                       <Field label="Date" required>
-                        <input type="date" className="input-field" value={o.offenseDate} onChange={(e) => updateOffense(oi, "offenseDate", e.target.value)} required />
+                        <input type="date" className="input-underline" value={o.offenseDate} onChange={(e) => updateOffense(oi, "offenseDate", e.target.value)} required />
                       </Field>
                       <Field label="Time" required>
-                        <input type="time" className="input-field" value={o.offenseTime} onChange={(e) => updateOffense(oi, "offenseTime", e.target.value)} required />
+                        <input type="time" className="input-underline" value={o.offenseTime} onChange={(e) => updateOffense(oi, "offenseTime", e.target.value)} required />
                       </Field>
                       <div className="sm:col-span-2">
                         <button type="button" onClick={() => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { hasDuration: true, fromDate: o.offenseDate, fromTime: o.offenseTime })} className="text-xs text-primary hover:underline">
@@ -543,11 +543,11 @@ export default function NewCasePage() {
                   )}
 
                   <Field label="Place" required>
-                    <input className="input-field" value={o.offensePlace} onChange={(e) => updateOffense(oi, "offensePlace", e.target.value)} required placeholder="Unit and installation (e.g., Co A, 1st Bn, 7th Mar, MCB Camp Pendleton)" />
+                    <input className="input-underline" value={o.offensePlace} onChange={(e) => updateOffense(oi, "offensePlace", e.target.value)} required placeholder="Unit and installation (e.g., Co A, 1st Bn, 7th Mar, MCB Camp Pendleton)" />
                   </Field>
                   <div className="sm:col-span-2">
                     <Field label="Summary" required>
-                      <textarea className="input-field h-16" value={o.summary} onChange={(e) => updateOffense(oi, "summary", e.target.value)} required />
+                      <textarea className="input-underline h-16" value={o.summary} onChange={(e) => updateOffense(oi, "summary", e.target.value)} required />
                     </Field>
                   </div>
                 </div>
@@ -582,16 +582,16 @@ export default function NewCasePage() {
                   </div>
                   {o.victims.map((v, vi) => (
                     <div key={vi} className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
-                      <select className="input-field text-xs" value={v.status} onChange={(e) => updateVictim(oi, vi, "status", e.target.value)}>
+                      <select className="input-underline text-xs" value={v.status} onChange={(e) => updateVictim(oi, vi, "status", e.target.value)}>
                         {VICTIM_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
-                      <select className="input-field text-xs" value={v.sex} onChange={(e) => updateVictim(oi, vi, "sex", e.target.value)}>
+                      <select className="input-underline text-xs" value={v.sex} onChange={(e) => updateVictim(oi, vi, "sex", e.target.value)}>
                         {VICTIM_SEXES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
-                      <select className="input-field text-xs" value={v.race} onChange={(e) => updateVictim(oi, vi, "race", e.target.value)}>
+                      <select className="input-underline text-xs" value={v.race} onChange={(e) => updateVictim(oi, vi, "race", e.target.value)}>
                         {VICTIM_RACES.map((r) => <option key={r} value={r}>{r}</option>)}
                       </select>
-                      <select className="input-field text-xs" value={v.ethnicity} onChange={(e) => updateVictim(oi, vi, "ethnicity", e.target.value)}>
+                      <select className="input-underline text-xs" value={v.ethnicity} onChange={(e) => updateVictim(oi, vi, "ethnicity", e.target.value)}>
                         {VICTIM_ETHNICITIES.map((et) => <option key={et} value={et}>{et}</option>)}
                       </select>
                     </div>
