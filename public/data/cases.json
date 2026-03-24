@@ -1561,6 +1561,19 @@
         "distributionOmpf": false,
         "distributionFiles": false,
         "distributionMember": false
+      },
+      {
+        "id": "doc-1774311060823-fv1sx",
+        "documentVersion": 1,
+        "isCurrent": true,
+        "createdAt": "2026-03-24T00:11:00.823Z",
+        "documentType": "APPEAL_RIGHTS_ACK",
+        "generatedById": "user-co-preparer",
+        "generatedAt": "2026-03-24T00:11:00.823Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
       }
     ],
     "remedialActions": [],
