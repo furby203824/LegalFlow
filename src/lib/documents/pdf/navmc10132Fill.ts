@@ -430,7 +430,15 @@ export async function fillNavmc10132Pdf(
   }
 
   // ═══ Booker statement (Item 2 area) ═══
-  // The template has a pre-filled booker text; leave it as-is
+  if (version !== "PARTIAL") {
+    if (data.vesselException) {
+      setText(form, "2 BOOKER", "(No Booker statement due to the vessel exception, United States v. Mack, 9 M.J. 300, 320 (C.M.A. 1980).)");
+    } else if (data.item2ElectionAccepted === true) {
+      setText(form, "2 BOOKER", "BOOKER STATEMENT: Having been advised of the above and fully understanding my rights, I choose to accept NJP.");
+    } else if (data.item2ElectionAccepted === false) {
+      setText(form, "2 BOOKER", "(No Booker statement due to refusal of NJP.)");
+    }
+  }
 
   // Flatten form to prevent further editing (for FINAL version)
   // Flattening converts form fields to static text, removing field boxes

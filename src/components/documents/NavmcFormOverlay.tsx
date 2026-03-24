@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { punishmentAbbreviated } from "@/lib/documents/punishmentText";
 import { fmtStandard, fmtISO } from "@/lib/documents/dateFormatters";
 import { buildPunishmentList } from "@/services/documents";
+import { PDFDocument } from "pdf-lib";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CaseData = any;
@@ -157,11 +158,16 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
     vals[`1${letters[i]} FINDING`] = o.finding === "GUILTY" ? "G" : o.finding === "NOT_GUILTY" ? "NG" : "";
   }
 
-  // Item 2: Election
-  if (caseData.item2ElectionAccepted === true) {
-    vals["2 DEMAND"] = "Accept NJP";
+  // Item 2: Election — use exact PDF dropdown values
+  if (caseData.vesselException) {
+    vals["2 DEMAND"] = "I cannot demand trial because I am attached to or embarked upon a vessel.";
+    vals["2 BOOKER"] = "(No Booker statement due to the vessel exception, United States v. Mack, 9 M.J. 300, 320 (C.M.A. 1980).)";
+  } else if (caseData.item2ElectionAccepted === true) {
+    vals["2 DEMAND"] = "I do not demand trial and will accept non-judicial punishment, subject to my right of appeal.";
+    vals["2 BOOKER"] = "BOOKER STATEMENT: Having been advised of the above and fully understanding my rights, I choose to accept NJP.";
   } else if (caseData.item2ElectionAccepted === false) {
-    vals["2 DEMAND"] = "Demand Trial";
+    vals["2 DEMAND"] = "I demand trial and refuse non-judicial punishment.";
+    vals["2 BOOKER"] = "(No Booker statement due to refusal of NJP.)";
   }
   vals["2 COUNSELOPP"] = caseData.item2CounselConsulted ? "have" : "";
   vals["2 ACC ELECTION AND RIGHTS DATE_af_date"] = caseData.signatures?.["2"]?.signedDate ? fmtISO(caseData.signatures["2"].signedDate) : "";
@@ -504,4 +510,116 @@ function FormPage({
         })}
     </div>
   );
+}
+
+/* ── Generate PDF with overlay text baked into page images ── */
+
+export async function generateOverlayPdf(
+  caseData: CaseData,
+  basePath: string = process.env.NEXT_PUBLIC_BASE_PATH || "/LegalFlow"
+): Promise<{ pdfBytes: Uint8Array; filename: string }> {
+  const pdfUrl = `${basePath}/forms/NAVMC_10132.pdf`;
+  const fieldValues = mapCaseToFieldValues(caseData);
+  const PDF_FONT_PT = 8;
+  const SCALE = 2; // render at 2x for crisp text
+
+  // Load and render PDF pages with pdfjs
+  const pdfjsLib = await import("pdfjs-dist");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `${basePath}/pdf.worker.min.mjs`;
+  const pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+
+  const pageCanvases: HTMLCanvasElement[] = [];
+
+  for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale: SCALE });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext("2d")!;
+
+    // Render the PDF page background
+    await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+
+    // Draw overlay text for this page's fields
+    const pageIndex = pageNum - 1;
+    const pageFields = FIELD_DEFS.filter((f) => f.page === pageIndex);
+    const scaledFontPx = (PDF_FONT_PT / PAGE_H) * viewport.height;
+
+    ctx.font = `${scaledFontPx}px Arial, Helvetica, sans-serif`;
+    ctx.fillStyle = "#000";
+
+    for (const field of pageFields) {
+      const value = fieldValues[field.name] || "";
+      if (!value) continue;
+
+      // Convert PDF coords (bottom-left) to canvas coords (top-left, scaled)
+      const absH = Math.abs(field.h);
+      const canvasX = (field.x / PAGE_W) * viewport.width;
+      const canvasY = ((PAGE_H - field.y - absH) / PAGE_H) * viewport.height;
+      const canvasW = (field.w / PAGE_W) * viewport.width;
+      const canvasH = (absH / PAGE_H) * viewport.height;
+
+      if (field.type === "checkbox") {
+        if (value) {
+          ctx.font = `bold ${scaledFontPx}px Arial, Helvetica, sans-serif`;
+          const textW = ctx.measureText("X").width;
+          ctx.fillText("X", canvasX + (canvasW - textW) / 2, canvasY + canvasH * 0.75);
+          ctx.font = `${scaledFontPx}px Arial, Helvetica, sans-serif`;
+        }
+        continue;
+      }
+
+      const isTextArea = field.h > 100;
+      const isCentered = field.type === "date" || CENTERED_FIELDS.has(field.name);
+
+      if (isTextArea) {
+        // Simple multi-line rendering
+        const lines = value.split("\n");
+        const lineHeight = scaledFontPx * 1.2;
+        let y = canvasY + scaledFontPx;
+        for (const line of lines) {
+          if (y > canvasY + canvasH) break;
+          ctx.fillText(line, canvasX + 2, y, canvasW - 4);
+          y += lineHeight;
+        }
+      } else {
+        // Single line
+        const textY = canvasY + canvasH * 0.7;
+        if (isCentered) {
+          const textW = ctx.measureText(value).width;
+          ctx.fillText(value, canvasX + (canvasW - textW) / 2, textY, canvasW);
+        } else {
+          ctx.fillText(value, canvasX + 2, textY, canvasW - 4);
+        }
+      }
+    }
+
+    pageCanvases.push(canvas);
+  }
+
+  // Build PDF from canvas images using pdf-lib
+  const outPdf = await PDFDocument.create();
+
+  for (const canvas of pageCanvases) {
+    const pngDataUrl = canvas.toDataURL("image/png");
+    const pngBase64 = pngDataUrl.split(",")[1];
+    const pngBytes = Uint8Array.from(atob(pngBase64), (c) => c.charCodeAt(0));
+    const pngImage = await outPdf.embedPng(pngBytes);
+
+    const page = outPdf.addPage([PAGE_W, PAGE_H]);
+    page.drawImage(pngImage, {
+      x: 0,
+      y: 0,
+      width: PAGE_W,
+      height: PAGE_H,
+    });
+  }
+
+  const pdfBytes = await outPdf.save();
+  const caseNumber = caseData.caseNumber || caseData.id;
+  const filename = `CASE-${caseNumber}_NAVMC_10132_FINAL.pdf`;
+
+  return { pdfBytes: new Uint8Array(pdfBytes), filename };
 }
