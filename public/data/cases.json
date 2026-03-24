@@ -2138,7 +2138,7 @@
         "offenseTime": "09:46",
         "offensePlace": "Co A, HQBN",
         "finding": null,
-        "locked": false
+        "locked": true
       }
     ],
     "victims": [
@@ -2150,7 +2150,7 @@
         "victimSex": "Unknown",
         "victimRace": "Unknown",
         "victimEthnicity": "Unknown",
-        "locked": false
+        "locked": true
       }
     ],
     "punishment": null,
