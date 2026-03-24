@@ -931,7 +931,7 @@
     "isOverdue": false,
     "caseNumber": "CASE-2026-0007",
     "status": "PUNISHMENT_IMPOSED",
-    "currentPhase": "HEARING",
+    "currentPhase": "NOTIFICATION",
     "unitId": "unit-1bn5mar",
     "unitFullString": "1st Bn, 5th Marines",
     "accusedName": "Nelson, Megan B",
@@ -967,7 +967,8 @@
     "njpAuthorityUnit": "1st Bn, 5th Marines",
     "njpAuthorityRank": "",
     "njpAuthorityGrade": "",
-    "njpAuthorityEdipi": ""
+    "njpAuthorityEdipi": "",
+    "dateNoticeToAccused": "2026-03-24"
   },
   {
     "id": "case-1774223160076-5vamv",
