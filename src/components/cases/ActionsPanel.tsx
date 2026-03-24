@@ -10,7 +10,7 @@ import {
 import { performPhaseAction } from "@/services/api";
 import { generatePdfDocument } from "@/services/documents";
 import PdfViewer from "@/components/documents/PdfViewer";
-import NavmcFormOverlay from "@/components/documents/NavmcFormOverlay";
+import NavmcFormOverlay, { generateOverlayPdf } from "@/components/documents/NavmcFormOverlay";
 import HearingGuidePanel from "@/components/cases/HearingGuidePanel";
 import { getSession } from "@/lib/auth";
 import { getAppealAuthorityLabel } from "@/lib/units";
@@ -1382,8 +1382,8 @@ function AdminClosureAction({ caseData, loading, onSubmit }: { caseData: CaseDat
   async function handleGenerate() {
     setGenerating(true);
     try {
-      // Generate PDF for download/print only — preview uses NavmcFormOverlay
-      const result = await generatePdfDocument(caseData.id, "navmc_10132_pdf");
+      // Generate PDF with overlay text baked into page images — matches displayed preview
+      const result = await generateOverlayPdf(caseData);
       const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
