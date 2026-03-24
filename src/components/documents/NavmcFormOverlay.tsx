@@ -158,11 +158,16 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
     vals[`1${letters[i]} FINDING`] = o.finding === "GUILTY" ? "G" : o.finding === "NOT_GUILTY" ? "NG" : "";
   }
 
-  // Item 2: Election
-  if (caseData.item2ElectionAccepted === true) {
-    vals["2 DEMAND"] = "Accept NJP";
+  // Item 2: Election — use exact PDF dropdown values
+  if (caseData.vesselException) {
+    vals["2 DEMAND"] = "I cannot demand trial because I am attached to or embarked upon a vessel.";
+    vals["2 BOOKER"] = "(No Booker statement due to the vessel exception, United States v. Mack, 9 M.J. 300, 320 (C.M.A. 1980).)";
+  } else if (caseData.item2ElectionAccepted === true) {
+    vals["2 DEMAND"] = "I do not demand trial and will accept non-judicial punishment, subject to my right of appeal.";
+    vals["2 BOOKER"] = "BOOKER STATEMENT: Having been advised of the above and fully understanding my rights, I choose to accept NJP.";
   } else if (caseData.item2ElectionAccepted === false) {
-    vals["2 DEMAND"] = "Demand Trial";
+    vals["2 DEMAND"] = "I demand trial and refuse non-judicial punishment.";
+    vals["2 BOOKER"] = "(No Booker statement due to refusal of NJP.)";
   }
   vals["2 COUNSELOPP"] = caseData.item2CounselConsulted ? "have" : "";
   vals["2 ACC ELECTION AND RIGHTS DATE_af_date"] = caseData.signatures?.["2"]?.signedDate ? fmtISO(caseData.signatures["2"].signedDate) : "";
