@@ -425,7 +425,7 @@
       {
         "id": "doc-1774327265303-v67uc",
         "documentVersion": 17,
-        "isCurrent": true,
+        "isCurrent": false,
         "createdAt": "2026-03-24T04:41:05.303Z",
         "documentType": "NAVMC_10132_PDF",
         "generatedById": "user-admin",
@@ -433,7 +433,8 @@
         "distributionEsrb": false,
         "distributionOmpf": false,
         "distributionFiles": false,
-        "distributionMember": false
+        "distributionMember": false,
+        "supersededById": "doc-1774381621120-w4wjx"
       },
       {
         "id": "doc-1774328470722-lfbwb",
@@ -470,6 +471,19 @@
         "documentType": "NAVMC_10132_MEMBER",
         "generatedById": "user-admin",
         "generatedAt": "2026-03-24T05:01:12.979Z"
+      },
+      {
+        "id": "doc-1774381621120-w4wjx",
+        "documentVersion": 18,
+        "isCurrent": true,
+        "createdAt": "2026-03-24T19:47:01.120Z",
+        "documentType": "NAVMC_10132_PDF",
+        "generatedById": "user-admin",
+        "generatedAt": "2026-03-24T19:47:01.120Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
       }
     ],
     "remedialActions": [],
@@ -542,6 +556,156 @@
     "item16UdNumber": "123245",
     "item16Dtd": "2026-03-23",
     "caseFinalDate": "2026-03-24"
+  },
+  {
+    "id": "case-1774328691514-qshsr",
+    "createdAt": "2026-03-24",
+    "updatedAt": "2026-03-24",
+    "offenses": [
+      {
+        "id": "off-1774328690369-A",
+        "offenseLetter": "A",
+        "ucmjArticle": "Art. 90  Willfully disobeying sup. comm. officer",
+        "offenseType": "Willfully disobeying sup. comm. officer",
+        "offenseSummary": "He did things at places",
+        "offenseDate": "2026-03-02",
+        "offenseTime": "19:04",
+        "offensePlace": "MCBH",
+        "finding": null,
+        "locked": false
+      },
+      {
+        "id": "off-1774328690369-B",
+        "offenseLetter": "B",
+        "ucmjArticle": "Art. 95  Sleeping on post",
+        "offenseType": "Sleeping on post",
+        "offenseSummary": "Found sleeping on post.",
+        "offenseDate": "2026-03-03",
+        "offenseTime": "19:05",
+        "offensePlace": "Bks 2754",
+        "finding": null,
+        "locked": false
+      },
+      {
+        "id": "off-1774328690369-C",
+        "offenseLetter": "C",
+        "ucmjArticle": "Art. 92  Viol. ALNAV 074/20 (Hemp Use)",
+        "offenseType": "Viol. ALNAV 074/20 (Hemp Use)",
+        "offenseSummary": "Found to be using hemp scream. ",
+        "offenseDate": "2026-03-03",
+        "offenseTime": "22:04",
+        "offensePlace": "Bks 2754",
+        "finding": null,
+        "locked": false
+      }
+    ],
+    "victims": [
+      {
+        "id": "v-1774328690370-A",
+        "offenseId": "off-1774328690369-A",
+        "victimLetter": "A",
+        "victimStatus": "Unknown",
+        "victimSex": "Unknown",
+        "victimRace": "Unknown",
+        "victimEthnicity": "Unknown",
+        "locked": false
+      },
+      {
+        "id": "v-1774328690370-B",
+        "offenseId": "off-1774328690369-B",
+        "victimLetter": "B",
+        "victimStatus": "Unknown",
+        "victimSex": "Unknown",
+        "victimRace": "Unknown",
+        "victimEthnicity": "Unknown",
+        "locked": false
+      },
+      {
+        "id": "v-1774328690370-C",
+        "offenseId": "off-1774328690369-C",
+        "victimLetter": "C",
+        "victimStatus": "Unknown",
+        "victimSex": "Unknown",
+        "victimRace": "Unknown",
+        "victimEthnicity": "Unknown",
+        "locked": false
+      }
+    ],
+    "punishment": null,
+    "appeal": null,
+    "chargeSheet": null,
+    "hearingRecord": null,
+    "item21Entries": [],
+    "signatures": [
+      {
+        "id": "sig-1774328820255-jwoqx",
+        "createdAt": "2026-03-24T05:07:00.255Z",
+        "itemNumber": "2",
+        "signerRole": "SUITE_ADMIN",
+        "signerUserId": "user-admin",
+        "signerName": "CO",
+        "signedDate": "2026-03-24",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": true,
+        "coSignedInstead": true
+      }
+    ],
+    "evidence": [],
+    "documents": [
+      {
+        "id": "doc-1774328775798-l7ca0",
+        "documentVersion": 1,
+        "isCurrent": true,
+        "createdAt": "2026-03-24T05:06:15.798Z",
+        "documentType": "NOTIFICATION_ELECTION_RIGHTS",
+        "generatedById": "user-admin",
+        "generatedAt": "2026-03-24T05:06:15.798Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
+      }
+    ],
+    "remedialActions": [],
+    "vacationRecordsAsParent": [],
+    "flags": [],
+    "daysOpen": 0,
+    "nextAction": "Complete Item 2 - Rights advisement",
+    "nextActionOwner": "ACCUSED",
+    "isOverdue": false,
+    "caseNumber": "CASE-2026-0006",
+    "status": "REFERRED_COURT_MARTIAL",
+    "currentPhase": "RIGHTS_ADVISEMENT",
+    "unitId": "unit-1bn5mar",
+    "unitFullString": "1st Bn, 5th Marines",
+    "accusedName": "Thompson, Andrew Michael",
+    "accusedLastName": "Thompson",
+    "accusedFirstName": "Andrew",
+    "accusedMiddleName": "Michael",
+    "accusedRank": "GySgt",
+    "accusedGrade": "E7",
+    "accusedEdipi": "9505550092",
+    "accusedDateOfBirth": "1989-10-06",
+    "accusedAfadbd": "2012-06-22",
+    "accusedServiceBranch": "USMC",
+    "component": "ACTIVE",
+    "vesselException": false,
+    "commanderGradeLevel": "FIELD_GRADE_AND_ABOVE",
+    "jurisdictionConfirmed": true,
+    "uaApplicable": false,
+    "offenseDateEarliest": "2026-03-02",
+    "formLocked": false,
+    "jaReviewRequired": false,
+    "jaReviewComplete": false,
+    "njpDate": null,
+    "appealNotFiled": false,
+    "accusedTransferred": false,
+    "initiatedById": "user-admin",
+    "rightsAcknowledgement": {
+      "id": "ra-1774328812128-yvfeq",
+      "acknowledged": true,
+      "acknowledgedAt": "2026-03-24T05:06:52.128Z"
+    }
   },
   {
     "id": "case-1774223160076-5vamv",
@@ -1958,155 +2122,5 @@
     "njpAuthorityEdipi": "3456789012",
     "dateNoticeToAccused": "2026-03-23",
     "appealFiledDate": "2026-03-23"
-  },
-  {
-    "id": "case-1774328691514-qshsr",
-    "createdAt": "2026-03-24",
-    "updatedAt": "2026-03-24",
-    "offenses": [
-      {
-        "id": "off-1774328690369-A",
-        "offenseLetter": "A",
-        "ucmjArticle": "Art. 90  Willfully disobeying sup. comm. officer",
-        "offenseType": "Willfully disobeying sup. comm. officer",
-        "offenseSummary": "He did things at places",
-        "offenseDate": "2026-03-02",
-        "offenseTime": "19:04",
-        "offensePlace": "MCBH",
-        "finding": null,
-        "locked": false
-      },
-      {
-        "id": "off-1774328690369-B",
-        "offenseLetter": "B",
-        "ucmjArticle": "Art. 95  Sleeping on post",
-        "offenseType": "Sleeping on post",
-        "offenseSummary": "Found sleeping on post.",
-        "offenseDate": "2026-03-03",
-        "offenseTime": "19:05",
-        "offensePlace": "Bks 2754",
-        "finding": null,
-        "locked": false
-      },
-      {
-        "id": "off-1774328690369-C",
-        "offenseLetter": "C",
-        "ucmjArticle": "Art. 92  Viol. ALNAV 074/20 (Hemp Use)",
-        "offenseType": "Viol. ALNAV 074/20 (Hemp Use)",
-        "offenseSummary": "Found to be using hemp scream. ",
-        "offenseDate": "2026-03-03",
-        "offenseTime": "22:04",
-        "offensePlace": "Bks 2754",
-        "finding": null,
-        "locked": false
-      }
-    ],
-    "victims": [
-      {
-        "id": "v-1774328690370-A",
-        "offenseId": "off-1774328690369-A",
-        "victimLetter": "A",
-        "victimStatus": "Unknown",
-        "victimSex": "Unknown",
-        "victimRace": "Unknown",
-        "victimEthnicity": "Unknown",
-        "locked": false
-      },
-      {
-        "id": "v-1774328690370-B",
-        "offenseId": "off-1774328690369-B",
-        "victimLetter": "B",
-        "victimStatus": "Unknown",
-        "victimSex": "Unknown",
-        "victimRace": "Unknown",
-        "victimEthnicity": "Unknown",
-        "locked": false
-      },
-      {
-        "id": "v-1774328690370-C",
-        "offenseId": "off-1774328690369-C",
-        "victimLetter": "C",
-        "victimStatus": "Unknown",
-        "victimSex": "Unknown",
-        "victimRace": "Unknown",
-        "victimEthnicity": "Unknown",
-        "locked": false
-      }
-    ],
-    "punishment": null,
-    "appeal": null,
-    "chargeSheet": null,
-    "hearingRecord": null,
-    "item21Entries": [],
-    "signatures": [
-      {
-        "id": "sig-1774328820255-jwoqx",
-        "createdAt": "2026-03-24T05:07:00.255Z",
-        "itemNumber": "2",
-        "signerRole": "SUITE_ADMIN",
-        "signerUserId": "user-admin",
-        "signerName": "CO",
-        "signedDate": "2026-03-24",
-        "signatureMethod": "ELECTRONIC",
-        "refusalNoted": true,
-        "coSignedInstead": true
-      }
-    ],
-    "evidence": [],
-    "documents": [
-      {
-        "id": "doc-1774328775798-l7ca0",
-        "documentVersion": 1,
-        "isCurrent": true,
-        "createdAt": "2026-03-24T05:06:15.798Z",
-        "documentType": "NOTIFICATION_ELECTION_RIGHTS",
-        "generatedById": "user-admin",
-        "generatedAt": "2026-03-24T05:06:15.798Z",
-        "distributionEsrb": false,
-        "distributionOmpf": false,
-        "distributionFiles": false,
-        "distributionMember": false
-      }
-    ],
-    "remedialActions": [],
-    "vacationRecordsAsParent": [],
-    "flags": [],
-    "daysOpen": 0,
-    "nextAction": "Complete Item 2 - Rights advisement",
-    "nextActionOwner": "ACCUSED",
-    "isOverdue": false,
-    "caseNumber": "CASE-2026-0006",
-    "status": "REFERRED_COURT_MARTIAL",
-    "currentPhase": "RIGHTS_ADVISEMENT",
-    "unitId": "unit-1bn5mar",
-    "unitFullString": "1st Bn, 5th Marines",
-    "accusedName": "Thompson, Andrew Michael",
-    "accusedLastName": "Thompson",
-    "accusedFirstName": "Andrew",
-    "accusedMiddleName": "Michael",
-    "accusedRank": "GySgt",
-    "accusedGrade": "E7",
-    "accusedEdipi": "9505550092",
-    "accusedDateOfBirth": "1989-10-06",
-    "accusedAfadbd": "2012-06-22",
-    "accusedServiceBranch": "USMC",
-    "component": "ACTIVE",
-    "vesselException": false,
-    "commanderGradeLevel": "FIELD_GRADE_AND_ABOVE",
-    "jurisdictionConfirmed": true,
-    "uaApplicable": false,
-    "offenseDateEarliest": "2026-03-02",
-    "formLocked": false,
-    "jaReviewRequired": false,
-    "jaReviewComplete": false,
-    "njpDate": null,
-    "appealNotFiled": false,
-    "accusedTransferred": false,
-    "initiatedById": "user-admin",
-    "rightsAcknowledgement": {
-      "id": "ra-1774328812128-yvfeq",
-      "acknowledged": true,
-      "acknowledgedAt": "2026-03-24T05:06:52.128Z"
-    }
   }
 ]
