@@ -359,7 +359,7 @@ export async function fillNavmc10132Pdf(
       data.njpAuthorityTitle || "",
     ].filter(Boolean).join(", ");
     setText(form, "8 NJP AUTHORITY NAME TITLE SERVICE", authParts);
-    setText(form, "8A NJP AUTHORITY GRADE", data.njpAuthorityGrade || "");
+    setText(form, "8A NJP AUTHORITY GRADE", [data.njpAuthorityRank, data.njpAuthorityGrade].filter(Boolean).join("/") || "");
     if (data.njpAuthorityEdipi) {
       setText(form, "8B NJP AUTHORITY EDIPI", data.njpAuthorityEdipi);
     }
