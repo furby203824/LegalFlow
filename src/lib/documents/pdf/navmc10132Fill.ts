@@ -410,7 +410,7 @@ export async function fillNavmc10132Pdf(
       setText(form, "16 FINAL ADMIN UD", data.item16UdNumber);
     }
     if (data.item16Dtd) {
-      setText(form, "16 FINAL ADMIN DTD", data.item16Dtd);
+      setText(form, "16 FINAL ADMIN DTD", fmtStandard(data.item16Dtd));
     }
   }
 
