@@ -152,7 +152,7 @@ export function vrR2005(item3Date: string | undefined, item6Date: string | undef
       ruleId: "VR-R2-005",
       type: "HARD_BLOCK",
       field: "item3_date",
-      message: `Item 3 must be signed before or on the date punishment is imposed per MCO 5800.16 para 011105.C. Item 3 was signed on ${item3Date}. The punishment date entered is ${item6Date}. Correct the punishment date or obtain a new Item 3 signature.`,
+      message: `Item 3 must be signed before or on the date punishment is imposed per NAVMC 10132 REV. 08-2023 Item 3 instructions. Item 3 was signed on ${item3Date}. The punishment date entered is ${item6Date}. Correct the punishment date or obtain a new Item 3 signature.`,
     };
   }
   return null;
@@ -405,7 +405,7 @@ export function vrR4001(item11Date: string | undefined, njpDate: string | undefi
       ruleId: "VR-R4-001",
       type: "HARD_BLOCK",
       field: "item11_date",
-      message: `Item 11 cannot be dated before the date of punishment imposition per MCO 5800.16 para 011105.K. The NJP date is ${njpDate}. Enter a date on or after the NJP date.`,
+      message: `Item 11 cannot be dated before the date of punishment imposition per NAVMC 10132 REV. 08-2023 Item 11 instructions. The NJP date is ${njpDate}. Enter a date on or after the NJP date.`,
     };
   }
   return null;
@@ -686,7 +686,7 @@ export function vrR2003(refusedToSign: boolean, vesselException: boolean): { rou
   if (refusedToSign && !vesselException) {
     return {
       route: true,
-      message: "The accused has refused to indicate intentions and/or refused to sign Item 2. Per MCO 5800.16 para 011105.B, this is treated as a refusal of NJP. This case will be referred to the officer exercising court-martial jurisdiction.",
+      message: "The accused has refused to indicate intentions and/or refused to sign Item 2. Per NAVMC 10132 REV. 08-2023 Item 2 instructions, this is treated as a refusal of NJP. This case will be referred to the officer exercising court-martial jurisdiction.",
     };
   }
   return { route: false, message: "" };
@@ -907,7 +907,7 @@ export function vrSys002(lockedItems: string[], attemptedItem: string): Validati
       ruleId: "VR-SYS-002",
       type: "HARD_BLOCK",
       field: `item_${attemptedItem}`,
-      message: "This item has been locked by a signature event and cannot be modified digitally. Per MCO 5800.16 para 011104, corrections must be made in ink on the physical form, initialed by the appropriate officer, and the corrected form must be scanned and uploaded to this case record.",
+      message: "This item has been locked by a signature event and cannot be modified digitally. Per MCO 5800.16 para 011104 as modified by MARADMIN 427/23, corrections to manually prepared forms must be made in ink on the physical form, initialed by the appropriate officer. Electronic corrections are governed by the progressive lock sequence in the NAVMC 10132 REV. 08-2023 form instructions.",
     };
   }
   return null;
