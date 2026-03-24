@@ -9,7 +9,7 @@ import ActionsPanel from "@/components/cases/ActionsPanel";
 import RemarksPanel from "@/components/cases/RemarksPanel";
 import EvidencePanel from "@/components/cases/EvidencePanel";
 import AuditLogPanel from "@/components/cases/AuditLogPanel";
-import NavmcFormOverlay from "@/components/documents/NavmcFormOverlay";
+
 import { cn } from "@/lib/utils";
 import { AlertTriangle, AlertOctagon, Info } from "lucide-react";
 import { getCase } from "@/services/api";
@@ -46,7 +46,7 @@ function CaseViewContent() {
   const id = searchParams.get("id") || "";
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>("navmc");
+  const [activeTab, setActiveTab] = useState<string>("personnel");
   const router = useRouter();
 
   function loadCase() {
@@ -77,7 +77,6 @@ function CaseViewContent() {
   const accused = caseData.accused;
 
   const TABS = [
-    { key: "navmc", label: "NAVMC 10132" },
     { key: "personnel", label: "Personnel Data" },
     { key: "evidence", label: "Evidence" },
     { key: "tracking", label: "Tracking History" },
@@ -177,11 +176,6 @@ function CaseViewContent() {
           </div>
 
           <div className="p-5">
-            {/* NAVMC 10132 Form Overlay Tab */}
-            {activeTab === "navmc" && (
-              <NavmcFormOverlay caseData={caseData} />
-            )}
-
             {/* Personnel Data Tab — CLA-style fieldsets */}
             {activeTab === "personnel" && (
               <PersonnelDataTab caseData={caseData} />

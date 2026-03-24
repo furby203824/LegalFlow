@@ -174,7 +174,22 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
   for (let i = 0; i < Math.min(offenses.length, 5); i++) {
     const o = offenses[i];
     vals[`1${letters[i]} ARTICLE`] = o.ucmjArticle || "";
-    vals[`1${letters[i]} SUMMARY`] = o.shortDescription || o.summary || "";
+    // Build summary: description + date/time + place
+    const summaryParts: string[] = [];
+    if (o.offenseSummary || o.summary || o.shortDescription) {
+      summaryParts.push(o.offenseSummary || o.summary || o.shortDescription);
+    }
+    if (o.offenseDate) {
+      let datePart = `On or about ${o.offenseDate}`;
+      if (o.offenseTime) datePart += ` at ${o.offenseTime}`;
+      if (o.toDate && o.toDate !== o.offenseDate) {
+        datePart += ` through ${o.toDate}`;
+        if (o.toTime) datePart += ` at ${o.toTime}`;
+      }
+      summaryParts.push(datePart);
+    }
+    if (o.offensePlace) summaryParts.push(`at ${o.offensePlace}`);
+    vals[`1${letters[i]} SUMMARY`] = summaryParts.join(". ");
     vals[`1${letters[i]} FINDING`] = o.finding === "GUILTY" ? "G" : o.finding === "NOT_GUILTY" ? "NG" : "";
   }
 
