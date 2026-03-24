@@ -821,6 +821,18 @@
         "signatureMethod": "ELECTRONIC",
         "refusalNoted": false,
         "coSignedInstead": false
+      },
+      {
+        "id": "sig-1774393658345-q2naa",
+        "createdAt": "2026-03-24T23:07:38.345Z",
+        "itemNumber": "12",
+        "signerRole": "SUITE_ADMIN",
+        "signerUserId": "user-admin",
+        "signerName": "Nelson",
+        "signedDate": "2026-03-24",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
       }
     ],
     "evidence": [],
