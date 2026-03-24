@@ -439,8 +439,13 @@ export async function fillNavmc10132Pdf(
       if (mk instanceof PDFDict) {
         mk.delete(PDFName.of("BG")); // remove background color
       }
+      // Delete cached appearance stream so it regenerates with new border style
+      widget.dict.delete(PDFName.of("AP"));
     }
   }
+
+  // Regenerate all field appearances with the updated border styles
+  form.updateFieldAppearances();
 
   // Flatten form to prevent further editing (for FINAL version)
   if (version === "FINAL") {
