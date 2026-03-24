@@ -1559,7 +1559,7 @@
     "nextActionOwner": "ACCUSED",
     "isOverdue": false,
     "caseNumber": "CASE-2026-0005",
-    "status": "RIGHTS_ADVISED",
+    "status": "PUNISHMENT_IMPOSED",
     "currentPhase": "HEARING",
     "unitId": "unit-aco1bn5mar",
     "unitFullString": "Alpha Co, 1st Bn, 5th Marines",
@@ -1604,6 +1604,12 @@
       }
     ],
     "reviewForwardedAt": "2026-03-23T19:52:34.948Z",
-    "reviewForwardedBy": "user-co-reviewer"
+    "reviewForwardedBy": "user-co-reviewer",
+    "njpAuthorityName": "Park, David",
+    "njpAuthorityTitle": "Company Commander",
+    "njpAuthorityUnit": "Alpha Co, 1st Bn, 5th Marines",
+    "njpAuthorityRank": "Capt",
+    "njpAuthorityGrade": "O3",
+    "njpAuthorityEdipi": "3456789012"
   }
 ]
