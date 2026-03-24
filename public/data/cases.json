@@ -1466,7 +1466,13 @@
       "appealFiled": true,
       "appealNotFiled": false,
       "jaReviewRequired": false,
-      "appealFiledDate": "2026-03-23"
+      "appealFiledDate": "2026-03-23",
+      "appealAuthorityName": "Commanding Officer, 1st Bn, 5th Marines",
+      "appealAuthorityRank": "LtCol",
+      "appealAuthoritySignedDate": "2026-03-23",
+      "appealOutcome": "DENIED",
+      "appealOutcomeDetail": null,
+      "items1314Locked": true
     },
     "chargeSheet": null,
     "hearingRecord": {
