@@ -737,7 +737,16 @@
         "locked": true
       }
     ],
-    "punishment": null,
+    "punishment": {
+      "id": "pun-1774391290886-xj09p",
+      "punishmentDate": "2026-03-24",
+      "forfeitureAmount": 3865,
+      "reductionImposed": false,
+      "suspensionImposed": true,
+      "suspensionPunishment": "forfeiture",
+      "suspensionMonths": 6,
+      "suspensionStatus": "ACTIVE"
+    },
     "appeal": null,
     "chargeSheet": null,
     "hearingRecord": {
