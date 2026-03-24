@@ -1455,7 +1455,8 @@
       "suspensionImposed": true,
       "suspensionPunishment": "forfeiture, restriction",
       "suspensionMonths": 6,
-      "suspensionStatus": "ACTIVE"
+      "suspensionStatus": "ACTIVE",
+      "locked": true
     },
     "appeal": null,
     "chargeSheet": null,
