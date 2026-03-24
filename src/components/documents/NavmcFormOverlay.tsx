@@ -387,68 +387,110 @@ export default function NavmcFormOverlay({ caseData, className }: NavmcFormOverl
         </button>
       </div>
 
-      {/* Form page with overlaid fields */}
-      <div className="relative w-full" style={{ aspectRatio: `${PAGE_W} / ${PAGE_H}` }}>
-        {/* Background: rendered PDF page */}
-        <img
-          src={pageImages[currentPage]}
-          alt={`NAVMC 10132 Page ${currentPage + 1}`}
-          className="absolute inset-0 w-full h-full object-contain"
-          draggable={false}
-        />
+      {/* Form page with overlaid fields
+           PDF spec: Arial 8pt on 792pt page → font = 1.01% of page height.
+           We use a ref to measure the container and compute px font size. */}
+      <FormPage
+        pageImage={pageImages[currentPage]}
+        currentPage={currentPage}
+        pageFields={pageFields}
+        fieldValues={fieldValues}
+      />
+    </div>
+  );
+}
 
-        {/* Overlaid field values */}
-        {pageFields.map((field) => {
-          const pos = pdfToCSS(field);
-          const value = fieldValues[field.name] || "";
+/* ── Form page renderer with scaled text ── */
 
-          if (field.type === "checkbox") {
-            return (
-              <div
-                key={field.name}
-                className="absolute flex items-center justify-center"
-                style={pos}
-                title={field.label}
-              >
-                {value && (
-                  <span className="text-[10px] font-bold text-blue-800 leading-none">X</span>
-                )}
-              </div>
-            );
-          }
+function FormPage({
+  pageImage, currentPage, pageFields, fieldValues,
+}: {
+  pageImage: string; currentPage: number;
+  pageFields: FieldDef[]; fieldValues: Record<string, string>;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerH, setContainerH] = useState(0);
 
-          // Is this a large text area (Item 21)?
-          const isTextArea = field.h > 100;
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) setContainerH(entry.contentRect.height);
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
 
+  // PDF font: Arial 8pt on 792pt page
+  const PDF_FONT_PT = 8;
+  const scaledFontPx = containerH > 0 ? (PDF_FONT_PT / PAGE_H) * containerH : 0;
+
+  // Common text style matching the PDF form
+  const textStyle: React.CSSProperties = {
+    fontFamily: "Arial, Helvetica, sans-serif",
+    fontSize: `${scaledFontPx}px`,
+    color: "#000",
+    lineHeight: 1.2,
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full"
+      style={{ aspectRatio: `${PAGE_W} / ${PAGE_H}` }}
+    >
+      <img
+        src={pageImage}
+        alt={`NAVMC 10132 Page ${currentPage + 1}`}
+        className="absolute inset-0 w-full h-full object-contain"
+        draggable={false}
+      />
+
+      {scaledFontPx > 0 && pageFields.map((field) => {
+        const pos = pdfToCSS(field);
+        const value = fieldValues[field.name] || "";
+
+        if (field.type === "checkbox") {
           return (
             <div
               key={field.name}
-              className="absolute overflow-hidden"
+              className="absolute flex items-center justify-center"
               style={pos}
               title={field.label}
             >
-              {isTextArea ? (
-                <div
-                  className="w-full h-full px-[2px] text-blue-900 leading-tight whitespace-pre-wrap overflow-hidden"
-                  style={{ fontSize: "clamp(6px, 0.95vw, 9px)", fontFamily: "monospace" }}
-                >
-                  {value}
-                </div>
-              ) : (
-                <div
-                  className={cn(
-                    "w-full h-full flex items-center px-[2px] text-blue-900 truncate leading-none",
-                    !value && "bg-yellow-100/30"
-                  )}
-                  style={{ fontSize: "clamp(6px, 0.95vw, 10px)", fontFamily: "monospace" }}
-                >
+              {value && (
+                <span style={{ ...textStyle, fontWeight: 700 }}>X</span>
+              )}
+            </div>
+          );
+        }
+
+        const isTextArea = field.h > 100;
+
+        return (
+          <div
+            key={field.name}
+            className="absolute overflow-hidden"
+            style={pos}
+            title={field.label}
+          >
+            {isTextArea ? (
+              <div
+                className="w-full h-full whitespace-pre-wrap overflow-hidden"
+                style={{ ...textStyle, padding: "1px 2px" }}
+              >
+                {value}
+              </div>
+            ) : (
+              <div
+                className="w-full h-full flex items-center truncate"
+                style={{ ...textStyle, padding: "0 2px" }}
+              >
                   {value || ""}
                 </div>
               )}
             </div>
           );
         })}
-      </div>
     </div>
   );
 }
