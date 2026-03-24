@@ -862,7 +862,7 @@
     "nextActionOwner": "ACCUSED",
     "isOverdue": false,
     "caseNumber": "CASE-2026-0007",
-    "status": "RIGHTS_ADVISED",
+    "status": "PUNISHMENT_IMPOSED",
     "currentPhase": "HEARING",
     "unitId": "unit-1bn5mar",
     "unitFullString": "1st Bn, 5th Marines",
@@ -893,7 +893,13 @@
       "id": "ra-1774381703649-8cx6g",
       "acknowledged": true,
       "acknowledgedAt": "2026-03-24T19:48:23.649Z"
-    }
+    },
+    "njpAuthorityName": "Admin, System",
+    "njpAuthorityTitle": "Commanding Officer",
+    "njpAuthorityUnit": "1st Bn, 5th Marines",
+    "njpAuthorityRank": "",
+    "njpAuthorityGrade": "",
+    "njpAuthorityEdipi": ""
   },
   {
     "id": "case-1774223160076-5vamv",
