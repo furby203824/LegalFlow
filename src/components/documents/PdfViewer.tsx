@@ -30,14 +30,10 @@ export default function PdfViewer({ pdfBytes, className }: PdfViewerProps) {
       try {
         const srcDoc = await PDFDocument.load(pdfBytes);
 
-        // Flatten form fields into page content before splitting.
-        // Without this, widget annotations lose their parent AcroForm
-        // when copied to single-page documents, causing inconsistent
-        // rendering across browsers and reloads.
+        // Safety net: flatten any remaining form fields before splitting
+        // pages, in case the source PDF was not already flattened.
         try {
-          const form = srcDoc.getForm();
-          form.updateFieldAppearances();
-          form.flatten();
+          srcDoc.getForm().flatten();
         } catch {
           // No form fields — continue
         }
