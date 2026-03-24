@@ -1087,5 +1087,16 @@
     "userName": "co-preparer",
     "action": "UPDATE",
     "notes": "Appeal filed on 2026-03-23"
+  },
+  {
+    "id": "audit-1774318738070-457yo",
+    "timestamp": "2026-03-24T02:18:58.070Z",
+    "caseId": "case-1774294101445-2c51m",
+    "caseNumber": "CASE-2026-0005",
+    "userId": "user-bn-certifier",
+    "userRole": "CERTIFIER",
+    "userName": "bn-certifier",
+    "action": "SIGN",
+    "notes": "Item 14 signed - appeal DENIED"
   }
 ]
