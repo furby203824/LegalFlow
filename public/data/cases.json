@@ -156,6 +156,18 @@
         "signatureMethod": "ELECTRONIC",
         "refusalNoted": false,
         "coSignedInstead": false
+      },
+      {
+        "id": "sig-1774328468312-usi8i",
+        "createdAt": "2026-03-24T05:01:08.312Z",
+        "itemNumber": "16",
+        "signerRole": "SUITE_ADMIN",
+        "signerUserId": "user-admin",
+        "signerName": "Admin",
+        "signedDate": "2026-03-24",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
       }
     ],
     "evidence": [],
