@@ -433,7 +433,7 @@ function PunishmentChecklist({
                       min="1"
                       max={p.max}
                       step="1"
-                      className="input-field text-xs w-28"
+                      className="input-underline text-xs w-28"
                       value={responses[`${p.key}_detail`] || ""}
                       onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ""); setResponse(`${p.key}_detail`, v); }}
                       placeholder="Amount"
@@ -445,7 +445,7 @@ function PunishmentChecklist({
                       <>
                         <span className="text-xs text-neutral-mid">per month for</span>
                         <select
-                          className="input-field text-xs w-20"
+                          className="input-underline text-xs w-20"
                           value={responses[`${p.key}_months`] || "1"}
                           onChange={(e) => setResponse(`${p.key}_months`, e.target.value)}
                         >
@@ -467,7 +467,7 @@ function PunishmentChecklist({
                       min="1"
                       max={p.max}
                       step="1"
-                      className="input-field text-xs w-20"
+                      className="input-underline text-xs w-20"
                       value={responses[`${p.key}_detail`] || ""}
                       onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ""); setResponse(`${p.key}_detail`, v); }}
                       placeholder="Days"
@@ -501,7 +501,7 @@ function PunishmentChecklist({
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-neutral-mid">Reduce to</span>
                     <select
-                      className="input-field text-xs w-28"
+                      className="input-underline text-xs w-28"
                       value={responses[`${p.key}_detail`] || ""}
                       onChange={(e) => setResponse(`${p.key}_detail`, e.target.value)}
                     >
@@ -536,7 +536,7 @@ function PunishmentChecklist({
           <div className="flex items-center gap-2 text-sm">
             <span className="font-medium text-amber-800">Suspension period:</span>
             <select
-              className="input-field text-sm w-24 text-center"
+              className="input-underline text-sm w-24 text-center"
               value={responses["susp_months"] || ""}
               onChange={(e) => setResponse("susp_months", e.target.value)}
             >
@@ -639,11 +639,11 @@ export default function HearingGuidePanel({ caseId, caseData, onUpdate }: { case
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-surface rounded-lg border border-border">
         <div>
           <label className="block text-xs font-medium text-neutral-mid mb-1">Appeal Authority (Next Higher)</label>
-          <div className="input-field text-sm bg-surface text-neutral-dark">{appealAuthority || "—"}</div>
+          <div className="input-underline text-sm bg-surface text-neutral-dark">{appealAuthority || "—"}</div>
         </div>
         <div>
           <label className="block text-xs font-medium text-neutral-mid mb-1">Who Reads Appellate Rights</label>
-          <input className="input-field text-sm" value={appellateRightsReader} onChange={(e) => setAppellateRightsReader(e.target.value)} placeholder="e.g., Capt Smith, Legal" />
+          <input className="input-underline text-sm" value={appellateRightsReader} onChange={(e) => setAppellateRightsReader(e.target.value)} placeholder="e.g., Capt Smith, Legal" />
         </div>
       </div>
 
@@ -735,7 +735,7 @@ export default function HearingGuidePanel({ caseId, caseData, onUpdate }: { case
             {step.responseType === "freetext" && step.responseKey && (
               <div className="mt-4">
                 <textarea
-                  className="input-field min-h-[80px] text-sm"
+                  className="input-underline min-h-[80px] text-sm"
                   value={responses[step.responseKey] || ""}
                   onChange={(e) => setResponse(step.responseKey!, e.target.value)}
                   placeholder={step.placeholder}

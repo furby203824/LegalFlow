@@ -88,18 +88,18 @@ export default function UsersPage() {
             <h3 className="text-base font-semibold mb-4">Create User</h3>
             {error && <div className="rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm text-error mb-4">{error}</div>}
             <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div><label className="block text-sm font-medium mb-1">Username *</label><input name="username" required className="input-field" /></div>
-              <div><label className="block text-sm font-medium mb-1">Password *</label><input name="password" type="password" required className="input-field" /></div>
-              <div><label className="block text-sm font-medium mb-1">Email *</label><input name="email" type="email" required className="input-field" /></div>
-              <div><label className="block text-sm font-medium mb-1">First Name *</label><input name="firstName" required className="input-field" /></div>
-              <div><label className="block text-sm font-medium mb-1">Last Name *</label><input name="lastName" required className="input-field" /></div>
+              <div><label className="block text-sm font-medium mb-1">Username *</label><input name="username" required className="input-underline" /></div>
+              <div><label className="block text-sm font-medium mb-1">Password *</label><input name="password" type="password" required className="input-underline" /></div>
+              <div><label className="block text-sm font-medium mb-1">Email *</label><input name="email" type="email" required className="input-underline" /></div>
+              <div><label className="block text-sm font-medium mb-1">First Name *</label><input name="firstName" required className="input-underline" /></div>
+              <div><label className="block text-sm font-medium mb-1">Last Name *</label><input name="lastName" required className="input-underline" /></div>
               <div><label className="block text-sm font-medium mb-1">Role *</label>
-                <select name="role" required className="input-field">{ROLES.map((r) => <option key={r} value={r}>{r.replace(/_/g, " ")}</option>)}</select></div>
+                <select name="role" required className="input-underline">{ROLES.map((r) => <option key={r} value={r}>{r.replace(/_/g, " ")}</option>)}</select></div>
               <div><label className="block text-sm font-medium mb-1">Unit</label>
-                <input value="3d Bn, 7th Marines" readOnly className="input-field bg-surface text-neutral-mid" /></div>
-              <div><label className="block text-sm font-medium mb-1">EDIPI</label><input name="edipi" maxLength={10} className="input-field" /></div>
+                <input value="3d Bn, 7th Marines" readOnly className="input-underline bg-surface text-neutral-mid" /></div>
+              <div><label className="block text-sm font-medium mb-1">EDIPI</label><input name="edipi" maxLength={10} className="input-underline" /></div>
               <div><label className="block text-sm font-medium mb-1">Rank</label>
-                <select name="rank" className="input-field"><option value="">—</option>{RANKS.map((r) => <option key={r} value={r}>{r}</option>)}</select></div>
+                <select name="rank" className="input-underline"><option value="">—</option>{RANKS.map((r) => <option key={r} value={r}>{r}</option>)}</select></div>
               <div className="sm:col-span-3"><button type="submit" className="btn-primary">Create User</button></div>
             </form>
           </div>
@@ -108,7 +108,7 @@ export default function UsersPage() {
         {/* Search */}
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-mid" />
-          <input type="text" placeholder="Search users..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-9" />
+          <input type="text" placeholder="Search users..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-underline pl-9" />
         </div>
 
         {/* Users table + detail panel */}

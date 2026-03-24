@@ -361,28 +361,28 @@ export default function NewCasePage() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field label="Last Name" required>
-                <input className="input-field" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                <input className="input-underline" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
               </Field>
               <Field label="First Name" required>
-                <input className="input-field" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                <input className="input-underline" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
               </Field>
               <Field label="Middle Name">
-                <input className="input-field" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
+                <input className="input-underline" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
               </Field>
               <Field label="Rank / Grade" required>
-                <select className="input-field" value={rankGrade} onChange={(e) => { setRankGrade(e.target.value); const g = e.target.value ? e.target.value.split("/")[0] : ""; setAfadbd(g ? generateAFADBD(g) : ""); }} required>
+                <select className="input-underline" value={rankGrade} onChange={(e) => { setRankGrade(e.target.value); const g = e.target.value ? e.target.value.split("/")[0] : ""; setAfadbd(g ? generateAFADBD(g) : ""); }} required>
                   <option value="">Select rank/grade</option>
                   {enlistedRankOptions.map((o) => <option key={o.label} value={o.label}>{o.label}</option>)}
                 </select>
               </Field>
               <Field label="EDIPI (10 digits)" required>
-                <input className="input-field font-mono" value={edipi} onChange={(e) => setEdipi(e.target.value)} pattern="\d{10}" maxLength={10} required />
+                <input className="input-underline font-mono" value={edipi} onChange={(e) => setEdipi(e.target.value)} pattern="\d{10}" maxLength={10} required />
               </Field>
               <Field label="AFADBD">
-                <input type="date" className="input-field" value={afadbd} onChange={(e) => setAfadbd(e.target.value)} />
+                <input type="date" className="input-underline" value={afadbd} onChange={(e) => setAfadbd(e.target.value)} />
               </Field>
               <Field label="Service Branch" required>
-                <select className="input-field" value={serviceBranch} onChange={(e) => handleBranchChange(e.target.value)} required>
+                <select className="input-underline" value={serviceBranch} onChange={(e) => handleBranchChange(e.target.value)} required>
                   <option value="USMC">USMC</option>
                   <option value="USN">USN</option>
                 </select>
@@ -625,7 +625,7 @@ export default function NewCasePage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="Type">
-                    <select className="input-field" value={ev.type} onChange={(e) => updateEvidenceItem(ei, "type", e.target.value)}>
+                    <select className="input-underline" value={ev.type} onChange={(e) => updateEvidenceItem(ei, "type", e.target.value)}>
                       <option value="">Select type</option>
                       <option value="WITNESS_STATEMENT">Witness Statement</option>
                       <option value="PHYSICAL_EVIDENCE">Physical Evidence</option>
@@ -639,13 +639,13 @@ export default function NewCasePage() {
                     </select>
                   </Field>
                   <Field label="Date Received">
-                    <input type="date" className="input-field" value={ev.dateReceived} onChange={(e) => updateEvidenceItem(ei, "dateReceived", e.target.value)} />
+                    <input type="date" className="input-underline" value={ev.dateReceived} onChange={(e) => updateEvidenceItem(ei, "dateReceived", e.target.value)} />
                   </Field>
                   <Field label="Source">
-                    <input className="input-field" value={ev.source} onChange={(e) => updateEvidenceItem(ei, "source", e.target.value)} placeholder="e.g., SSgt Smith, PMO, medical" />
+                    <input className="input-underline" value={ev.source} onChange={(e) => updateEvidenceItem(ei, "source", e.target.value)} placeholder="e.g., SSgt Smith, PMO, medical" />
                   </Field>
                   <Field label="Description">
-                    <input className="input-field" value={ev.description} onChange={(e) => updateEvidenceItem(ei, "description", e.target.value)} placeholder="Brief description of evidence" />
+                    <input className="input-underline" value={ev.description} onChange={(e) => updateEvidenceItem(ei, "description", e.target.value)} placeholder="Brief description of evidence" />
                   </Field>
                 </div>
               </div>

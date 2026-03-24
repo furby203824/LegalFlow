@@ -357,7 +357,7 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
                 />
               </div>
               <label className="block text-xs font-medium mb-1">Item 10 — Date of Notice to Accused</label>
-              <input type="date" id="item10Date" defaultValue={caseData.njpDate || ""} className="input-field mb-2" />
+              <input type="date" id="item10Date" defaultValue={caseData.njpDate || ""} className="input-underline mb-2" />
               <button onClick={() => { const v = (document.getElementById("item10Date") as HTMLInputElement).value; performAction("SIGN_ITEM_11", { item10Date: v, signerName: "NJP Authority" }); }} disabled={loading} className="btn-primary text-xs w-full">
                 Sign Item 11
               </button>
@@ -372,7 +372,7 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
           {/* 9. Appeal Filed (Item 13) */}
           {appeal?.appealIntent === "INTENDS_TO_APPEAL" && !appeal?.appealFiledDate && canPerformAction(userRole, "ENTER_APPEAL_DATE") && (
             <ActionSection title="Appeal Filed (Item 13)">
-              <input type="date" id="appealDate" className="input-field mb-2" />
+              <input type="date" id="appealDate" className="input-underline mb-2" />
               <button onClick={() => { const v = (document.getElementById("appealDate") as HTMLInputElement).value; performAction("ENTER_APPEAL_DATE", { appealDate: v }); }} disabled={loading} className="btn-primary text-xs w-full">
                 Record Appeal
               </button>
@@ -382,9 +382,9 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
           {/* JA Review — required when punishment exceeds threshold (JAGMAN 0116) */}
           {caseData.jaReviewRequired && !caseData.jaReviewComplete && canPerformAction(userRole, "LOG_JA_REVIEW") && (
             <ActionSection title="JA Legal Review (JAGMAN 0116)">
-              <input type="text" id="jaName" placeholder="JA Name" className="input-field mb-2" />
-              <input type="date" id="jaDate" className="input-field mb-2" />
-              <textarea id="jaSummary" placeholder="Summary" className="input-field mb-2 h-16" />
+              <input type="text" id="jaName" placeholder="JA Name" className="input-underline mb-2" />
+              <input type="date" id="jaDate" className="input-underline mb-2" />
+              <textarea id="jaSummary" placeholder="Summary" className="input-underline mb-2 h-16" />
               <button onClick={() => {
                 const g = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement).value;
                 performAction("LOG_JA_REVIEW", { reviewerName: g("jaName"), reviewDate: g("jaDate"), summary: g("jaSummary") });
@@ -478,7 +478,7 @@ function ReviewerPanel({ caseData, loading, onAction }: { caseData: CaseData; lo
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Note an issue, flag a correction, or add a remark..."
-          className="input-field text-sm"
+          className="input-underline text-sm"
           rows={2}
         />
         <button
@@ -498,7 +498,7 @@ function ReviewerPanel({ caseData, loading, onAction }: { caseData: CaseData; lo
             value={returnReason}
             onChange={(e) => setReturnReason(e.target.value)}
             placeholder="Describe what needs to be corrected..."
-            className="input-field text-sm border-amber-300"
+            className="input-underline text-sm border-amber-300"
             rows={2}
           />
           <div className="flex gap-2">
@@ -728,7 +728,7 @@ function FindingsAction({ offenses, loading, onSubmit }: { offenses: { id: strin
       {offenses.map((o) => (
         <div key={o.id} className="flex items-center gap-2 mb-2">
           <span className="text-xs w-20">{o.offenseLetter}. Art.{o.ucmjArticle}</span>
-          <select value={findings[o.id] || ""} onChange={(e) => setFindings({ ...findings, [o.id]: e.target.value })} className="input-field text-xs">
+          <select value={findings[o.id] || ""} onChange={(e) => setFindings({ ...findings, [o.id]: e.target.value })} className="input-underline text-xs">
             <option value="">Select</option>
             <option value="G">Guilty</option>
             <option value="NG">Not Guilty</option>
@@ -781,24 +781,24 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
           <span className="block mt-1">Max forfeiture ({effectiveGrade} pay): <span className="font-semibold">${maxForf}</span>{isField ? "/mo for 2 mo" : ""}</span>
         )}
       </div>
-      <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-field mb-2" placeholder="Punishment date" />
+      <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-underline mb-2" placeholder="Punishment date" />
       <div className="grid grid-cols-2 gap-2 mb-2">
         {isVessel && (
           <div className="flex items-center gap-1">
-            <input type="number" step="1" value={corrDays} onChange={(e) => setCorrDays(e.target.value.replace(/[^0-9]/g, ""))} className="input-field text-xs flex-1" placeholder="Custody days" max={isField ? 30 : 7} />
+            <input type="number" step="1" value={corrDays} onChange={(e) => setCorrDays(e.target.value.replace(/[^0-9]/g, ""))} className="input-underline text-xs flex-1" placeholder="Custody days" max={isField ? 30 : 7} />
             <button type="button" className="btn-ghost text-[10px] px-1 py-0.5 shrink-0" onClick={() => setCorrDays(String(isField ? 30 : 7))}>Max</button>
           </div>
         )}
         <div className="flex items-center gap-1">
-          <input type="number" step="1" value={forfAmt} onChange={(e) => setForfAmt(e.target.value.replace(/[^0-9]/g, ""))} className="input-field text-xs flex-1" placeholder={maxForf != null ? `Forf $ (max $${maxForf})` : "Forfeiture $"} max={maxForf ?? undefined} />
+          <input type="number" step="1" value={forfAmt} onChange={(e) => setForfAmt(e.target.value.replace(/[^0-9]/g, ""))} className="input-underline text-xs flex-1" placeholder={maxForf != null ? `Forf $ (max $${maxForf})` : "Forfeiture $"} max={maxForf ?? undefined} />
           {maxForf != null && <button type="button" className="btn-ghost text-[10px] px-1 py-0.5 shrink-0" onClick={() => setForfAmt(String(maxForf))}>Max</button>}
         </div>
         <div className="flex items-center gap-1">
-          <input type="number" step="1" value={extraDays} onChange={(e) => setExtraDays(e.target.value.replace(/[^0-9]/g, ""))} className="input-field text-xs flex-1" placeholder="Extra duties" max={isField ? 45 : 14} />
+          <input type="number" step="1" value={extraDays} onChange={(e) => setExtraDays(e.target.value.replace(/[^0-9]/g, ""))} className="input-underline text-xs flex-1" placeholder="Extra duties" max={isField ? 45 : 14} />
           <button type="button" className="btn-ghost text-[10px] px-1 py-0.5 shrink-0" onClick={() => setExtraDays(String(isField ? 45 : 14))}>Max</button>
         </div>
         <div className="flex items-center gap-1">
-          <input type="number" step="1" value={restrDays} onChange={(e) => setRestrDays(e.target.value.replace(/[^0-9]/g, ""))} className="input-field text-xs flex-1" placeholder="Restriction" max={isField ? 60 : 14} />
+          <input type="number" step="1" value={restrDays} onChange={(e) => setRestrDays(e.target.value.replace(/[^0-9]/g, ""))} className="input-underline text-xs flex-1" placeholder="Restriction" max={isField ? 60 : 14} />
           <button type="button" className="btn-ghost text-[10px] px-1 py-0.5 shrink-0" onClick={() => setRestrDays(String(isField ? 60 : 14))}>Max</button>
         </div>
       </div>
@@ -834,7 +834,7 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
               {extraDays && <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!suspItems["extra"]} onChange={(e) => setSuspItems({ ...suspItems, extra: e.target.checked })} /> Extra duties ({extraDays}d)</label>}
               {restrDays && <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!suspItems["restriction"]} onChange={(e) => setSuspItems({ ...suspItems, restriction: e.target.checked })} /> Restriction ({restrDays}d)</label>}
               <div className="pt-1">
-                <select value={suspMo} onChange={(e) => setSuspMo(e.target.value)} className="input-field text-xs w-32">
+                <select value={suspMo} onChange={(e) => setSuspMo(e.target.value)} className="input-underline text-xs w-32">
                   <option value="">Months</option>
                   <option value="3">3 months</option>
                   <option value="4">4 months</option>
@@ -1142,7 +1142,7 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
 
           <div>
             <label className="block text-xs font-medium text-neutral-mid mb-1">Decision *</label>
-            <select value={outcome} onChange={(e) => setOutcome(e.target.value as "DENIED" | "GRANTED")} className="input-field text-xs">
+            <select value={outcome} onChange={(e) => setOutcome(e.target.value as "DENIED" | "GRANTED")} className="input-underline text-xs">
               <option value="DENIED">I have considered this appeal and deny relief</option>
               <option value="GRANTED">I have considered this appeal and grant relief as follows</option>
             </select>
@@ -1154,7 +1154,7 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
               <textarea
                 value={outcomeDetail}
                 onChange={(e) => setOutcomeDetail(e.target.value)}
-                className="input-field text-xs"
+                className="input-underline text-xs"
                 rows={3}
                 placeholder="Describe the relief granted (e.g., punishment set aside in whole or in part, reduction set aside, forfeiture reduced to...)."
               />
@@ -1163,7 +1163,7 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
 
           <div>
             <label className="block text-xs font-medium text-neutral-mid mb-1">Decision Date (Item 14) *</label>
-            <input type="date" value={item14Date} onChange={(e) => setItem14Date(e.target.value)} className="input-field text-xs" />
+            <input type="date" value={item14Date} onChange={(e) => setItem14Date(e.target.value)} className="input-underline text-xs" />
           </div>
 
           <button
@@ -1202,7 +1202,7 @@ function AppealNoticeAction({ caseData, loading, onSubmit }: { caseData: CaseDat
 
         <div>
           <label className="block text-xs font-medium text-neutral-mid mb-1">Date Accused Notified (Item 15) *</label>
-          <input type="date" value={item15Date} onChange={(e) => setItem15Date(e.target.value)} className="input-field text-xs" />
+          <input type="date" value={item15Date} onChange={(e) => setItem15Date(e.target.value)} className="input-underline text-xs" />
         </div>
 
         <button
@@ -1505,11 +1505,11 @@ function AdminClosureAction({ caseData, loading, onSubmit }: { caseData: CaseDat
             <div className="space-y-2">
               <div>
                 <label className="block text-xs font-medium text-neutral-mid mb-1">UD Number</label>
-                <input type="text" value={udNumber} onChange={(e) => setUdNumber(e.target.value)} className="input-field" placeholder="UD Number" />
+                <input type="text" value={udNumber} onChange={(e) => setUdNumber(e.target.value)} className="input-underline" placeholder="UD Number" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-mid mb-1">UD Date</label>
-                <input type="date" value={udDate} onChange={(e) => setUdDate(e.target.value)} className="input-field" />
+                <input type="date" value={udDate} onChange={(e) => setUdDate(e.target.value)} className="input-underline" />
               </div>
             </div>
             <button onClick={() => onSubmit({ udNumber, udDate, signerName: "Admin" })} disabled={loading} className="btn-danger text-xs w-full gap-1">
@@ -1544,23 +1544,23 @@ function Item9Action({ caseData, loading, onSubmit }: { caseData: CaseData; load
       <div className="space-y-2">
         <div>
           <label className="block text-xs font-medium text-neutral-mid mb-1">Name</label>
-          <input type="text" value={name} disabled className="input-field text-xs bg-gray-50" />
+          <input type="text" value={name} disabled className="input-underline text-xs bg-gray-50" />
         </div>
         <div>
           <label className="block text-xs font-medium text-neutral-mid mb-1">Rank/Grade</label>
-          <input type="text" value={rankGrade} disabled className="input-field text-xs bg-gray-50" />
+          <input type="text" value={rankGrade} disabled className="input-underline text-xs bg-gray-50" />
         </div>
         <div>
           <label className="block text-xs font-medium text-neutral-mid mb-1">EDIPI</label>
-          <input type="text" value={edipi} disabled className="input-field text-xs bg-gray-50 font-mono" />
+          <input type="text" value={edipi} disabled className="input-underline text-xs bg-gray-50 font-mono" />
         </div>
         <div>
           <label className="block text-xs font-medium text-neutral-mid mb-1">Unit</label>
-          <input type="text" value={unit} disabled className="input-field text-xs bg-gray-50" />
+          <input type="text" value={unit} disabled className="input-underline text-xs bg-gray-50" />
         </div>
         <div>
           <label className="block text-xs font-medium text-neutral-mid mb-1">Title</label>
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input-field text-xs" />
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input-underline text-xs" />
         </div>
       </div>
       <p className="text-xs text-neutral-mid mt-2 italic">
@@ -1751,15 +1751,15 @@ function VacateSuspensionAction({ caseData, loading, onSubmit }: { caseData: Cas
             {/* Triggering offense */}
             <div>
               <label className="block text-xs font-medium text-neutral-mid mb-1">Triggering UCMJ Article</label>
-              <input type="text" value={triggeringArticle} onChange={(e) => setTriggeringArticle(e.target.value)} className="input-field" placeholder="e.g., 86, 92, 134" />
+              <input type="text" value={triggeringArticle} onChange={(e) => setTriggeringArticle(e.target.value)} className="input-underline" placeholder="e.g., 86, 92, 134" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-mid mb-1">Triggering Offense Summary</label>
-              <textarea value={triggeringSummary} onChange={(e) => setTriggeringSummary(e.target.value)} className="input-field h-16" placeholder="Brief description of the subsequent offense" />
+              <textarea value={triggeringSummary} onChange={(e) => setTriggeringSummary(e.target.value)} className="input-underline h-16" placeholder="Brief description of the subsequent offense" />
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-mid mb-1">Triggering Offense Date</label>
-              <input type="date" value={triggeringDate} onChange={(e) => setTriggeringDate(e.target.value)} className="input-field" max={suspensionEndDate || undefined} />
+              <input type="date" value={triggeringDate} onChange={(e) => setTriggeringDate(e.target.value)} className="input-underline" max={suspensionEndDate || undefined} />
               {triggeringDateOutOfScope && (
                 <p className="text-xs text-error mt-1">
                   Offense date is after the suspension end date ({suspensionEndDate}). The offense must occur within the suspension period.
@@ -1770,7 +1770,7 @@ function VacateSuspensionAction({ caseData, loading, onSubmit }: { caseData: Cas
             {/* Vacation details */}
             <div>
               <label className="block text-xs font-medium text-neutral-mid mb-1">Vacation Date</label>
-              <input type="date" value={vacationDate} onChange={(e) => setVacationDate(e.target.value)} className="input-field" />
+              <input type="date" value={vacationDate} onChange={(e) => setVacationDate(e.target.value)} className="input-underline" />
             </div>
             <div>
               <label className="flex items-center gap-2 text-xs">
@@ -1780,7 +1780,7 @@ function VacateSuspensionAction({ caseData, loading, onSubmit }: { caseData: Cas
                 <input type="radio" name="vacateScope" checked={!vacateInFull} onChange={() => setVacateInFull(false)} /> Vacate in part
               </label>
               {!vacateInFull && (
-                <input type="text" value={vacatedPortion} onChange={(e) => setVacatedPortion(e.target.value)} className="input-field mt-1" placeholder="Specify portion to vacate" />
+                <input type="text" value={vacatedPortion} onChange={(e) => setVacatedPortion(e.target.value)} className="input-underline mt-1" placeholder="Specify portion to vacate" />
               )}
             </div>
 
@@ -1788,11 +1788,11 @@ function VacateSuspensionAction({ caseData, loading, onSubmit }: { caseData: Cas
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs font-medium text-neutral-mid mb-1">CO Name</label>
-                <input type="text" value={coName} onChange={(e) => setCoName(e.target.value)} className="input-field" />
+                <input type="text" value={coName} onChange={(e) => setCoName(e.target.value)} className="input-underline" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-mid mb-1">CO Title</label>
-                <input type="text" value={coTitle} onChange={(e) => setCoTitle(e.target.value)} className="input-field" />
+                <input type="text" value={coTitle} onChange={(e) => setCoTitle(e.target.value)} className="input-underline" />
               </div>
             </div>
 
