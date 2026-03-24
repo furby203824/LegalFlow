@@ -8,7 +8,8 @@
 import { casesStore, usersStore, auditStore, caseWithIncludes } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { differenceInDays } from "date-fns";
-import type { UserRole } from "@/types";
+import type { UserRole, Grade } from "@/types";
+import { JEPES_GRADES, USMC_GRADE_TO_RANK, NAVY_GRADE_TO_RANK } from "@/types";
 import { getDescendantUnitIds } from "@/lib/units";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,7 +69,13 @@ export async function getDashboard() {
 
   const dashboardCases = cases.map((c) => {
     const daysInPhase = differenceInDays(new Date(), new Date(c.updatedAt));
-    const { action, owner } = getNextAction(c.currentPhase, c.status);
+    let { action, owner } = getNextAction(c.currentPhase, c.status);
+    // Override next action if JEPES RD Occasion is pending
+    const jepesPending = c.jepes?.rdOccasionRequired && !c.jepes?.rdOccasionCompleted && c.formLocked;
+    if (jepesPending && c.status.startsWith("CLOSED")) {
+      action = "Enter RD Occasion in JEPES module of MOL";
+      owner = "ADMIN";
+    }
     return {
       id: c.id,
       caseNumber: c.caseNumber,
@@ -83,6 +90,7 @@ export async function getDashboard() {
       overdue: daysInPhase > 14 && !c.status.startsWith("CLOSED"),
       suspensionActive: c.punishment?.suspensionStatus === "ACTIVE",
       jaReviewRequired: c.jaReviewRequired && !c.jaReviewComplete,
+      jepesPending,
     };
   });
 
@@ -424,6 +432,31 @@ export async function performPhaseAction(caseId: string, action: string, data: R
           generatedAt: new Date().toISOString(),
         });
       }
+      // JEPES RD Occasion detection (MCO 1616.1)
+      const pun = njpCase.punishment;
+      const hasGuilty = (njpCase.offenses || []).some((o: Rec) => o.finding === "G" || o.finding === "GUILTY");
+      const reductionFromGrade = (pun?.reductionFromGrade || njpCase.accusedGrade) as Grade;
+      if (pun?.reductionImposed && hasGuilty && JEPES_GRADES.includes(reductionFromGrade)) {
+        const isUsmc = (njpCase.serviceBranch || njpCase.accusedServiceBranch || "USMC") === "USMC";
+        const gradeToRank = isUsmc ? USMC_GRADE_TO_RANK : NAVY_GRADE_TO_RANK;
+        const prevRank = njpCase.accusedRank || gradeToRank[reductionFromGrade] || reductionFromGrade;
+        const newGrade = (pun.reductionToGrade || reductionFromGrade) as Grade;
+        const newRank = gradeToRank[newGrade] || newGrade;
+        await casesStore.update(caseId, {
+          jepes: {
+            rdOccasionRequired: true,
+            rdOccasionCompleted: false,
+            rdOccasionCompletedBy: null,
+            rdOccasionCompletedDate: null,
+            previousRank: prevRank,
+            previousGrade: reductionFromGrade,
+            newRank,
+            newGrade,
+          },
+          flags: [...(njpCase.flags || []), "JEPES"],
+        });
+      }
+
       await audit("SIGN", "Item 16 signed - case closed");
       return { message: "Case closed", status: finalStatus };
     }
@@ -604,6 +637,43 @@ export async function confirmRemark(caseId: string, remarkId: string) {
     confirmed: true,
   });
   return { remark: entry };
+}
+
+// =============================================================================
+// JEPES RD Occasion Confirmation
+// =============================================================================
+
+export async function confirmJepes(caseId: string) {
+  const u = user();
+  const c = await casesStore.findById(caseId);
+  if (!c) throw new Error("Case not found");
+  if (!c.jepes?.rdOccasionRequired) throw new Error("JEPES RD Occasion is not required for this case");
+  if (c.jepes.rdOccasionCompleted) throw new Error("JEPES RD Occasion already confirmed");
+
+  const today = new Date().toISOString().split("T")[0];
+  const jepes = {
+    ...c.jepes,
+    rdOccasionCompleted: true,
+    rdOccasionCompletedBy: u.userId,
+    rdOccasionCompletedDate: today,
+  };
+  const flags = (c.flags || []).filter((f: string) => f !== "JEPES");
+  await casesStore.update(caseId, { jepes, flags });
+
+  await auditStore.append({
+    caseId,
+    caseNumber: c.caseNumber,
+    userId: u.userId,
+    userRole: u.role,
+    userName: u.username,
+    action: "UPDATE",
+    field: "jepes.rdOccasionCompleted",
+    oldValue: "false",
+    newValue: "true",
+    notes: `JEPES RD Occasion confirmed submitted in MOL. Reduction: ${jepes.previousRank} ${jepes.previousGrade} → ${jepes.newRank} ${jepes.newGrade}.`,
+  });
+
+  return { message: "JEPES RD Occasion confirmed", jepes };
 }
 
 // =============================================================================

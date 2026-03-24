@@ -9,6 +9,7 @@ import ActionsPanel from "@/components/cases/ActionsPanel";
 import RemarksPanel from "@/components/cases/RemarksPanel";
 import EvidencePanel from "@/components/cases/EvidencePanel";
 import AuditLogPanel from "@/components/cases/AuditLogPanel";
+import JepesRdSection from "@/components/cases/JepesRdSection";
 
 import { cn } from "@/lib/utils";
 import { AlertTriangle, AlertOctagon, Info } from "lucide-react";
@@ -131,7 +132,7 @@ function CaseViewContent() {
         </div>
 
         {/* Alert badges */}
-        {(caseData.jaReviewRequired || caseData.punishmentRecord?.suspensionStatus === "ACTIVE" || caseData.statuteWarningAcknowledged || caseData.doublePunishmentChecked) && (
+        {(caseData.jaReviewRequired || caseData.punishmentRecord?.suspensionStatus === "ACTIVE" || caseData.statuteWarningAcknowledged || caseData.doublePunishmentChecked || (caseData.flags || []).includes("JEPES")) && (
           <div className="flex flex-wrap gap-2">
             {caseData.jaReviewRequired && !caseData.jaReviewComplete && (
               <span className="badge bg-warning/10 text-warning gap-1"><AlertTriangle size={12} /> JA REVIEW REQUIRED</span>
@@ -144,6 +145,9 @@ function CaseViewContent() {
             )}
             {caseData.doublePunishmentChecked && (
               <span className="badge bg-error/10 text-error gap-1"><AlertOctagon size={12} /> DOUBLE PUNISHMENT FLAG</span>
+            )}
+            {(caseData.flags || []).includes("JEPES") && (
+              <span className="badge bg-purple-100 text-purple-700 gap-1"><AlertTriangle size={12} /> JEPES RD OCCASION</span>
             )}
           </div>
         )}
@@ -194,6 +198,11 @@ function CaseViewContent() {
 
                 <div className="border-t border-border pt-4">
                   <UPBItemsPanel caseData={caseData} onUpdate={loadCase} />
+                </div>
+
+                {/* JEPES RD Occasion — full width below Item 16 */}
+                <div className="border-t border-border pt-4">
+                  <JepesRdSection c={caseData} onUpdate={loadCase} />
                 </div>
 
                 <div className="border-t border-border pt-4">

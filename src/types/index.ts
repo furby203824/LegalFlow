@@ -612,6 +612,31 @@ export interface SmcrForfeitureResult {
   sixtyDayEndDate: string;
 }
 
+// --- JEPES RD Occasion Record (MCO 1616.1) ---
+export interface JepesRecord {
+  rdOccasionRequired: boolean;
+  rdOccasionCompleted: boolean;
+  rdOccasionCompletedBy: string | null;
+  rdOccasionCompletedDate: string | null;
+  previousRank: string | null;
+  previousGrade: string | null;
+  newRank: string | null;
+  newGrade: string | null;
+}
+
+// --- JEPES Scope (E1-E4 only; E5+ falls under PES) ---
+export const JEPES_GRADES: Grade[] = ["E1", "E2", "E3", "E4"];
+
+// Preferred grade→rank mapping (first enlisted rank for each grade)
+export const USMC_GRADE_TO_RANK: Partial<Record<Grade, UsmcRank>> = {
+  E1: "Pvt", E2: "PFC", E3: "LCpl", E4: "Cpl", E5: "Sgt",
+  E6: "SSgt", E7: "GySgt", E8: "MSgt", E9: "MGySgt",
+};
+export const NAVY_GRADE_TO_RANK: Partial<Record<Grade, NavyRank>> = {
+  E1: "SR", E2: "SA", E3: "SN", E4: "PO3", E5: "PO2",
+  E6: "PO1", E7: "CPO", E8: "SCPO", E9: "MCPO",
+};
+
 // --- Dashboard Case ---
 export interface DashboardCase {
   id: string;
