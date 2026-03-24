@@ -269,8 +269,8 @@ export default function ActionsPanel({ caseData, onUpdate }: { caseData: CaseDat
                 <button onClick={() => performAction("SIGN_ITEM_2", { acceptsNjp: false, counselProvided: true, signerName: `${caseData.accused.lastName}` })} disabled={loading} className="btn-danger text-xs">
                   Demand Court-Martial
                 </button>
-                <button onClick={() => performAction("SIGN_ITEM_2", { acceptsNjp: false, counselProvided: true, refusedToSign: true, signerName: "CO" })} disabled={loading} className="btn-warning text-xs">
-                  Accused Refuses to Sign
+                <button onClick={() => performAction("SIGN_ITEM_2", { acceptsNjp: true, counselProvided: true, refusedToSign: true, signerName: "CO" })} disabled={loading} className="btn-warning text-xs">
+                  Accused Refuses to Sign (CO Signs)
                 </button>
               </div>
             </ActionSection>

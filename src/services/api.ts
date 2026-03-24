@@ -242,20 +242,30 @@ export async function performPhaseAction(caseId: string, action: string, data: R
 
     case "SIGN_ITEM_2": {
       const { acceptsNjp, refusedToSign, signerName } = data;
-      if ((!acceptsNjp || refusedToSign) && !njpCase.vesselException) {
-        await createSignature("2", signerName || u.username, { refusalNoted: refusedToSign, coSignedInstead: refusedToSign });
+
+      // Only an explicit demand for trial (not a refusal to sign) refers to court-martial.
+      // Per MCO 5800.16 / NAVMC 10132: refusing to sign ≠ demanding trial.
+      // The CO notes the refusal, signs in the accused's place, and NJP continues.
+      if (!acceptsNjp && !refusedToSign && !njpCase.vesselException) {
+        await createSignature("2", signerName || u.username, { demandedTrial: true });
         await casesStore.update(caseId, { status: "REFERRED_COURT_MARTIAL", currentPhase: "RIGHTS_ADVISEMENT" });
-        await audit("SIGN", "Item 2 signed - court-martial demanded or refused");
+        await audit("SIGN", "Item 2 signed - court-martial demanded");
         return { message: "Case referred to court-martial jurisdiction", status: "REFERRED_COURT_MARTIAL" };
       }
-      await createSignature("2", signerName || u.username);
+
+      // NJP accepted (either signed or accused refused to sign — CO signs instead)
+      await createSignature("2", signerName || u.username, {
+        refusalNoted: !!refusedToSign,
+        coSignedInstead: !!refusedToSign,
+        acceptedNjp: true,
+      });
       await casesStore.update(caseId, { currentPhase: "RIGHTS_ADVISEMENT" });
       const updated = await casesStore.findById(caseId);
       const lockedOffenses = (updated!.offenses || []).map((o: Rec) => ({ ...o, locked: true }));
       const lockedVictims = (updated!.victims || []).map((v: Rec) => ({ ...v, locked: true }));
       await casesStore.update(caseId, { offenses: lockedOffenses, victims: lockedVictims });
-      await audit("SIGN", "Item 2 signed - NJP accepted");
-      return { message: "Item 2 signed successfully" };
+      await audit("SIGN", refusedToSign ? "Item 2 signed by CO - accused refused to sign, NJP continues" : "Item 2 signed - NJP accepted");
+      return { message: refusedToSign ? "Refusal noted — CO signed, NJP continues" : "Item 2 signed successfully" };
     }
 
     case "SIGN_ITEM_3": {
