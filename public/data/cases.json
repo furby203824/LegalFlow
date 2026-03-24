@@ -2158,7 +2158,20 @@
     "chargeSheet": null,
     "hearingRecord": null,
     "item21Entries": [],
-    "signatures": [],
+    "signatures": [
+      {
+        "id": "sig-1774381718199-2jh0y",
+        "createdAt": "2026-03-24T19:48:38.199Z",
+        "itemNumber": "2",
+        "signerRole": "SUITE_ADMIN",
+        "signerUserId": "user-admin",
+        "signerName": "Nelson, Megan",
+        "signedDate": "2026-03-24",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
+      }
+    ],
     "evidence": [],
     "documents": [
       {
