@@ -2197,7 +2197,7 @@
     "isOverdue": false,
     "caseNumber": "CASE-2026-0007",
     "status": "INITIATED",
-    "currentPhase": "INITIATION",
+    "currentPhase": "RIGHTS_ADVISEMENT",
     "unitId": "unit-1bn5mar",
     "unitFullString": "1st Bn, 5th Marines",
     "accusedName": "Nelson, Megan B",
