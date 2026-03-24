@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { punishmentAbbreviated } from "@/lib/documents/punishmentText";
-import { fmtStandard } from "@/lib/documents/dateFormatters";
+import { fmtStandard, fmtISO } from "@/lib/documents/dateFormatters";
 import { buildPunishmentList } from "@/services/documents";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -156,10 +156,10 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
     vals["2 DEMAND"] = "Demand Trial";
   }
   vals["2 COUNSELOPP"] = caseData.item2CounselConsulted ? "have" : "";
-  vals["2 ACC ELECTION AND RIGHTS DATE_af_date"] = caseData.signatures?.["2"]?.signedDate ? fmtStandard(caseData.signatures["2"].signedDate) : "";
+  vals["2 ACC ELECTION AND RIGHTS DATE_af_date"] = caseData.signatures?.["2"]?.signedDate ? fmtISO(caseData.signatures["2"].signedDate) : "";
 
   // Item 3: CO Cert
-  vals["3 RIGHTS ATTEST DATE_af_date"] = caseData.signatures?.["3"]?.signedDate ? fmtStandard(caseData.signatures["3"].signedDate) : "";
+  vals["3 RIGHTS ATTEST DATE_af_date"] = caseData.signatures?.["3"]?.signedDate ? fmtISO(caseData.signatures["3"].signedDate) : "";
 
   // Item 4: UA
   vals["4 CURRENT UAS OVER 24 HRS AND MARKS OF DESERTION"] = caseData.uaApplicable ? "See case record" : "";
@@ -170,7 +170,7 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
     const punishmentText = punishments.map((p) => punishmentAbbreviated(p)).join("; ");
     const dateStr = caseData.njpDate ? fmtStandard(caseData.njpDate) : "";
     vals["6 PUNISHMENT IMPOSED"] = dateStr && punishmentText ? `${dateStr}. ${punishmentText}` : punishmentText;
-    vals["6 PUNISHMENT IMPOSITION DATE"] = caseData.njpDate ? fmtStandard(caseData.njpDate) : "";
+    vals["6 PUNISHMENT IMPOSITION DATE"] = caseData.njpDate ? fmtISO(caseData.njpDate) : "";
   }
 
   // Item 7: Suspension — use abbreviated format with date
@@ -199,32 +199,32 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
   vals["8B NJP AUTHORITY EDIPI"] = caseData.njpAuthorityEdipi || "";
 
   // Item 10: Notice date
-  vals["10 DATE OF DISPOSITION NOTICE"] = caseData.dateNoticeToAccused ? fmtStandard(caseData.dateNoticeToAccused) : "";
+  vals["10 DATE OF DISPOSITION NOTICE"] = caseData.dateNoticeToAccused ? fmtISO(caseData.dateNoticeToAccused) : "";
 
   // Item 11: Appeal advisement
-  vals["11 APPEAL ADVISEMENT DATE_af_date"] = caseData.signatures?.["11"]?.signedDate ? fmtStandard(caseData.signatures["11"].signedDate) : "";
+  vals["11 APPEAL ADVISEMENT DATE_af_date"] = caseData.signatures?.["11"]?.signedDate ? fmtISO(caseData.signatures["11"].signedDate) : "";
 
   // Item 12: Appeal intent
   if (appeal?.appealIntent === "INTENDS_TO_APPEAL") vals["12 INTEND APPEAL"] = "I do intend to appeal.";
   else if (appeal?.appealIntent === "DOES_NOT_INTEND") vals["12 INTEND APPEAL"] = "I do not intend to appeal.";
   else if (appeal?.appealIntent === "REFUSED_TO_SIGN") vals["12 INTEND APPEAL"] = "the accused refuses to sign.";
-  vals["12 APPEAL INTENT DATE_af_date"] = caseData.signatures?.["12"]?.signedDate ? fmtStandard(caseData.signatures["12"].signedDate) : "";
+  vals["12 APPEAL INTENT DATE_af_date"] = caseData.signatures?.["12"]?.signedDate ? fmtISO(caseData.signatures["12"].signedDate) : "";
 
   // Item 13: Appeal filed
-  vals["13 DATE OF APPEAL IF ANY_af_date"] = appeal?.appealFiledDate ? fmtStandard(appeal.appealFiledDate) : "";
+  vals["13 DATE OF APPEAL IF ANY_af_date"] = appeal?.appealFiledDate ? fmtISO(appeal.appealFiledDate) : "";
   vals["13 NOT APPEALED"] = appeal?.appealIntent === "DOES_NOT_INTEND" ? "X" : "";
 
   // Item 14: Appeal decision
   if (appeal?.appealOutcome === "DENIED") vals["14 APPEAL DECISION"] = "I have considered this appeal and deny relief.";
   else if (appeal?.appealOutcome === "GRANTED") vals["14 APPEAL DECISION"] = `I have considered this appeal and grant relief as follows: ${appeal.appealOutcomeDetail || ""}`;
-  vals["14 APPEAL DECISION DATE_af_date"] = appeal?.appealAuthoritySignedDate ? fmtStandard(appeal.appealAuthoritySignedDate) : "";
+  vals["14 APPEAL DECISION DATE_af_date"] = appeal?.appealAuthoritySignedDate ? fmtISO(appeal.appealAuthoritySignedDate) : "";
 
   // Item 15
-  vals["15 DATE OF NOTICE OF APPEAL DECISION_af_date"] = caseData.dateNoticeAppealDecision ? fmtStandard(caseData.dateNoticeAppealDecision) : "";
+  vals["15 DATE OF NOTICE OF APPEAL DECISION_af_date"] = caseData.dateNoticeAppealDecision ? fmtISO(caseData.dateNoticeAppealDecision) : "";
 
   // Item 16
   vals["16 FINAL ADMIN UD"] = caseData.item16UdNumber || "";
-  vals["16 FINAL ADMIN DTD"] = caseData.item16Dtd ? fmtStandard(caseData.item16Dtd) : "";
+  vals["16 FINAL ADMIN DTD"] = caseData.item16Dtd ? fmtISO(caseData.item16Dtd) : "";
 
   // Item 21: Remarks
   const remarks = (caseData.item21Entries || [])
