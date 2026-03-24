@@ -444,8 +444,8 @@
     "nextActionOwner": "ACCUSED",
     "isOverdue": false,
     "caseNumber": "CASE-2026-0005",
-    "status": "APPEAL_COMPLETE",
-    "currentPhase": "APPEAL",
+    "status": "CLOSED_SUSPENSION_ACTIVE",
+    "currentPhase": "CLOSED",
     "unitId": "unit-aco1bn5mar",
     "unitFullString": "Alpha Co, 1st Bn, 5th Marines",
     "accusedName": "Lee, Carlos Marie",
@@ -464,7 +464,7 @@
     "jurisdictionConfirmed": true,
     "uaApplicable": false,
     "offenseDateEarliest": "2026-03-01",
-    "formLocked": false,
+    "formLocked": true,
     "jaReviewRequired": false,
     "jaReviewComplete": false,
     "njpDate": "2026-03-24",
@@ -501,7 +501,11 @@
     "dateNoticeAppealDecision": "2026-03-23",
     "ompfScanConfirmed": true,
     "ompfConfirmedBy": "user-admin",
-    "ompfConfirmedDate": "2026-03-24T05:00:59.904Z"
+    "ompfConfirmedDate": "2026-03-24T05:00:59.904Z",
+    "item16SignedDate": "2026-03-24",
+    "item16UdNumber": "123245",
+    "item16Dtd": "2026-03-23",
+    "caseFinalDate": "2026-03-24"
   },
   {
     "id": "case-1774223160076-5vamv",
