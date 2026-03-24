@@ -1623,7 +1623,7 @@
     "nextActionOwner": "ACCUSED",
     "isOverdue": false,
     "caseNumber": "CASE-2026-0005",
-    "status": "APPEAL_PENDING",
+    "status": "APPEAL_DECIDED",
     "currentPhase": "APPEAL",
     "unitId": "unit-aco1bn5mar",
     "unitFullString": "Alpha Co, 1st Bn, 5th Marines",
