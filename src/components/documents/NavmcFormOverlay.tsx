@@ -123,11 +123,6 @@ const FIELD_DEFS: FieldDef[] = [
 
 // Fields with centered text alignment (matching PDF Q=1)
 const CENTERED_FIELDS = new Set([
-  "1A FINDING",
-  "1B FINDING",
-  "1C FINDING",
-  "1D FINDING",
-  "1E FINDING",
   "8A NJP AUTHORITY GRADE",
   "8B NJP AUTHORITY EDIPI",
   "19 ACCUSED RANK/GRADE",
@@ -177,17 +172,15 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
   // Item 4: UA
   vals["4 CURRENT UAS OVER 24 HRS AND MARKS OF DESERTION"] = caseData.uaApplicable ? "See case record" : "";
 
-  // Item 6: Punishment — use proper abbreviated format with date prefix
+  // Item 6: Punishment text (no date inline) — date goes in separate field
   if (pr) {
     const punishments = buildPunishmentList(pr);
     const punishmentText = punishments.map((p) => punishmentAbbreviated(p)).join("; ");
-    const dateStr = caseData.njpDate ? fmtStandard(caseData.njpDate) : "";
-    vals["6 PUNISHMENT IMPOSED"] = dateStr && punishmentText ? `${dateStr}. ${punishmentText}` : punishmentText;
-    // Date is already inline in the punishment text — leave separate date field empty
-    vals["6 PUNISHMENT IMPOSITION DATE"] = "";
+    vals["6 PUNISHMENT IMPOSED"] = punishmentText;
+    vals["6 PUNISHMENT IMPOSITION DATE"] = caseData.njpDate ? fmtISO(caseData.njpDate) : "";
   }
 
-  // Item 7: Suspension — use abbreviated format with date
+  // Item 7: Suspension — no date, add remission clause
   if (pr) {
     const punishments = buildPunishmentList(pr);
     const suspended = punishments.filter((p) => p.suspended);
@@ -197,8 +190,7 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
         const mo = p.suspensionMonths ? ` susp ${p.suspensionMonths} mos` : " susp";
         return `${desc}${mo}`;
       });
-      const dateStr = caseData.njpDate ? fmtStandard(caseData.njpDate) : "";
-      vals["7 SUSPENSION IF ANY"] = dateStr ? `${suspParts.join("; ")}. ${dateStr}` : suspParts.join("; ");
+      vals["7 SUSPENSION IF ANY"] = `${suspParts.join("; ")}, at which time unless sooner vac, red will be remitted w/o further action.`;
     } else {
       vals["7 SUSPENSION IF ANY"] = "NONE";
     }
