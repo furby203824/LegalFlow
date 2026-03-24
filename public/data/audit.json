@@ -1483,5 +1483,16 @@
     "userName": "admin",
     "action": "UPDATE",
     "notes": "Findings entered"
+  },
+  {
+    "id": "audit-1774391292456-h4ehq",
+    "timestamp": "2026-03-24T22:28:12.456Z",
+    "caseId": "case-1774381671908-9ib50",
+    "caseNumber": "CASE-2026-0007",
+    "userId": "user-admin",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "UPDATE",
+    "notes": "Punishment entered"
   }
 ]
