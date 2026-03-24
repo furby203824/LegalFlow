@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { punishmentAbbreviated } from "@/lib/documents/punishmentText";
+import { fmtStandard } from "@/lib/documents/dateFormatters";
+import { buildPunishmentList } from "@/services/documents";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CaseData = any;
@@ -153,62 +156,71 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
     vals["2 DEMAND"] = "Demand Trial";
   }
   vals["2 COUNSELOPP"] = caseData.item2CounselConsulted ? "have" : "";
-  vals["2 ACC ELECTION AND RIGHTS DATE_af_date"] = caseData.signatures?.["2"]?.signedDate || "";
+  vals["2 ACC ELECTION AND RIGHTS DATE_af_date"] = caseData.signatures?.["2"]?.signedDate ? fmtStandard(caseData.signatures["2"].signedDate) : "";
 
   // Item 3: CO Cert
-  vals["3 RIGHTS ATTEST DATE_af_date"] = caseData.signatures?.["3"]?.signedDate || "";
+  vals["3 RIGHTS ATTEST DATE_af_date"] = caseData.signatures?.["3"]?.signedDate ? fmtStandard(caseData.signatures["3"].signedDate) : "";
 
   // Item 4: UA
   vals["4 CURRENT UAS OVER 24 HRS AND MARKS OF DESERTION"] = caseData.uaApplicable ? "See case record" : "";
 
-  // Item 6: Punishment
+  // Item 6: Punishment — use proper abbreviated format with date prefix
   if (pr) {
-    const parts: string[] = [];
-    if (pr.forfeitureAmount) parts.push(`Forfeit $${pr.forfeitureAmount}${pr.forfeitureMonths > 1 ? `/mo x${pr.forfeitureMonths}` : ""}`);
-    if (pr.extraDutiesDays) parts.push(`Extra duties ${pr.extraDutiesDays}d`);
-    if (pr.restrictionDays) parts.push(`Restriction ${pr.restrictionDays}d`);
-    if (pr.corrCustodyDays) parts.push(`Corr custody ${pr.corrCustodyDays}d`);
-    if (pr.reductionImposed) parts.push(`Reduce to ${pr.reductionToGrade}`);
-    if (pr.admonitionReprimand) parts.push(pr.admonitionReprimand === "reprimand" ? "Reprimand" : "Admonition");
-    vals["6 PUNISHMENT IMPOSED"] = parts.join("; ");
-    vals["6 PUNISHMENT IMPOSITION DATE"] = caseData.njpDate || "";
+    const punishments = buildPunishmentList(pr);
+    const punishmentText = punishments.map((p) => punishmentAbbreviated(p)).join("; ");
+    const dateStr = caseData.njpDate ? fmtStandard(caseData.njpDate) : "";
+    vals["6 PUNISHMENT IMPOSED"] = dateStr && punishmentText ? `${dateStr}. ${punishmentText}` : punishmentText;
+    vals["6 PUNISHMENT IMPOSITION DATE"] = caseData.njpDate ? fmtStandard(caseData.njpDate) : "";
   }
 
-  // Item 7: Suspension
-  if (pr?.suspensionImposed) {
-    vals["7 SUSPENSION IF ANY"] = `${pr.suspensionPunishment} susp ${pr.suspensionMonths || 6} mos`;
-  } else {
-    vals["7 SUSPENSION IF ANY"] = pr ? "NONE" : "";
+  // Item 7: Suspension — use abbreviated format with date
+  if (pr) {
+    const punishments = buildPunishmentList(pr);
+    const suspended = punishments.filter((p) => p.suspended);
+    if (suspended.length > 0) {
+      const suspParts = suspended.map((p) => {
+        const desc = punishmentAbbreviated(p);
+        const mo = p.suspensionMonths ? ` susp ${p.suspensionMonths} mos` : " susp";
+        return `${desc}${mo}`;
+      });
+      const dateStr = caseData.njpDate ? fmtStandard(caseData.njpDate) : "";
+      vals["7 SUSPENSION IF ANY"] = dateStr ? `${suspParts.join("; ")}. ${dateStr}` : suspParts.join("; ");
+    } else {
+      vals["7 SUSPENSION IF ANY"] = "NONE";
+    }
   }
 
-  // Items 8: NJP Authority
-  vals["8 NJP AUTHORITY NAME TITLE SERVICE"] = caseData.hearingRecord?.njpAuthorityName || "";
-  vals["8A NJP AUTHORITY GRADE"] = caseData.hearingRecord?.njpAuthorityGrade || "";
-  vals["8B NJP AUTHORITY EDIPI"] = caseData.hearingRecord?.njpAuthorityEdipi || "";
+  // Items 8: NJP Authority — stored at top level of case record (set during SIGN_ITEM_9)
+  vals["8 NJP AUTHORITY NAME TITLE SERVICE"] = [
+    caseData.njpAuthorityName,
+    caseData.njpAuthorityTitle,
+  ].filter(Boolean).join(", ") || "";
+  vals["8A NJP AUTHORITY GRADE"] = caseData.njpAuthorityGrade || "";
+  vals["8B NJP AUTHORITY EDIPI"] = caseData.njpAuthorityEdipi || "";
 
   // Item 10: Notice date
-  vals["10 DATE OF DISPOSITION NOTICE"] = caseData.dateNoticeToAccused || "";
+  vals["10 DATE OF DISPOSITION NOTICE"] = caseData.dateNoticeToAccused ? fmtStandard(caseData.dateNoticeToAccused) : "";
 
   // Item 11: Appeal advisement
-  vals["11 APPEAL ADVISEMENT DATE_af_date"] = caseData.signatures?.["11"]?.signedDate || "";
+  vals["11 APPEAL ADVISEMENT DATE_af_date"] = caseData.signatures?.["11"]?.signedDate ? fmtStandard(caseData.signatures["11"].signedDate) : "";
 
   // Item 12: Appeal intent
-  if (appeal?.appealIntent === "INTENDS_TO_APPEAL") vals["12 INTEND APPEAL"] = "Intends to appeal";
-  else if (appeal?.appealIntent === "DOES_NOT_INTEND") vals["12 INTEND APPEAL"] = "Does not intend";
-  else if (appeal?.appealIntent === "REFUSED_TO_SIGN") vals["12 INTEND APPEAL"] = "Refused to sign";
-  vals["12 APPEAL INTENT DATE_af_date"] = caseData.signatures?.["12"]?.signedDate || "";
+  if (appeal?.appealIntent === "INTENDS_TO_APPEAL") vals["12 INTEND APPEAL"] = "I do intend to appeal.";
+  else if (appeal?.appealIntent === "DOES_NOT_INTEND") vals["12 INTEND APPEAL"] = "I do not intend to appeal.";
+  else if (appeal?.appealIntent === "REFUSED_TO_SIGN") vals["12 INTEND APPEAL"] = "the accused refuses to sign.";
+  vals["12 APPEAL INTENT DATE_af_date"] = caseData.signatures?.["12"]?.signedDate ? fmtStandard(caseData.signatures["12"].signedDate) : "";
 
   // Item 13: Appeal filed
-  vals["13 DATE OF APPEAL IF ANY_af_date"] = appeal?.appealFiledDate || "";
+  vals["13 DATE OF APPEAL IF ANY_af_date"] = appeal?.appealFiledDate ? fmtStandard(appeal.appealFiledDate) : "";
   vals["13 NOT APPEALED"] = appeal?.appealIntent === "DOES_NOT_INTEND" ? "X" : "";
 
   // Item 14: Appeal decision
-  if (appeal?.appealOutcome === "DENIED") vals["14 APPEAL DECISION"] = "Deny relief";
-  else if (appeal?.appealOutcome === "GRANTED") vals["14 APPEAL DECISION"] = `Grant relief: ${appeal.appealOutcomeDetail || ""}`;
-  vals["14 APPEAL DECISION DATE_af_date"] = appeal?.appealAuthoritySignedDate || "";
+  if (appeal?.appealOutcome === "DENIED") vals["14 APPEAL DECISION"] = "I have considered this appeal and deny relief.";
+  else if (appeal?.appealOutcome === "GRANTED") vals["14 APPEAL DECISION"] = `I have considered this appeal and grant relief as follows: ${appeal.appealOutcomeDetail || ""}`;
+  vals["14 APPEAL DECISION DATE_af_date"] = appeal?.appealAuthoritySignedDate ? fmtStandard(appeal.appealAuthoritySignedDate) : "";
 
   // Item 15
-  vals["15 DATE OF NOTICE OF APPEAL DECISION_af_date"] = caseData.dateNoticeAppealDecision || "";
+  vals["15 DATE OF NOTICE OF APPEAL DECISION_af_date"] = caseData.dateNoticeAppealDecision ? fmtStandard(caseData.dateNoticeAppealDecision) : "";
 
   // Item 16
   vals["16 FINAL ADMIN UD"] = caseData.item16UdNumber || "";
