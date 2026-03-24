@@ -745,19 +745,21 @@
       "currentStep": 16,
       "responses": {
         "finding_A": "GUILTY",
-        "pun_forfeiture": "",
-        "pun_forfeiture_susp": "",
+        "pun_forfeiture": "imposed",
+        "pun_forfeiture_susp": "yes",
         "pun_extra_duties": "",
         "pun_extra_duties_susp": "",
         "pun_restriction": "",
-        "pun_restriction_susp": ""
+        "pun_restriction_susp": "",
+        "pun_forfeiture_detail": "3865",
+        "susp_months": "6"
       },
       "appealAuthority": "Commanding Officer, 5th Marine Regiment",
       "appellateRightsReader": "",
       "completed": false,
       "lastUpdatedBy": "user-admin",
       "lastUpdatedByName": "admin",
-      "lastUpdatedAt": "2026-03-24T22:27:09.366Z"
+      "lastUpdatedAt": "2026-03-24T22:27:23.215Z"
     },
     "item21Entries": [],
     "signatures": [
