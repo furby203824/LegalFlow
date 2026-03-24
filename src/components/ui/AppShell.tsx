@@ -139,9 +139,11 @@ function buildSidebarMenu(role: string): SidebarSection[] {
       {
         label: "Important Links",
         children: [
+          { label: "MARADMIN 427/23", href: "https://www.marines.mil/News/Messages/Messages-Display/Article/3507627/unit-punishment-book-policy-update/", external: true },
+          { label: "MCO 5800.16-V14", href: "https://www.marines.mil/Portals/1/Publications/MCO%205800.16%20Vol14.pdf?ver=GiRsIU5b8B1FOhzJlbyB2Q%3d%3d", external: true },
+          { label: "JAGINST 5800.7G CH-2", href: "https://www.secnav.navy.mil/doni/SECNAV%20Manuals1/5800.7G_CH-2.pdf", external: true },
           { label: "Separation Basis Checklists", href: "#", disabled: true },
           { label: "Separation Manual", href: "#", disabled: true },
-          { label: "MCO 5800.16", href: "#", disabled: true },
           { label: "DD2875 SAAR access", href: "#", disabled: true },
         ],
       },

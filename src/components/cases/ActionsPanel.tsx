@@ -10,6 +10,7 @@ import {
 import { performPhaseAction } from "@/services/api";
 import { generatePdfDocument } from "@/services/documents";
 import PdfViewer from "@/components/documents/PdfViewer";
+import NavmcFormOverlay from "@/components/documents/NavmcFormOverlay";
 import HearingGuidePanel from "@/components/cases/HearingGuidePanel";
 import { getSession } from "@/lib/auth";
 import { getAppealAuthorityLabel } from "@/lib/units";
@@ -1371,7 +1372,6 @@ function AppealElectionAction({ caseData, loading, onSubmit }: { caseData: CaseD
 
 function AdminClosureAction({ caseData, loading, onSubmit }: { caseData: CaseData; loading: boolean; onSubmit: (d: Record<string, unknown>) => void }) {
   const [step, setStep] = useState<"generate" | "upload" | "confirm">("generate");
-  const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfFilename, setPdfFilename] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -1382,8 +1382,8 @@ function AdminClosureAction({ caseData, loading, onSubmit }: { caseData: CaseDat
   async function handleGenerate() {
     setGenerating(true);
     try {
+      // Generate PDF for download/print only — preview uses NavmcFormOverlay
       const result = await generatePdfDocument(caseData.id, "navmc_10132_pdf");
-      setPdfBytes(result.pdfBytes);
       const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
@@ -1458,8 +1458,8 @@ function AdminClosureAction({ caseData, loading, onSubmit }: { caseData: CaseDat
         {step === "upload" && (
           <div className="space-y-3">
             {pdfUrl && (
-              <div className="border border-border rounded-lg overflow-hidden">
-                <div className="flex items-center justify-between px-3 py-2 bg-surface border-b border-border">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-1">
                   <span className="text-xs font-medium">{pdfFilename}</span>
                   <div className="flex gap-2">
                     <button onClick={handlePrint} className="btn-ghost text-xs gap-1">
@@ -1470,7 +1470,7 @@ function AdminClosureAction({ caseData, loading, onSubmit }: { caseData: CaseDat
                     </button>
                   </div>
                 </div>
-                {pdfBytes && <PdfViewer pdfBytes={pdfBytes} className="h-[350px]" />}
+                <NavmcFormOverlay caseData={caseData} />
               </div>
             )}
 
