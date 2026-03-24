@@ -1463,9 +1463,10 @@
       "appealIntent": "INTENDS_TO_APPEAL",
       "item12SignedDate": "2026-03-24",
       "item12SignedById": "user-co-preparer",
-      "appealFiled": false,
+      "appealFiled": true,
       "appealNotFiled": false,
-      "jaReviewRequired": false
+      "jaReviewRequired": false,
+      "appealFiledDate": "2026-03-23"
     },
     "chargeSheet": null,
     "hearingRecord": {
