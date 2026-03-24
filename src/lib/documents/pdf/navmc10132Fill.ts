@@ -318,31 +318,31 @@ export async function fillNavmc10132Pdf(
 
   if (version !== "PARTIAL") {
     const punishmentText = buildPunishmentText(data);
-    const dateStr = data.item6Date ? fmtTitleCase(data.item6Date) : (data.njpDate ? fmtTitleCase(data.njpDate) : "");
-    // Item 6: "23 Mar 26. Extra duties for 14 days; Restriction for 14 days"
-    const item6Full = dateStr && punishmentText ? `${dateStr}. ${punishmentText}` : punishmentText;
-    if (item6Full.length > FIELD_MAX_LENGTH) {
+    // Item 6: punishment text only — date goes in separate field
+    if (punishmentText.length > FIELD_MAX_LENGTH) {
       setText(form, "6 PUNISHMENT IMPOSED", "See supplemental page");
       supplementalEntries.push({
         entryDate: data.item6Date || data.njpDate || new Date().toISOString().split("T")[0],
-        entryText: `Item 6 - Punishment Imposed: ${item6Full}`,
+        entryText: `Item 6 - Punishment Imposed: ${punishmentText}`,
       });
     } else {
-      setText(form, "6 PUNISHMENT IMPOSED", item6Full);
+      setText(form, "6 PUNISHMENT IMPOSED", punishmentText);
     }
-    // Clear the separate date field — date is inline in the text
-    setText(form, "6 PUNISHMENT IMPOSITION DATE", "");
+    // Date in separate field
+    const item6DateStr = data.item6Date || data.njpDate || "";
+    if (item6DateStr) {
+      setText(form, "6 PUNISHMENT IMPOSITION DATE", fmtISO(item6DateStr));
+    }
   }
 
   if (version !== "PARTIAL") {
     const suspensionText = buildSuspensionText(data);
-    const suspDateStr = data.item6Date ? fmtTitleCase(data.item6Date) : (data.njpDate ? fmtTitleCase(data.njpDate) : "");
-    // Item 7: "Extra duties suspended for 6 months. 23 Mar 26" or "NONE"
+    // Item 7: suspension text with remission clause — no date
     let item7Full: string;
     if (!suspensionText) {
       item7Full = "NONE";
     } else {
-      item7Full = suspDateStr ? `${suspensionText}. ${suspDateStr}` : suspensionText;
+      item7Full = `${suspensionText}, at which time unless sooner vac, red will be remitted w/o further action.`;
     }
     if (item7Full.length > FIELD_MAX_LENGTH) {
       setText(form, "7 SUSPENSION IF ANY", "See supplemental page");
