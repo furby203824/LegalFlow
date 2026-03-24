@@ -62,6 +62,7 @@ const FIELD_DEFS: FieldDef[] = [
   { name: "2 DEMAND", page: 0, x: 229.45, y: 569.72, w: 337.86, h: 10.57, type: "text", label: "Election", readOnly: true },
   { name: "2 COUNSELOPP", page: 0, x: 110, y: 553.85, w: 48.86, h: 10.57, type: "text", label: "Counsel", readOnly: true },
   { name: "2 BOOKER", page: 0, x: 35.85, y: 518.1, w: 527.83, h: 10.58, type: "text", label: "Booker Statement", readOnly: true },
+  { name: "2 ACC REFUSE TO SIGN", page: 0, x: 188.43, y: 501.6, w: 12.66, h: 11.45, type: "checkbox", label: "Accused Refused to Sign" },
   { name: "2 ACC ELECTION AND RIGHTS DATE_af_date", page: 0, x: 34.85, y: 486.53, w: 94.56, h: 13.44, type: "date", label: "Item 2 Date", readOnly: true },
 
   // ── Item 3: CO Certification ──
@@ -194,16 +195,21 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
   }
 
   // Item 2: Election — use exact PDF dropdown values
+  const item2Refusal = caseData.item2RefusalNoted || caseData.signatures?.["2"]?.refusalNoted;
   if (caseData.vesselException) {
     vals["2 DEMAND"] = "I cannot demand trial because I am attached to or embarked upon a vessel.";
     vals["2 BOOKER"] = "(No Booker statement due to the vessel exception, United States v. Mack, 9 M.J. 300, 320 (C.M.A. 1980).)";
-  } else if (caseData.item2ElectionAccepted === true) {
-    vals["2 DEMAND"] = "I do not demand trial and will accept non-judicial punishment, subject to my right of appeal.";
-    vals["2 BOOKER"] = "BOOKER STATEMENT: Having been advised of the above and fully understanding my rights, I choose to accept NJP.";
   } else if (caseData.item2ElectionAccepted === false) {
     vals["2 DEMAND"] = "I demand trial and refuse non-judicial punishment.";
     vals["2 BOOKER"] = "(No Booker statement due to refusal of NJP.)";
+  } else if (caseData.item2ElectionAccepted === true) {
+    vals["2 DEMAND"] = "I do not demand trial and will accept non-judicial punishment, subject to my right of appeal.";
+    vals["2 BOOKER"] = item2Refusal
+      ? ""  // No Booker when accused refuses to sign (CO signs instead)
+      : "BOOKER STATEMENT: Having been advised of the above and fully understanding my rights, I choose to accept NJP.";
   }
+  // Accused refused to sign checkbox
+  vals["2 ACC REFUSE TO SIGN"] = item2Refusal ? "X" : "";
   vals["2 COUNSELOPP"] = caseData.item2CounselConsulted ? "have" : "";
   vals["2 ACC ELECTION AND RIGHTS DATE_af_date"] = caseData.signatures?.["2"]?.signedDate ? fmtISO(caseData.signatures["2"].signedDate) : "";
 
