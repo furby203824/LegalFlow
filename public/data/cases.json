@@ -1572,7 +1572,7 @@
     "isOverdue": false,
     "caseNumber": "CASE-2026-0005",
     "status": "PUNISHMENT_IMPOSED",
-    "currentPhase": "HEARING",
+    "currentPhase": "NOTIFICATION",
     "unitId": "unit-aco1bn5mar",
     "unitFullString": "Alpha Co, 1st Bn, 5th Marines",
     "accusedName": "Lee, Carlos Marie",
@@ -1622,6 +1622,7 @@
     "njpAuthorityUnit": "Alpha Co, 1st Bn, 5th Marines",
     "njpAuthorityRank": "Capt",
     "njpAuthorityGrade": "O3",
-    "njpAuthorityEdipi": "3456789012"
+    "njpAuthorityEdipi": "3456789012",
+    "dateNoticeToAccused": "2026-03-24"
   }
 ]
