@@ -2089,6 +2089,11 @@
     "njpDate": null,
     "appealNotFiled": false,
     "accusedTransferred": false,
-    "initiatedById": "user-admin"
+    "initiatedById": "user-admin",
+    "rightsAcknowledgement": {
+      "id": "ra-1774328812128-yvfeq",
+      "acknowledged": true,
+      "acknowledgedAt": "2026-03-24T05:06:52.128Z"
+    }
   }
 ]
