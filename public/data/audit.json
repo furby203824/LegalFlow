@@ -1109,5 +1109,16 @@
     "userName": "co-preparer",
     "action": "UPDATE",
     "notes": "Item 15 - accused notified of appeal decision on 2026-03-23"
+  },
+  {
+    "id": "audit-1774318769921-z1wnt",
+    "timestamp": "2026-03-24T02:19:29.921Z",
+    "caseId": "case-1774294101445-2c51m",
+    "caseNumber": "CASE-2026-0005",
+    "userId": "user-co-preparer",
+    "userRole": "NJP_PREPARER",
+    "userName": "co-preparer",
+    "action": "GENERATE",
+    "notes": "Generated PDF: navmc_10132_pdf"
   }
 ]
