@@ -29,6 +29,19 @@ export default function PdfViewer({ pdfBytes, className }: PdfViewerProps) {
       setLoading(true);
       try {
         const srcDoc = await PDFDocument.load(pdfBytes);
+
+        // Flatten form fields into page content before splitting.
+        // Without this, widget annotations lose their parent AcroForm
+        // when copied to single-page documents, causing inconsistent
+        // rendering across browsers and reloads.
+        try {
+          const form = srcDoc.getForm();
+          form.updateFieldAppearances();
+          form.flatten();
+        } catch {
+          // No form fields — continue
+        }
+
         const count = srcDoc.getPageCount();
         const urls: string[] = [];
 

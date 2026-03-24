@@ -440,6 +440,10 @@ export async function fillNavmc10132Pdf(
     }
   }
 
+  // Generate appearance streams for all fields so the visual output
+  // is deterministic regardless of the PDF viewer used.
+  form.updateFieldAppearances();
+
   // Flatten form to prevent further editing (for FINAL version)
   // Flattening converts form fields to static text, removing field boxes
   if (version === "FINAL") {
