@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { RANK_GRADE_OPTIONS, getMaxForfeiture } from "@/types";
+import { RANK_GRADE_OPTIONS, getMaxForfeiture, getRankGradeOptionsByBranch } from "@/types";
 import type { CommanderGradeLevel, UserRole } from "@/types";
 import {
   AlertTriangle, AlertOctagon, Info, Clock, Lock, FileText, Download, Upload, Printer, CheckCircle,
@@ -1036,8 +1036,11 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
   const [pdfFilename, setPdfFilename] = useState("");
   const [generating, setGenerating] = useState(false);
   const [outcome, setOutcome] = useState("DENIED");
+  const [outcomeDetail, setOutcomeDetail] = useState("");
+  const [item14Date, setItem14Date] = useState("");
   const [item15Date, setItem15Date] = useState("");
   const [authorityName, setAuthorityName] = useState(caseData.appealRecord?.appealAuthorityName || caseData.hearingRecord?.appealAuthority || getAppealAuthorityLabel(caseData.unitId || "") || "");
+  const [authorityRank, setAuthorityRank] = useState(caseData.appealRecord?.appealAuthorityRank || "");
   const [fileName, setFileName] = useState("");
   const accused = caseData.accused || {};
 
@@ -1168,25 +1171,63 @@ function AppealDecisionAction({ caseData, loading, onSubmit }: { caseData: CaseD
             <p className="text-xs text-neutral-mid">
               Record the decision from the signed appeal document for {accused.rank} {accused.lastName}.
             </p>
-            <div>
-              <label className="block text-xs font-medium text-neutral-mid mb-1">Appeal Authority (Next Higher)</label>
-              <div className="input-field text-xs bg-surface text-neutral-dark">{authorityName || "—"}</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-neutral-mid mb-1">Appeal Authority Name *</label>
+                <input type="text" value={authorityName} onChange={(e) => setAuthorityName(e.target.value)} className="input-field text-xs" placeholder="Name of appeal authority" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-neutral-mid mb-1">Appeal Authority Rank *</label>
+                <select value={authorityRank} onChange={(e) => setAuthorityRank(e.target.value)} className="input-field text-xs">
+                  <option value="">Select rank</option>
+                  {getRankGradeOptionsByBranch(caseData.serviceBranch || "USMC")
+                    .filter((r) => r.grade.startsWith("O") || r.grade.startsWith("W"))
+                    .map((r) => (
+                      <option key={r.rank} value={r.rank}>{r.label}</option>
+                    ))}
+                </select>
+              </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-mid mb-1">Decision</label>
-              <select value={outcome} onChange={(e) => setOutcome(e.target.value)} className="input-field">
+              <label className="block text-xs font-medium text-neutral-mid mb-1">Decision *</label>
+              <select value={outcome} onChange={(e) => setOutcome(e.target.value)} className="input-field text-xs">
                 <option value="DENIED">Denied</option>
                 <option value="DENIED_UNTIMELY">Denied - Untimely</option>
                 <option value="GRANTED_SET_ASIDE">Granted - Set Aside</option>
-                <option value="REDUCTION_SET_ASIDE_ONLY">Reduction Set Aside</option>
+                <option value="REDUCTION_SET_ASIDE_ONLY">Reduction Set Aside Only</option>
                 <option value="PARTIAL_RELIEF">Partial Relief</option>
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-neutral-mid mb-1">Date Notice of Appeal Decision (Item 15)</label>
-              <input type="date" value={item15Date} onChange={(e) => setItem15Date(e.target.value)} className="input-field" />
+            {(outcome === "PARTIAL_RELIEF" || outcome === "GRANTED_SET_ASIDE" || outcome === "REDUCTION_SET_ASIDE_ONLY") && (
+              <div>
+                <label className="block text-xs font-medium text-neutral-mid mb-1">Decision Details *</label>
+                <textarea
+                  value={outcomeDetail}
+                  onChange={(e) => setOutcomeDetail(e.target.value)}
+                  className="input-field text-xs"
+                  rows={2}
+                  placeholder={outcome === "PARTIAL_RELIEF" ? "Describe which punishments were modified or set aside..." : outcome === "REDUCTION_SET_ASIDE_ONLY" ? "Reduction in grade set aside; remaining punishments stand." : "Describe the basis for setting aside the punishment..."}
+                />
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-neutral-mid mb-1">Item 14 Decision Date *</label>
+                <input type="date" value={item14Date} onChange={(e) => setItem14Date(e.target.value)} className="input-field text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-mid mb-1">Item 15 Notice Date *</label>
+                <input type="date" value={item15Date} onChange={(e) => setItem15Date(e.target.value)} className="input-field text-xs" />
+              </div>
             </div>
-            <button onClick={() => onSubmit({ outcome, item15Date, authorityName })} disabled={loading || !authorityName} className="btn-primary text-xs w-full gap-1">
+            {item14Date && item15Date && item15Date < item14Date && (
+              <p className="text-xs text-error">Item 15 date cannot be before Item 14 date</p>
+            )}
+            <button
+              onClick={() => onSubmit({ outcome, outcomeDetail: outcomeDetail || undefined, item14Date, item15Date, authorityName, authorityRank })}
+              disabled={loading || !authorityName || !authorityRank || !item14Date || !item15Date || (item15Date < item14Date) || ((outcome === "PARTIAL_RELIEF" || outcome === "GRANTED_SET_ASIDE" || outcome === "REDUCTION_SET_ASIDE_ONLY") && !outcomeDetail)}
+              className="btn-primary text-xs w-full gap-1"
+            >
               <CheckCircle size={14} />
               {loading ? "Processing..." : "Validate Appeal Decision"}
             </button>
