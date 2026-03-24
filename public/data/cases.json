@@ -1472,7 +1472,8 @@
       "appealAuthoritySignedDate": "2026-03-23",
       "appealOutcome": "DENIED",
       "appealOutcomeDetail": null,
-      "items1314Locked": true
+      "items1314Locked": true,
+      "appealDecisionNoticeDate": "2026-03-23"
     },
     "chargeSheet": null,
     "hearingRecord": {
