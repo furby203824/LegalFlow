@@ -748,7 +748,15 @@
       "suspensionStatus": "ACTIVE",
       "locked": true
     },
-    "appeal": null,
+    "appeal": {
+      "id": "app-1774393659159-lpn5w",
+      "appealIntent": "DOES_NOT_INTEND",
+      "item12SignedDate": "2026-03-24",
+      "item12SignedById": "user-admin",
+      "appealFiled": false,
+      "appealNotFiled": true,
+      "jaReviewRequired": false
+    },
     "chargeSheet": null,
     "hearingRecord": {
       "id": "hr-1774391229366-217q8",
