@@ -96,15 +96,15 @@ export default function AccountPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-neutral-mid mb-1">First Name</label>
-              <input className="input-field text-sm" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+              <input className="input-underline text-sm" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
             </div>
             <div>
               <label className="block text-xs text-neutral-mid mb-1">Last Name</label>
-              <input className="input-field text-sm" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              <input className="input-underline text-sm" value={lastName} onChange={(e) => setLastName(e.target.value)} />
             </div>
             <div className="col-span-2">
               <label className="block text-xs text-neutral-mid mb-1">Email</label>
-              <input type="email" className="input-field text-sm" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <input type="email" className="input-underline text-sm" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
           </div>
         </div>
@@ -114,21 +114,21 @@ export default function AccountPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-neutral-mid mb-1">Rank</label>
-              <select className="input-field text-sm" value={rank} onChange={(e) => setRank(e.target.value)}>
+              <select className="input-underline text-sm" value={rank} onChange={(e) => setRank(e.target.value)}>
                 <option value="">Select</option>
                 {RANKS.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs text-neutral-mid mb-1">Grade</label>
-              <select className="input-field text-sm" value={grade} onChange={(e) => setGrade(e.target.value)}>
+              <select className="input-underline text-sm" value={grade} onChange={(e) => setGrade(e.target.value)}>
                 <option value="">Select</option>
                 {GRADES.map((g) => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
             <div className="col-span-2">
               <label className="block text-xs text-neutral-mid mb-1">EDIPI</label>
-              <input className="input-field text-sm font-mono" value={edipi} onChange={(e) => setEdipi(e.target.value)} maxLength={10} placeholder="10-digit DoD ID" />
+              <input className="input-underline text-sm font-mono" value={edipi} onChange={(e) => setEdipi(e.target.value)} maxLength={10} placeholder="10-digit DoD ID" />
             </div>
           </div>
         </div>

@@ -194,47 +194,47 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="sm:col-span-2">
             <Label>1. Name of Accused (Last, First, Middle Initial)</Label>
-            <input className="input-field bg-gray-50" value={accusedName} disabled />
+            <input className="input-underline bg-gray-50" value={accusedName} disabled />
           </div>
           <div>
             <Label>2. EDIPI</Label>
-            <input className="input-field font-mono bg-gray-50" value={edipi || "Not provided"} disabled />
+            <input className="input-underline font-mono bg-gray-50" value={edipi || "Not provided"} disabled />
           </div>
           <div>
             <Label>3. Grade or Rank</Label>
-            <input className="input-field bg-gray-50" value={gradeOrRank} disabled />
+            <input className="input-underline bg-gray-50" value={gradeOrRank} disabled />
           </div>
           <div>
             <Label>4. Pay Grade</Label>
-            <input className="input-field bg-gray-50" value={payGrade} disabled />
+            <input className="input-underline bg-gray-50" value={payGrade} disabled />
           </div>
           <div>
             <Label>5. Unit or Organization</Label>
-            <input className="input-field bg-gray-50" value={unitOrOrg} disabled />
+            <input className="input-underline bg-gray-50" value={unitOrOrg} disabled />
           </div>
           <div>
             <Label>6a. Initial Date of Current Service</Label>
-            <input type="date" className="input-field" value={serviceInitialDate} onChange={(e) => setServiceInitialDate(e.target.value)} disabled={locked} />
+            <input type="date" className="input-underline" value={serviceInitialDate} onChange={(e) => setServiceInitialDate(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>6b. Term</Label>
-            <input className="input-field" value={serviceTerm} onChange={(e) => setServiceTerm(e.target.value)} placeholder="e.g., 4 years" disabled={locked} />
+            <input className="input-underline" value={serviceTerm} onChange={(e) => setServiceTerm(e.target.value)} placeholder="e.g., 4 years" disabled={locked} />
           </div>
           <div>
             <Label>7a. Pay - Basic</Label>
-            <input className="input-field font-mono" value={payBasic} onChange={(e) => setPayBasic(e.target.value)} placeholder="$0.00" disabled={locked} />
+            <input className="input-underline font-mono" value={payBasic} onChange={(e) => setPayBasic(e.target.value)} placeholder="$0.00" disabled={locked} />
           </div>
           <div>
             <Label>7b. Pay - Sea/Foreign Duty</Label>
-            <input className="input-field font-mono" value={paySeaForeign} onChange={(e) => setPaySeaForeign(e.target.value)} placeholder="$0.00" disabled={locked} />
+            <input className="input-underline font-mono" value={paySeaForeign} onChange={(e) => setPaySeaForeign(e.target.value)} placeholder="$0.00" disabled={locked} />
           </div>
           <div>
             <Label>7c. Pay - Total</Label>
-            <input className="input-field font-mono" value={payTotal} onChange={(e) => setPayTotal(e.target.value)} placeholder="$0.00" disabled={locked} />
+            <input className="input-underline font-mono" value={payTotal} onChange={(e) => setPayTotal(e.target.value)} placeholder="$0.00" disabled={locked} />
           </div>
           <div>
             <Label>8. Nature of Restraint of Accused</Label>
-            <select className="input-field" value={natureOfRestraint} onChange={(e) => setNatureOfRestraint(e.target.value)} disabled={locked}>
+            <select className="input-underline" value={natureOfRestraint} onChange={(e) => setNatureOfRestraint(e.target.value)} disabled={locked}>
               <option value="None">None</option>
               <option value="Restriction">Restriction in lieu of arrest</option>
               <option value="Arrest">Arrest</option>
@@ -244,7 +244,7 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
           </div>
           <div>
             <Label>9. Date(s) Imposed</Label>
-            <input className="input-field" value={datesImposed} onChange={(e) => setDatesImposed(e.target.value)} placeholder="YYYYMMDD" disabled={locked} />
+            <input className="input-underline" value={datesImposed} onChange={(e) => setDatesImposed(e.target.value)} placeholder="YYYYMMDD" disabled={locked} />
           </div>
         </div>
       </CollapsibleSection>
@@ -271,12 +271,12 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
             <div className="space-y-3">
               <div>
                 <Label>10. Charge: Violation of the UCMJ, Article</Label>
-                <input className="input-field bg-gray-50" value={c.article} disabled />
+                <input className="input-underline bg-gray-50" value={c.article} disabled />
               </div>
               <div>
                 <Label>Specification</Label>
                 <textarea
-                  className="input-field min-h-[120px] bg-gray-50"
+                  className="input-underline min-h-[120px] bg-gray-50"
                   value={c.specification}
                   disabled
                 />
@@ -296,19 +296,19 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="sm:col-span-2">
             <Label>11a. Name of Accuser (Last, First, MI)</Label>
-            <input className="input-field" value={accuserName} onChange={(e) => setAccuserName(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={accuserName} onChange={(e) => setAccuserName(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>11b. Grade</Label>
-            <input className="input-field" value={accuserGrade} onChange={(e) => setAccuserGrade(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={accuserGrade} onChange={(e) => setAccuserGrade(e.target.value)} disabled={locked} />
           </div>
           <div className="sm:col-span-2">
             <Label>11c. Organization of Accuser</Label>
-            <input className="input-field" value={accuserOrg} onChange={(e) => setAccuserOrg(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={accuserOrg} onChange={(e) => setAccuserOrg(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>11e. Date (YYYYMMDD)</Label>
-            <input className="input-field font-mono" value={accuserSignedDate} onChange={(e) => setAccuserSignedDate(e.target.value)} placeholder="YYYYMMDD" disabled={locked} />
+            <input className="input-underline font-mono" value={accuserSignedDate} onChange={(e) => setAccuserSignedDate(e.target.value)} placeholder="YYYYMMDD" disabled={locked} />
           </div>
         </div>
         <div className="mt-4 pt-4 border-t border-border">
@@ -318,19 +318,19 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Typed Name of Officer</Label>
-              <input className="input-field" value={oathOfficerName} onChange={(e) => setOathOfficerName(e.target.value)} disabled={locked} />
+              <input className="input-underline" value={oathOfficerName} onChange={(e) => setOathOfficerName(e.target.value)} disabled={locked} />
             </div>
             <div>
               <Label>Organization of Officer</Label>
-              <input className="input-field" value={oathOfficerOrg} onChange={(e) => setOathOfficerOrg(e.target.value)} disabled={locked} />
+              <input className="input-underline" value={oathOfficerOrg} onChange={(e) => setOathOfficerOrg(e.target.value)} disabled={locked} />
             </div>
             <div>
               <Label>Grade</Label>
-              <input className="input-field" value={oathOfficerGrade} onChange={(e) => setOathOfficerGrade(e.target.value)} disabled={locked} />
+              <input className="input-underline" value={oathOfficerGrade} onChange={(e) => setOathOfficerGrade(e.target.value)} disabled={locked} />
             </div>
             <div>
               <Label>Official Capacity</Label>
-              <input className="input-field" value={oathOfficerCapacity} onChange={(e) => setOathOfficerCapacity(e.target.value)} placeholder="e.g., Commissioned Officer" disabled={locked} />
+              <input className="input-underline" value={oathOfficerCapacity} onChange={(e) => setOathOfficerCapacity(e.target.value)} placeholder="e.g., Commissioned Officer" disabled={locked} />
             </div>
           </div>
         </div>
@@ -346,20 +346,20 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label>Date of Notification</Label>
-            <input type="date" className="input-field" value={notificationDate} onChange={(e) => setNotificationDate(e.target.value)} disabled={locked} />
+            <input type="date" className="input-underline" value={notificationDate} onChange={(e) => setNotificationDate(e.target.value)} disabled={locked} />
           </div>
           <div />
           <div>
             <Label>Typed Name of Immediate Commander</Label>
-            <input className="input-field" value={notificationCmdrName} onChange={(e) => setNotificationCmdrName(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={notificationCmdrName} onChange={(e) => setNotificationCmdrName(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>Organization of Immediate Commander</Label>
-            <input className="input-field" value={notificationCmdrOrg} onChange={(e) => setNotificationCmdrOrg(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={notificationCmdrOrg} onChange={(e) => setNotificationCmdrOrg(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>Grade</Label>
-            <input className="input-field" value={notificationCmdrGrade} onChange={(e) => setNotificationCmdrGrade(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={notificationCmdrGrade} onChange={(e) => setNotificationCmdrGrade(e.target.value)} disabled={locked} />
           </div>
         </div>
       </CollapsibleSection>
@@ -374,31 +374,31 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label>Date Received</Label>
-            <input type="date" className="input-field" value={receiptDate} onChange={(e) => setReceiptDate(e.target.value)} disabled={locked} />
+            <input type="date" className="input-underline" value={receiptDate} onChange={(e) => setReceiptDate(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>Time (hours)</Label>
-            <input type="time" className="input-field" value={receiptTime} onChange={(e) => setReceiptTime(e.target.value)} disabled={locked} />
+            <input type="time" className="input-underline" value={receiptTime} onChange={(e) => setReceiptTime(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>Location</Label>
-            <input className="input-field" value={receiptLocation} onChange={(e) => setReceiptLocation(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={receiptLocation} onChange={(e) => setReceiptLocation(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>Designation of Command/Officer (R.C.M. 403)</Label>
-            <input className="input-field" value={receiptDesignation} onChange={(e) => setReceiptDesignation(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={receiptDesignation} onChange={(e) => setReceiptDesignation(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>Typed Name of Officer</Label>
-            <input className="input-field" value={receiptOfficerName} onChange={(e) => setReceiptOfficerName(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={receiptOfficerName} onChange={(e) => setReceiptOfficerName(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>Official Capacity of Officer Signing</Label>
-            <input className="input-field" value={receiptOfficerCapacity} onChange={(e) => setReceiptOfficerCapacity(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={receiptOfficerCapacity} onChange={(e) => setReceiptOfficerCapacity(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>Grade</Label>
-            <input className="input-field" value={receiptOfficerGrade} onChange={(e) => setReceiptOfficerGrade(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={receiptOfficerGrade} onChange={(e) => setReceiptOfficerGrade(e.target.value)} disabled={locked} />
           </div>
         </div>
       </CollapsibleSection>
@@ -413,19 +413,19 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="sm:col-span-2">
             <Label>14a. Designation of Command of Convening Authority</Label>
-            <input className="input-field" value={conveningAuthority} onChange={(e) => setConveningAuthority(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={conveningAuthority} onChange={(e) => setConveningAuthority(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>14b. Place</Label>
-            <input className="input-field" value={referralPlace} onChange={(e) => setReferralPlace(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={referralPlace} onChange={(e) => setReferralPlace(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>14c. Date (YYYYMMDD)</Label>
-            <input className="input-field font-mono" value={referralDate} onChange={(e) => setReferralDate(e.target.value)} placeholder="YYYYMMDD" disabled={locked} />
+            <input className="input-underline font-mono" value={referralDate} onChange={(e) => setReferralDate(e.target.value)} placeholder="YYYYMMDD" disabled={locked} />
           </div>
           <div>
             <Label>Court-Martial Type</Label>
-            <select className="input-field" value={courtMartialType} onChange={(e) => setCourtMartialType(e.target.value)} disabled={locked}>
+            <select className="input-underline" value={courtMartialType} onChange={(e) => setCourtMartialType(e.target.value)} disabled={locked}>
               <option value="">Select type</option>
               <option value="SCM">Summary Court-Martial</option>
               <option value="SPCM">Special Court-Martial</option>
@@ -434,29 +434,29 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
           </div>
           <div>
             <Label>Convened by</Label>
-            <input className="input-field" value={referralConvenedBy} onChange={(e) => setReferralConvenedBy(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={referralConvenedBy} onChange={(e) => setReferralConvenedBy(e.target.value)} disabled={locked} />
           </div>
         </div>
         <div className="mt-3">
           <Label>Instructions (R.C.M. 601(e))</Label>
-          <textarea className="input-field min-h-[60px]" value={referralInstructions} onChange={(e) => setReferralInstructions(e.target.value)} disabled={locked} />
+          <textarea className="input-underline min-h-[60px]" value={referralInstructions} onChange={(e) => setReferralInstructions(e.target.value)} disabled={locked} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
           <div>
             <Label>By Command or Order</Label>
-            <input className="input-field" value={referralCommandOrOrder} onChange={(e) => setReferralCommandOrOrder(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={referralCommandOrOrder} onChange={(e) => setReferralCommandOrOrder(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>Typed Name of Officer</Label>
-            <input className="input-field" value={referralOfficerName} onChange={(e) => setReferralOfficerName(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={referralOfficerName} onChange={(e) => setReferralOfficerName(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>Official Capacity of Officer Signing</Label>
-            <input className="input-field" value={referralOfficerCapacity} onChange={(e) => setReferralOfficerCapacity(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={referralOfficerCapacity} onChange={(e) => setReferralOfficerCapacity(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>Grade</Label>
-            <input className="input-field" value={referralOfficerGrade} onChange={(e) => setReferralOfficerGrade(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={referralOfficerGrade} onChange={(e) => setReferralOfficerGrade(e.target.value)} disabled={locked} />
           </div>
         </div>
       </CollapsibleSection>
@@ -471,16 +471,16 @@ export default function ChargeSheetPanel({ caseId, caseData, onUpdate }: ChargeS
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label>Date of Service</Label>
-            <input type="date" className="input-field" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} disabled={locked} />
+            <input type="date" className="input-underline" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} disabled={locked} />
           </div>
           <div />
           <div>
             <Label>Typed Name of Trial Counsel</Label>
-            <input className="input-field" value={trialCounselName} onChange={(e) => setTrialCounselName(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={trialCounselName} onChange={(e) => setTrialCounselName(e.target.value)} disabled={locked} />
           </div>
           <div>
             <Label>Grade or Rank of Trial Counsel</Label>
-            <input className="input-field" value={trialCounselGrade} onChange={(e) => setTrialCounselGrade(e.target.value)} disabled={locked} />
+            <input className="input-underline" value={trialCounselGrade} onChange={(e) => setTrialCounselGrade(e.target.value)} disabled={locked} />
           </div>
         </div>
       </CollapsibleSection>

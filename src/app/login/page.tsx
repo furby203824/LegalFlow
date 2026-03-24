@@ -194,19 +194,19 @@ export default function LoginPage() {
               )}
               <div>
                 <label className="block text-sm font-medium text-neutral-dark mb-1">Repo Owner</label>
-                <input type="text" value={owner} onChange={(e) => setOwner(e.target.value)} className="input-field" placeholder="github-username" required />
+                <input type="text" value={owner} onChange={(e) => setOwner(e.target.value)} className="input-underline" placeholder="github-username" required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-dark mb-1">Repo Name</label>
-                <input type="text" value={repo} onChange={(e) => setRepo(e.target.value)} className="input-field" placeholder="LegalFlow" required />
+                <input type="text" value={repo} onChange={(e) => setRepo(e.target.value)} className="input-underline" placeholder="LegalFlow" required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-dark mb-1">Branch</label>
-                <input type="text" value={branch} onChange={(e) => setBranch(e.target.value)} className="input-field" placeholder="main" />
+                <input type="text" value={branch} onChange={(e) => setBranch(e.target.value)} className="input-underline" placeholder="main" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-dark mb-1">Personal Access Token</label>
-                <input type="password" value={token} onChange={(e) => setToken(e.target.value)} className="input-field" placeholder="ghp_..." required />
+                <input type="password" value={token} onChange={(e) => setToken(e.target.value)} className="input-underline" placeholder="ghp_..." required />
                 <p className="text-xs text-neutral-mid mt-1">Requires repo read/write scope</p>
               </div>
               <button type="submit" disabled={loading} className="btn-primary w-full">
@@ -234,7 +234,7 @@ export default function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
-                    className="input-field"
+                    className="input-underline"
                     placeholder="Enter username"
                   />
                 </div>
@@ -248,7 +248,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="input-field"
+                    className="input-underline"
                     placeholder="Enter password"
                   />
                 </div>

@@ -82,7 +82,7 @@ export default function DashboardPage() {
                 value={newBroadcastMsg}
                 onChange={(e) => setNewBroadcastMsg(e.target.value)}
                 placeholder="Enter broadcast message..."
-                className="input-field flex-1 min-h-[80px] text-sm"
+                className="input-underline flex-1 min-h-[80px] text-sm"
                 maxLength={1000}
               />
               <div className="flex flex-col gap-1">

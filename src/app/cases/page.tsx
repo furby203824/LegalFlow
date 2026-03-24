@@ -268,7 +268,7 @@ function CasesListContent() {
             <select
               value={pageSize}
               onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-              className="input-field text-xs w-16 py-1"
+              className="input-underline text-xs w-16 py-1"
             >
               <option value={20}>20</option>
               <option value={50}>50</option>
@@ -329,7 +329,7 @@ function CasesListContent() {
                         type="text"
                         value={filterCaseNum}
                         onChange={(e) => { setFilterCaseNum(e.target.value); setPage(1); }}
-                        className="input-field text-xs py-1 w-full"
+                        className="input-underline text-xs py-1 w-full"
                         placeholder=""
                       />
                     </td>
@@ -338,7 +338,7 @@ function CasesListContent() {
                         type="text"
                         value={filterEdipi}
                         onChange={(e) => { setFilterEdipi(e.target.value); setPage(1); }}
-                        className="input-field text-xs py-1 w-full"
+                        className="input-underline text-xs py-1 w-full"
                         placeholder=""
                       />
                     </td>
@@ -347,7 +347,7 @@ function CasesListContent() {
                         type="text"
                         value={filterName}
                         onChange={(e) => { setFilterName(e.target.value); setPage(1); }}
-                        className="input-field text-xs py-1 w-full"
+                        className="input-underline text-xs py-1 w-full"
                         placeholder=""
                       />
                     </td>
@@ -355,7 +355,7 @@ function CasesListContent() {
                       <select
                         value={filterStatus}
                         onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-                        className="input-field text-xs py-1 w-full"
+                        className="input-underline text-xs py-1 w-full"
                       >
                         <option value="">Package Statuses</option>
                         {STATUS_OPTIONS.map((s) => (
@@ -368,7 +368,7 @@ function CasesListContent() {
                         type="text"
                         value={filterPhase}
                         onChange={(e) => { setFilterPhase(e.target.value); setPage(1); }}
-                        className="input-field text-xs py-1 w-full"
+                        className="input-underline text-xs py-1 w-full"
                         placeholder=""
                       />
                     </td>
@@ -377,7 +377,7 @@ function CasesListContent() {
                         type="text"
                         value={filterArticle}
                         onChange={(e) => { setFilterArticle(e.target.value); setPage(1); }}
-                        className="input-field text-xs py-1 w-full"
+                        className="input-underline text-xs py-1 w-full"
                         placeholder=""
                       />
                     </td>

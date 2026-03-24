@@ -190,7 +190,7 @@ export default function EvidencePanel({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium mb-1">Type</label>
-                  <select value={type} onChange={(e) => setType(e.target.value)} className="input-field">
+                  <select value={type} onChange={(e) => setType(e.target.value)} className="input-underline">
                     <option value="">Select type</option>
                     {EVIDENCE_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>{t.label}</option>
@@ -199,16 +199,16 @@ export default function EvidencePanel({
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1">Date Received</label>
-                  <input type="date" value={dateReceived} onChange={(e) => setDateReceived(e.target.value)} className="input-field" />
+                  <input type="date" value={dateReceived} onChange={(e) => setDateReceived(e.target.value)} className="input-underline" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1">Source</label>
-                <input value={source} onChange={(e) => setSource(e.target.value)} className="input-field" placeholder="e.g., SSgt Smith, PMO, medical" />
+                <input value={source} onChange={(e) => setSource(e.target.value)} className="input-underline" placeholder="e.g., SSgt Smith, PMO, medical" />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1">Description</label>
-                <input value={description} onChange={(e) => setDescription(e.target.value)} className="input-field" placeholder="Brief description of evidence" />
+                <input value={description} onChange={(e) => setDescription(e.target.value)} className="input-underline" placeholder="Brief description of evidence" />
               </div>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => setShowAdd(false)} className="btn-ghost text-xs">Cancel</button>
@@ -247,16 +247,16 @@ function EvidenceRow({
     return (
       <div className="rounded-md border border-primary bg-blue-50 p-3 space-y-2">
         <div className="grid grid-cols-2 gap-2">
-          <select value={editType} onChange={(e) => setEditType(e.target.value)} className="input-field text-xs">
+          <select value={editType} onChange={(e) => setEditType(e.target.value)} className="input-underline text-xs">
             <option value="">Select type</option>
             {EVIDENCE_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
-          <input type="date" value={editDateReceived} onChange={(e) => setEditDateReceived(e.target.value)} className="input-field text-xs" />
+          <input type="date" value={editDateReceived} onChange={(e) => setEditDateReceived(e.target.value)} className="input-underline text-xs" />
         </div>
-        <input value={editSource} onChange={(e) => setEditSource(e.target.value)} className="input-field text-xs" placeholder="Source" />
-        <input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="input-field text-xs" placeholder="Description" />
+        <input value={editSource} onChange={(e) => setEditSource(e.target.value)} className="input-underline text-xs" placeholder="Source" />
+        <input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="input-underline text-xs" placeholder="Description" />
         <div className="flex gap-2 justify-end">
           <button onClick={onCancel} className="btn-ghost text-xs gap-1"><X size={12} /> Cancel</button>
           <button onClick={onSave} disabled={loading} className="btn-primary text-xs gap-1"><Check size={12} /> Save</button>

@@ -115,11 +115,11 @@ export default function RemarksPanel({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium mb-1">Date</label>
-                  <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-field" />
+                  <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-underline" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1">Type</label>
-                  <select value={entryType} onChange={(e) => setEntryType(e.target.value)} className="input-field">
+                  <select value={entryType} onChange={(e) => setEntryType(e.target.value)} className="input-underline">
                     {ENTRY_TYPES.map((t) => (
                       <option key={t} value={t}>{t.replace(/_/g, " ")}</option>
                     ))}
@@ -128,7 +128,7 @@ export default function RemarksPanel({
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1">Entry Text</label>
-                <textarea value={text} onChange={(e) => setText(e.target.value)} className="input-field h-16" placeholder="YYYY-MM-DD ITEM X: ..." />
+                <textarea value={text} onChange={(e) => setText(e.target.value)} className="input-underline h-16" placeholder="YYYY-MM-DD ITEM X: ..." />
               </div>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => setShowAdd(false)} className="btn-ghost text-xs">Cancel</button>

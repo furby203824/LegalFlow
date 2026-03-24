@@ -96,25 +96,25 @@ export default function RightsAcknowledgementPanel({ caseId, caseData, onUpdate 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-1">
               <Label>Full Name (Last, First MI)</Label>
-              <input className="input-field bg-gray-50" value={accusedName} disabled />
+              <input className="input-underline bg-gray-50" value={accusedName} disabled />
             </div>
             <div>
               <Label>Rate/Rank</Label>
-              <input className="input-field bg-gray-50" value={accusedRateRank} disabled />
+              <input className="input-underline bg-gray-50" value={accusedRateRank} disabled />
             </div>
             <div>
               <Label>Service</Label>
-              <input className="input-field bg-gray-50" value={accusedService} disabled />
+              <input className="input-underline bg-gray-50" value={accusedService} disabled />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Activity/Unit</Label>
-              <input className="input-field bg-gray-50" value={activityUnit} disabled />
+              <input className="input-underline bg-gray-50" value={activityUnit} disabled />
             </div>
             <div>
               <Label>Date of Birth</Label>
-              <input className="input-field bg-gray-50" value={dateOfBirth || "Not provided"} disabled />
+              <input className="input-underline bg-gray-50" value={dateOfBirth || "Not provided"} disabled />
             </div>
           </div>
 
@@ -123,15 +123,15 @@ export default function RightsAcknowledgementPanel({ caseId, caseData, onUpdate 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <Label>Name (Last, First MI)</Label>
-              <input className="input-field" value={interviewerName} onChange={(e) => setInterviewerName(e.target.value)} disabled={locked} />
+              <input className="input-underline" value={interviewerName} onChange={(e) => setInterviewerName(e.target.value)} disabled={locked} />
             </div>
             <div>
               <Label>Rate/Rank</Label>
-              <input className="input-field" value={interviewerRateRank} onChange={(e) => setInterviewerRateRank(e.target.value)} disabled={locked} />
+              <input className="input-underline" value={interviewerRateRank} onChange={(e) => setInterviewerRateRank(e.target.value)} disabled={locked} />
             </div>
             <div>
               <Label>Service</Label>
-              <select className="input-field" value={interviewerService} onChange={(e) => setInterviewerService(e.target.value)} disabled={locked}>
+              <select className="input-underline" value={interviewerService} onChange={(e) => setInterviewerService(e.target.value)} disabled={locked}>
                 <option value="USN">USN</option>
                 <option value="USMC">USMC</option>
                 <option value="USCG">USCG</option>
@@ -144,11 +144,11 @@ export default function RightsAcknowledgementPanel({ caseId, caseData, onUpdate 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Organization</Label>
-              <input className="input-field" value={interviewerOrg} onChange={(e) => setInterviewerOrg(e.target.value)} disabled={locked} />
+              <input className="input-underline" value={interviewerOrg} onChange={(e) => setInterviewerOrg(e.target.value)} disabled={locked} />
             </div>
             <div>
               <Label>Billet</Label>
-              <input className="input-field" value={interviewerBillet} onChange={(e) => setInterviewerBillet(e.target.value)} disabled={locked} />
+              <input className="input-underline" value={interviewerBillet} onChange={(e) => setInterviewerBillet(e.target.value)} disabled={locked} />
             </div>
           </div>
 
@@ -157,15 +157,15 @@ export default function RightsAcknowledgementPanel({ caseId, caseData, onUpdate 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <Label>Location of Interview</Label>
-              <input className="input-field" value={interviewLocation} onChange={(e) => setInterviewLocation(e.target.value)} disabled={locked} />
+              <input className="input-underline" value={interviewLocation} onChange={(e) => setInterviewLocation(e.target.value)} disabled={locked} />
             </div>
             <div>
               <Label>Time</Label>
-              <input type="time" className="input-field" value={interviewTime} onChange={(e) => setInterviewTime(e.target.value)} disabled={locked} />
+              <input type="time" className="input-underline" value={interviewTime} onChange={(e) => setInterviewTime(e.target.value)} disabled={locked} />
             </div>
             <div>
               <Label>Date</Label>
-              <input type="date" className="input-field" value={interviewDate} onChange={(e) => setInterviewDate(e.target.value)} disabled={locked} />
+              <input type="date" className="input-underline" value={interviewDate} onChange={(e) => setInterviewDate(e.target.value)} disabled={locked} />
             </div>
           </div>
         </div>
@@ -182,7 +182,7 @@ export default function RightsAcknowledgementPanel({ caseId, caseData, onUpdate 
             Auto-populated from case offenses. Edit if needed.
           </p>
           <textarea
-            className="input-field min-h-[80px]"
+            className="input-underline min-h-[80px]"
             value={suspectedOffenses}
             onChange={(e) => setSuspectedOffenses(e.target.value)}
             placeholder="Describe suspected offense(s)..."
