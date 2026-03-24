@@ -1505,5 +1505,16 @@
     "userName": "admin",
     "action": "SIGN",
     "notes": "Item 9 signed - punishment imposed"
+  },
+  {
+    "id": "audit-1774391302037-k5yzq",
+    "timestamp": "2026-03-24T22:28:22.037Z",
+    "caseId": "case-1774381671908-9ib50",
+    "caseNumber": "CASE-2026-0007",
+    "userId": "user-admin",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated PDF: navmc_10132_pdf"
   }
 ]
