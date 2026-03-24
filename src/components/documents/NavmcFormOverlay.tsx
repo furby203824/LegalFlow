@@ -103,6 +103,15 @@ const FIELD_DEFS: FieldDef[] = [
   // ── Item 15: Notice of Appeal Decision ──
   { name: "15 DATE OF NOTICE OF APPEAL DECISION_af_date", page: 0, x: 475.99, y: 139.21, w: 96.3, h: 14.4, type: "date", label: "Item 15 Date" },
 
+  // ── Signature fields (positions match the signature lines on the form) ──
+  { name: "2 ACC ELECTION AND RIGHTS SIGNATURE", page: 0, x: 140, y: 486.53, w: 430, h: 16, type: "signature", label: "Item 2 Signature" },
+  { name: "3 RIGHTS ATTEST SIGNATURE", page: 0, x: 140, y: 440.14, w: 430, h: 16, type: "signature", label: "Item 3 Signature" },
+  { name: "9 NJP AUTHORITY SIGNATURE", page: 0, x: 34.68, y: 257.89, w: 435, h: 16, type: "signature", label: "Item 9 Signature" },
+  { name: "11 APPEAL ADVISEMENT SIGNATURE", page: 0, x: 105, y: 203.72, w: 147, h: 16, type: "signature", label: "Item 11 Signature" },
+  { name: "12 APPEAL INTENT SIGNATURE", page: 0, x: 326, y: 203.72, w: 147, h: 16, type: "signature", label: "Item 12 Signature" },
+  { name: "14 APPEAL DECISION SIGNATURE", page: 0, x: 106, y: 151.92, w: 370, h: 16, type: "signature", label: "Item 14 Signature" },
+  { name: "16 FINAL ADMIN INIT", page: 0, x: 470, y: 122.36, w: 100, h: 14.4, type: "signature", label: "Item 16 Initials" },
+
   // ── Item 16: Admin Closure ──
   { name: "16 FINAL ADMIN UD", page: 0, x: 310.06, y: 122.36, w: 59.1, h: 14.4, type: "text", label: "UD Number" },
   { name: "16 FINAL ADMIN DTD", page: 0, x: 388.84, y: 122.36, w: 59.1, h: 14.4, type: "date", label: "UD Date" },
@@ -129,6 +138,17 @@ const CENTERED_FIELDS = new Set([
   "19 ACCUSED RANK/GRADE",
   "20 ACCUSED EDIPI",
 ]);
+
+/** Build a digital signature display string: LASTNAME.FIRSTNAME.EDIPI */
+function buildDigSigName(name: string, edipi?: string): string {
+  // name may be "Last, First" or "Last, First Middle" or just a name
+  const parts = name.split(",").map((s) => s.trim());
+  const lastName = (parts[0] || "").toUpperCase();
+  const firstParts = (parts[1] || "").toUpperCase().split(/\s+/);
+  const segments = [lastName, ...firstParts].filter(Boolean);
+  if (edipi) segments.push(edipi);
+  return segments.join(".");
+}
 
 /* ── Map case data to field values ── */
 
@@ -237,6 +257,39 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
   // Item 16
   vals["16 FINAL ADMIN UD"] = caseData.item16UdNumber || "";
   vals["16 FINAL ADMIN DTD"] = caseData.item16Dtd ? fmtISO(caseData.item16Dtd) : "";
+
+  // Signatures — digital signature format: LASTNAME.FIRSTNAME.EDIPI
+  const sigs = caseData.signatures || {};
+  const accusedEdipi = accused.edipi || "";
+
+  // Item 2: Accused signature (uses accused EDIPI)
+  if (sigs["2"]?.signerName) {
+    vals["2 ACC ELECTION AND RIGHTS SIGNATURE"] = buildDigSigName(sigs["2"].signerName, accusedEdipi) + "|" + (sigs["2"].signedDate || "");
+  }
+  // Item 3: CO signature (uses NJP authority EDIPI if available)
+  if (sigs["3"]?.signerName) {
+    vals["3 RIGHTS ATTEST SIGNATURE"] = buildDigSigName(sigs["3"].signerName, caseData.njpAuthorityEdipi) + "|" + (sigs["3"].signedDate || "");
+  }
+  // Item 9: NJP Authority signature
+  if (sigs["9"]?.signerName) {
+    vals["9 NJP AUTHORITY SIGNATURE"] = buildDigSigName(sigs["9"].signerName, caseData.njpAuthorityEdipi) + "|" + (sigs["9"].signedDate || "");
+  }
+  // Item 11: NJP Authority notification signature
+  if (sigs["11"]?.signerName) {
+    vals["11 APPEAL ADVISEMENT SIGNATURE"] = buildDigSigName(sigs["11"].signerName, caseData.njpAuthorityEdipi) + "|" + (sigs["11"].signedDate || "");
+  }
+  // Item 12: Accused appeal intent signature
+  if (sigs["12"]?.signerName) {
+    vals["12 APPEAL INTENT SIGNATURE"] = buildDigSigName(sigs["12"].signerName, accusedEdipi) + "|" + (sigs["12"].signedDate || "");
+  }
+  // Item 14: Appeal authority signature
+  if (sigs["14"]?.signerName) {
+    vals["14 APPEAL DECISION SIGNATURE"] = buildDigSigName(sigs["14"].signerName, caseData.njpAuthorityEdipi) + "|" + (sigs["14"].signedDate || "");
+  }
+  // Item 16: Admin closure initials
+  if (sigs["16"]?.signerName) {
+    vals["16 FINAL ADMIN INIT"] = buildDigSigName(sigs["16"].signerName, caseData.njpAuthorityEdipi) + "|" + (sigs["16"].signedDate || "");
+  }
 
   // Item 21: Remarks
   const remarks = (caseData.item21Entries || [])
@@ -476,6 +529,34 @@ function FormPage({
           );
         }
 
+        if (field.type === "signature") {
+          if (!value) return null;
+          // value format: "LASTNAME.FIRSTNAME.EDIPI|YYYY-MM-DD"
+          const [sigName, sigDate] = value.split("|");
+          const dateDisplay = sigDate ? sigDate.replace(/-/g, ".") : "";
+          // Narrow fields (Items 11, 12, 16 INIT) stack vertically
+          const isNarrow = field.w < 200;
+          const nameFontPx = isNarrow ? scaledFontPx * 0.5 : scaledFontPx * 0.75;
+          const annotFontPx = isNarrow ? scaledFontPx * 0.4 : scaledFontPx * 0.5;
+          return (
+            <div
+              key={field.name}
+              className="absolute overflow-hidden"
+              style={{ ...pos, display: "flex", alignItems: isNarrow ? "flex-start" : "center", flexDirection: isNarrow ? "column" : "row" }}
+              title={field.label}
+            >
+              <span style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: `${nameFontPx}px`, color: "#000", whiteSpace: "nowrap" }}>
+                {sigName}
+              </span>
+              <span style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: `${annotFontPx}px`, color: "#000", marginLeft: isNarrow ? 0 : `${scaledFontPx * 0.4}px`, whiteSpace: "nowrap", lineHeight: 1.1 }}>
+                Digitally signed by {sigName}
+                <br />
+                Date: {dateDisplay}
+              </span>
+            </div>
+          );
+        }
+
         const isTextArea = field.h > 100;
         const isCentered = field.type === "date" || CENTERED_FIELDS.has(field.name);
 
@@ -568,6 +649,33 @@ export async function generateOverlayPdf(
           ctx.fillText("X", canvasX + (canvasW - textW) / 2, canvasY + canvasH * 0.75);
           ctx.font = `${scaledFontPx}px Arial, Helvetica, sans-serif`;
         }
+        continue;
+      }
+
+      if (field.type === "signature") {
+        const [sigName, sigDate] = value.split("|");
+        const dateDisplay = sigDate ? sigDate.replace(/-/g, ".") : "";
+        const isNarrow = field.w < 200;
+        const nameFontPx = isNarrow ? scaledFontPx * 0.5 : scaledFontPx * 0.75;
+        const annotFontPx = isNarrow ? scaledFontPx * 0.4 : scaledFontPx * 0.5;
+        if (isNarrow) {
+          // Stack vertically for narrow fields
+          ctx.font = `${nameFontPx}px Arial, Helvetica, sans-serif`;
+          ctx.fillText(sigName, canvasX, canvasY + nameFontPx, canvasW);
+          ctx.font = `${annotFontPx}px Arial, Helvetica, sans-serif`;
+          ctx.fillText(`Digitally signed by ${sigName}`, canvasX, canvasY + nameFontPx + annotFontPx * 1.2, canvasW);
+          ctx.fillText(`Date: ${dateDisplay}`, canvasX, canvasY + nameFontPx + annotFontPx * 2.4, canvasW);
+        } else {
+          // Side by side for wide fields
+          ctx.font = `${nameFontPx}px Arial, Helvetica, sans-serif`;
+          ctx.fillText(sigName, canvasX, canvasY + canvasH * 0.7);
+          const nameWidth = ctx.measureText(sigName).width;
+          const annotX = canvasX + nameWidth + scaledFontPx * 0.4;
+          ctx.font = `${annotFontPx}px Arial, Helvetica, sans-serif`;
+          ctx.fillText(`Digitally signed by ${sigName}`, annotX, canvasY + canvasH * 0.4);
+          ctx.fillText(`Date: ${dateDisplay}`, annotX, canvasY + canvasH * 0.85);
+        }
+        ctx.font = `${scaledFontPx}px Arial, Helvetica, sans-serif`;
         continue;
       }
 
