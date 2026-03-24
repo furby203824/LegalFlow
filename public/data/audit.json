@@ -1054,5 +1054,16 @@
     "userName": "co-certifier",
     "action": "SIGN",
     "notes": "Item 11 signed"
+  },
+  {
+    "id": "audit-1774311061871-grofw",
+    "timestamp": "2026-03-24T00:11:01.871Z",
+    "caseId": "case-1774294101445-2c51m",
+    "caseNumber": "CASE-2026-0005",
+    "userId": "user-co-preparer",
+    "userRole": "NJP_PREPARER",
+    "userName": "co-preparer",
+    "action": "GENERATE",
+    "notes": "Generated PDF: appeal_rights_ack"
   }
 ]
