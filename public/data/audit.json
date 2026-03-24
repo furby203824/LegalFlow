@@ -1571,5 +1571,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated PDF: appeal_rights_ack"
+  },
+  {
+    "id": "audit-1774393660692-1tsay",
+    "timestamp": "2026-03-24T23:07:40.692Z",
+    "caseId": "case-1774381671908-9ib50",
+    "caseNumber": "CASE-2026-0007",
+    "userId": "user-admin",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "SIGN",
+    "notes": "Item 12 - no appeal"
   }
 ]
