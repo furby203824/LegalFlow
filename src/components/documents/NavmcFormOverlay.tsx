@@ -121,6 +121,14 @@ const FIELD_DEFS: FieldDef[] = [
   { name: "25 ACCUSED EDIPI", page: 1, x: 489.37, y: 95.4, w: 88.55, h: 14.4, type: "text", label: "EDIPI", readOnly: true },
 ];
 
+// Fields with centered text alignment (matching PDF Q=1)
+const CENTERED_FIELDS = new Set([
+  "8A NJP AUTHORITY GRADE",
+  "8B NJP AUTHORITY EDIPI",
+  "19 ACCUSED RANK/GRADE",
+  "20 ACCUSED EDIPI",
+]);
+
 /* ── Map case data to field values ── */
 
 function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
@@ -170,7 +178,8 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
     const punishmentText = punishments.map((p) => punishmentAbbreviated(p)).join("; ");
     const dateStr = caseData.njpDate ? fmtStandard(caseData.njpDate) : "";
     vals["6 PUNISHMENT IMPOSED"] = dateStr && punishmentText ? `${dateStr}. ${punishmentText}` : punishmentText;
-    vals["6 PUNISHMENT IMPOSITION DATE"] = caseData.njpDate ? fmtISO(caseData.njpDate) : "";
+    // Date is already inline in the punishment text — leave separate date field empty
+    vals["6 PUNISHMENT IMPOSITION DATE"] = "";
   }
 
   // Item 7: Suspension — use abbreviated format with date
@@ -465,7 +474,7 @@ function FormPage({
         }
 
         const isTextArea = field.h > 100;
-        const isDate = field.type === "date";
+        const isCentered = field.type === "date" || CENTERED_FIELDS.has(field.name);
 
         return (
           <div
@@ -487,7 +496,7 @@ function FormPage({
                 style={{
                   ...textStyle,
                   padding: "0 2px",
-                  ...(isDate ? { textAlign: "center", justifyContent: "center" } : {}),
+                  ...(isCentered ? { textAlign: "center", justifyContent: "center" } : {}),
                 }}
               >
                   {value || ""}
