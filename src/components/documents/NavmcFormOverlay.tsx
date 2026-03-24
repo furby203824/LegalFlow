@@ -103,13 +103,14 @@ const FIELD_DEFS: FieldDef[] = [
   // ── Item 15: Notice of Appeal Decision ──
   { name: "15 DATE OF NOTICE OF APPEAL DECISION_af_date", page: 0, x: 475.99, y: 139.21, w: 96.3, h: 14.4, type: "date", label: "Item 15 Date" },
 
-  // ── Signature fields ──
-  { name: "2 ACC ELECTION AND RIGHTS SIGNATURE", page: 0, x: 188.43, y: 486.53, w: 374.73, h: 13.44, type: "signature", label: "Item 2 Signature" },
-  { name: "3 RIGHTS ATTEST SIGNATURE", page: 0, x: 188.43, y: 440.14, w: 374.73, h: 13.44, type: "signature", label: "Item 3 Signature" },
-  { name: "9 NJP AUTHORITY SIGNATURE", page: 0, x: 34.68, y: 257.89, w: 415.92, h: 13.44, type: "signature", label: "Item 9 Signature" },
-  { name: "11 APPEAL ADVISEMENT SIGNATURE", page: 0, x: 105.96, y: 203.72, w: 141.96, h: 14.4, type: "signature", label: "Item 11 Signature" },
-  { name: "12 APPEAL INTENT SIGNATURE", page: 0, x: 331.48, y: 203.72, w: 141.96, h: 14.4, type: "signature", label: "Item 12 Signature" },
-  { name: "14 APPEAL DECISION SIGNATURE", page: 0, x: 106.92, y: 151.92, w: 362.52, h: 14.4, type: "signature", label: "Item 14 Signature" },
+  // ── Signature fields (positions match the signature lines on the form) ──
+  { name: "2 ACC ELECTION AND RIGHTS SIGNATURE", page: 0, x: 140, y: 486.53, w: 430, h: 16, type: "signature", label: "Item 2 Signature" },
+  { name: "3 RIGHTS ATTEST SIGNATURE", page: 0, x: 140, y: 440.14, w: 430, h: 16, type: "signature", label: "Item 3 Signature" },
+  { name: "9 NJP AUTHORITY SIGNATURE", page: 0, x: 34.68, y: 257.89, w: 435, h: 16, type: "signature", label: "Item 9 Signature" },
+  { name: "11 APPEAL ADVISEMENT SIGNATURE", page: 0, x: 105, y: 203.72, w: 147, h: 16, type: "signature", label: "Item 11 Signature" },
+  { name: "12 APPEAL INTENT SIGNATURE", page: 0, x: 326, y: 203.72, w: 147, h: 16, type: "signature", label: "Item 12 Signature" },
+  { name: "14 APPEAL DECISION SIGNATURE", page: 0, x: 106, y: 151.92, w: 370, h: 16, type: "signature", label: "Item 14 Signature" },
+  { name: "16 FINAL ADMIN INIT", page: 0, x: 470, y: 122.36, w: 100, h: 14.4, type: "signature", label: "Item 16 Initials" },
 
   // ── Item 16: Admin Closure ──
   { name: "16 FINAL ADMIN UD", page: 0, x: 310.06, y: 122.36, w: 59.1, h: 14.4, type: "text", label: "UD Number" },
@@ -284,6 +285,10 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
   // Item 14: Appeal authority signature
   if (sigs["14"]?.signerName) {
     vals["14 APPEAL DECISION SIGNATURE"] = buildDigSigName(sigs["14"].signerName, caseData.njpAuthorityEdipi) + "|" + (sigs["14"].signedDate || "");
+  }
+  // Item 16: Admin closure initials
+  if (sigs["16"]?.signerName) {
+    vals["16 FINAL ADMIN INIT"] = buildDigSigName(sigs["16"].signerName, caseData.njpAuthorityEdipi) + "|" + (sigs["16"].signedDate || "");
   }
 
   // Item 21: Remarks
@@ -528,20 +533,22 @@ function FormPage({
           if (!value) return null;
           // value format: "LASTNAME.FIRSTNAME.EDIPI|YYYY-MM-DD"
           const [sigName, sigDate] = value.split("|");
-          const sigFontPx = scaledFontPx * 0.85;
-          const annotFontPx = scaledFontPx * 0.55;
           const dateDisplay = sigDate ? sigDate.replace(/-/g, ".") : "";
+          // Narrow fields (Items 11, 12, 16 INIT) stack vertically
+          const isNarrow = field.w < 200;
+          const nameFontPx = isNarrow ? scaledFontPx * 0.5 : scaledFontPx * 0.75;
+          const annotFontPx = isNarrow ? scaledFontPx * 0.4 : scaledFontPx * 0.5;
           return (
             <div
               key={field.name}
-              className="absolute flex items-center overflow-hidden"
-              style={pos}
+              className="absolute overflow-hidden"
+              style={{ ...pos, display: "flex", alignItems: isNarrow ? "flex-start" : "center", flexDirection: isNarrow ? "column" : "row" }}
               title={field.label}
             >
-              <span style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: `${sigFontPx}px`, color: "#000", whiteSpace: "nowrap" }}>
+              <span style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: `${nameFontPx}px`, color: "#000", whiteSpace: "nowrap" }}>
                 {sigName}
               </span>
-              <span style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: `${annotFontPx}px`, color: "#000", marginLeft: `${scaledFontPx * 0.5}px`, whiteSpace: "nowrap", lineHeight: 1.1 }}>
+              <span style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: `${annotFontPx}px`, color: "#000", marginLeft: isNarrow ? 0 : `${scaledFontPx * 0.4}px`, whiteSpace: "nowrap", lineHeight: 1.1 }}>
                 Digitally signed by {sigName}
                 <br />
                 Date: {dateDisplay}
@@ -647,18 +654,27 @@ export async function generateOverlayPdf(
 
       if (field.type === "signature") {
         const [sigName, sigDate] = value.split("|");
-        const sigFontPx = scaledFontPx * 0.85;
-        const annotFontPx = scaledFontPx * 0.55;
         const dateDisplay = sigDate ? sigDate.replace(/-/g, ".") : "";
-        // Draw main signature name
-        ctx.font = `${sigFontPx}px Arial, Helvetica, sans-serif`;
-        ctx.fillText(sigName, canvasX, canvasY + canvasH * 0.75);
-        // Draw annotation text
-        const nameWidth = ctx.measureText(sigName).width;
-        const annotX = canvasX + nameWidth + scaledFontPx * 0.5;
-        ctx.font = `${annotFontPx}px Arial, Helvetica, sans-serif`;
-        ctx.fillText(`Digitally signed by ${sigName}`, annotX, canvasY + canvasH * 0.45);
-        ctx.fillText(`Date: ${dateDisplay}`, annotX, canvasY + canvasH * 0.85);
+        const isNarrow = field.w < 200;
+        const nameFontPx = isNarrow ? scaledFontPx * 0.5 : scaledFontPx * 0.75;
+        const annotFontPx = isNarrow ? scaledFontPx * 0.4 : scaledFontPx * 0.5;
+        if (isNarrow) {
+          // Stack vertically for narrow fields
+          ctx.font = `${nameFontPx}px Arial, Helvetica, sans-serif`;
+          ctx.fillText(sigName, canvasX, canvasY + nameFontPx, canvasW);
+          ctx.font = `${annotFontPx}px Arial, Helvetica, sans-serif`;
+          ctx.fillText(`Digitally signed by ${sigName}`, canvasX, canvasY + nameFontPx + annotFontPx * 1.2, canvasW);
+          ctx.fillText(`Date: ${dateDisplay}`, canvasX, canvasY + nameFontPx + annotFontPx * 2.4, canvasW);
+        } else {
+          // Side by side for wide fields
+          ctx.font = `${nameFontPx}px Arial, Helvetica, sans-serif`;
+          ctx.fillText(sigName, canvasX, canvasY + canvasH * 0.7);
+          const nameWidth = ctx.measureText(sigName).width;
+          const annotX = canvasX + nameWidth + scaledFontPx * 0.4;
+          ctx.font = `${annotFontPx}px Arial, Helvetica, sans-serif`;
+          ctx.fillText(`Digitally signed by ${sigName}`, annotX, canvasY + canvasH * 0.4);
+          ctx.fillText(`Date: ${dateDisplay}`, annotX, canvasY + canvasH * 0.85);
+        }
         ctx.font = `${scaledFontPx}px Arial, Helvetica, sans-serif`;
         continue;
       }
