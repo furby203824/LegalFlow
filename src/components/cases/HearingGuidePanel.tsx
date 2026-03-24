@@ -435,9 +435,12 @@ function PunishmentChecklist({
                       step="1"
                       className="input-field text-xs w-28"
                       value={responses[`${p.key}_detail`] || ""}
-                      onChange={(e) => setResponse(`${p.key}_detail`, e.target.value)}
+                      onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ""); setResponse(`${p.key}_detail`, v); }}
                       placeholder="Amount"
                     />
+                    {p.max && (
+                      <button type="button" className="btn-ghost text-[10px] px-1.5 py-0.5" onClick={() => setResponse(`${p.key}_detail`, String(p.max))}>Max</button>
+                    )}
                     {isField && (
                       <>
                         <span className="text-xs text-neutral-mid">per month for</span>
@@ -463,12 +466,16 @@ function PunishmentChecklist({
                       type="number"
                       min="1"
                       max={p.max}
+                      step="1"
                       className="input-field text-xs w-20"
                       value={responses[`${p.key}_detail`] || ""}
-                      onChange={(e) => setResponse(`${p.key}_detail`, e.target.value)}
+                      onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ""); setResponse(`${p.key}_detail`, v); }}
                       placeholder="Days"
                     />
                     <span className="text-xs text-neutral-mid">days</span>
+                    {p.max && (
+                      <button type="button" className="btn-ghost text-[10px] px-1.5 py-0.5" onClick={() => setResponse(`${p.key}_detail`, String(p.max))}>Max</button>
+                    )}
                     {p.max && responses[`${p.key}_detail`] && Number(responses[`${p.key}_detail`]) > p.max && (
                       <span className="text-xs text-error">Exceeds {p.max} day limit</span>
                     )}

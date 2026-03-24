@@ -777,11 +777,23 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
       <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-field mb-2" placeholder="Punishment date" />
       <div className="grid grid-cols-2 gap-2 mb-2">
         {isVessel && (
-          <input type="number" value={corrDays} onChange={(e) => setCorrDays(e.target.value)} className="input-field text-xs" placeholder="Custody days" />
+          <div className="flex items-center gap-1">
+            <input type="number" step="1" value={corrDays} onChange={(e) => setCorrDays(e.target.value.replace(/[^0-9]/g, ""))} className="input-field text-xs flex-1" placeholder="Custody days" max={isField ? 30 : 7} />
+            <button type="button" className="btn-ghost text-[10px] px-1 py-0.5 shrink-0" onClick={() => setCorrDays(String(isField ? 30 : 7))}>Max</button>
+          </div>
         )}
-        <input type="number" value={forfAmt} onChange={(e) => setForfAmt(e.target.value)} className="input-field text-xs" placeholder={maxForf != null ? `Forfeiture $ (max $${maxForf})` : "Forfeiture $"} max={maxForf ?? undefined} />
-        <input type="number" value={extraDays} onChange={(e) => setExtraDays(e.target.value)} className="input-field text-xs" placeholder="Extra duties" />
-        <input type="number" value={restrDays} onChange={(e) => setRestrDays(e.target.value)} className="input-field text-xs" placeholder="Restriction" />
+        <div className="flex items-center gap-1">
+          <input type="number" step="1" value={forfAmt} onChange={(e) => setForfAmt(e.target.value.replace(/[^0-9]/g, ""))} className="input-field text-xs flex-1" placeholder={maxForf != null ? `Forf $ (max $${maxForf})` : "Forfeiture $"} max={maxForf ?? undefined} />
+          {maxForf != null && <button type="button" className="btn-ghost text-[10px] px-1 py-0.5 shrink-0" onClick={() => setForfAmt(String(maxForf))}>Max</button>}
+        </div>
+        <div className="flex items-center gap-1">
+          <input type="number" step="1" value={extraDays} onChange={(e) => setExtraDays(e.target.value.replace(/[^0-9]/g, ""))} className="input-field text-xs flex-1" placeholder="Extra duties" max={isField ? 45 : 14} />
+          <button type="button" className="btn-ghost text-[10px] px-1 py-0.5 shrink-0" onClick={() => setExtraDays(String(isField ? 45 : 14))}>Max</button>
+        </div>
+        <div className="flex items-center gap-1">
+          <input type="number" step="1" value={restrDays} onChange={(e) => setRestrDays(e.target.value.replace(/[^0-9]/g, ""))} className="input-field text-xs flex-1" placeholder="Restriction" max={isField ? 60 : 14} />
+          <button type="button" className="btn-ghost text-[10px] px-1 py-0.5 shrink-0" onClick={() => setRestrDays(String(isField ? 60 : 14))}>Max</button>
+        </div>
       </div>
       {canReduce ? (
         <>
