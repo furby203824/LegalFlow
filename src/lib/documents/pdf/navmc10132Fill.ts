@@ -426,28 +426,8 @@ export async function fillNavmc10132Pdf(
   // ═══ Booker statement (Item 2 area) ═══
   // The template has a pre-filled booker text; leave it as-is
 
-  // Change form field borders from boxes to underline-only
-  const fields = form.getFields();
-  for (const field of fields) {
-    const widgets = field.acroField.getWidgets();
-    for (const widget of widgets) {
-      // Set border style to underline (/S /U) with thin width
-      const bs = pdf.context.obj({ S: "U", W: 1 });
-      widget.dict.set(PDFName.of("BS"), bs);
-      // Remove background fill color but keep border color for the underline
-      const mk = widget.dict.lookup(PDFName.of("MK"));
-      if (mk instanceof PDFDict) {
-        mk.delete(PDFName.of("BG")); // remove background color
-      }
-      // Delete cached appearance stream so it regenerates with new border style
-      widget.dict.delete(PDFName.of("AP"));
-    }
-  }
-
-  // Regenerate all field appearances with the updated border styles
-  form.updateFieldAppearances();
-
   // Flatten form to prevent further editing (for FINAL version)
+  // Flattening converts form fields to static text, removing field boxes
   if (version === "FINAL") {
     form.flatten();
   }
