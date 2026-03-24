@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronRight, ChevronLeft, Check, Printer, Save, RotateCcw, AlertTriangle } from "lucide-react";
+import { checkReductionAuthority } from "@/utils/reductionAuthority";
+import type { ServiceBranch as ReductionServiceBranch, CommanderGradeLevel as ReductionCGL } from "@/utils/reductionAuthority";
 import { updateHearingRecord } from "@/services/api";
 import { PUNISHMENT_LIMITS, getMaxForfeiture } from "@/types";
 import type { CommanderGradeLevel } from "@/types";
@@ -285,27 +287,38 @@ function SuspensionAnnouncement({ responses }: { responses: Record<string, strin
 
 // Enlisted grade ordering for reduction calculation
 const ENLISTED_GRADES = ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9"];
-// Map grade to the USMC rank abbreviation at that grade
-const GRADE_TO_RANK_ABBR: Record<string, string> = {
+// Map grade to rank abbreviation per service branch
+const USMC_GRADE_TO_RANK_ABBR: Record<string, string> = {
   E1: "Pvt", E2: "PFC", E3: "LCpl", E4: "Cpl", E5: "Sgt",
   E6: "SSgt", E7: "GySgt", E8: "MSgt", E9: "MGySgt",
 };
+const USN_GRADE_TO_RANK_ABBR: Record<string, string> = {
+  E1: "SR", E2: "SA", E3: "SN", E4: "PO3", E5: "PO2",
+  E6: "PO1", E7: "CPO", E8: "SCPO", E9: "MCPO",
+};
+const GRADE_TO_RANK_ABBR = USMC_GRADE_TO_RANK_ABBR; // default fallback
 
-function getReductionLimit(accusedGrade: string, accusedRank: string, isField: boolean): { label: string; available: boolean; targetGrade?: string } {
+function getRankAbbr(grade: string, service: string): string {
+  return (service === "USN" ? USN_GRADE_TO_RANK_ABBR : USMC_GRADE_TO_RANK_ABBR)[grade] || grade;
+}
+
+function getReductionLimit(accusedGrade: string, accusedRank: string, isField: boolean, service?: string): { label: string; available: boolean; targetGrade?: string; blockMessage?: string; blockCitation?: string } {
   const gradeIdx = ENLISTED_GRADES.indexOf(accusedGrade);
-  // E1 cannot be reduced further
   if (gradeIdx <= 0) return { label: "Not available — already at lowest grade", available: false };
 
-  if (!isField) {
-    // Company grade commanders cannot impose reduction in grade
-    return { label: "Not available — company grade commander cannot reduce in grade", available: false };
+  const svc: ReductionServiceBranch = (service || "USMC") as ReductionServiceBranch;
+  const cmdLevel: ReductionCGL = isField ? "FIELD_GRADE_AND_ABOVE" : "COMPANY_GRADE";
+  const check = checkReductionAuthority(accusedGrade, svc, cmdLevel);
+
+  if (check.blocked) {
+    return { label: `Not available — ${check.message}`, available: false, blockMessage: check.message, blockCitation: check.citation };
   }
 
-  // Field grade: can reduce one or more pay grades
-  const targetGrade = "E1";
-  const targetRank = GRADE_TO_RANK_ABBR[targetGrade] || targetGrade;
+  // One grade reduction only (MCO 5800.16 para 010302.C)
+  const targetGrade = `E${gradeIdx}`;
+  const targetRank = getRankAbbr(targetGrade, svc);
   return {
-    label: `Red fr ${accusedRank}/${accusedGrade} to as low as ${targetRank}/${targetGrade}`,
+    label: `Red fr ${accusedRank}/${accusedGrade} to ${targetRank}/${targetGrade} (one grade only per MCO 5800.16)`,
     available: true,
     targetGrade,
   };
@@ -316,6 +329,7 @@ function PunishmentChecklist({
   accusedGrade,
   accusedRank,
   yearsOfService,
+  serviceBranch,
   responses,
   setResponse,
 }: {
@@ -323,21 +337,17 @@ function PunishmentChecklist({
   accusedGrade: string;
   accusedRank: string;
   yearsOfService?: number;
+  serviceBranch?: string;
   responses: Record<string, string>;
   setResponse: (key: string, value: string) => void;
 }) {
   const limits = PUNISHMENT_LIMITS[commanderGradeLevel] || PUNISHMENT_LIMITS.COMPANY_GRADE;
   const isField = commanderGradeLevel === "FIELD_GRADE_AND_ABOVE";
-  const reduction = getReductionLimit(accusedGrade, accusedRank, isField);
+  const reduction = getReductionLimit(accusedGrade, accusedRank, isField, serviceBranch);
 
-  // If reduction is imposed, forfeiture is based on the reduced grade
+  // If reduction is imposed, forfeiture is based on the reduced grade (one grade only)
   const reductionImposed = responses["pun_reduction"] === "imposed";
-  const reducedGrade = reductionImposed && reduction.targetGrade
-    ? (isField && responses["pun_reduction_detail"]
-      // Field grade: user specifies target grade in detail field, try to parse it
-      ? (ENLISTED_GRADES.find((g) => responses["pun_reduction_detail"].toUpperCase().includes(g)) || reduction.targetGrade)
-      : reduction.targetGrade)
-    : accusedGrade;
+  const reducedGrade = reductionImposed && reduction.targetGrade ? reduction.targetGrade : accusedGrade;
   const effectiveGradeForForf = reductionImposed ? reducedGrade : accusedGrade;
   const maxForfeit = getMaxForfeiture(effectiveGradeForForf, commanderGradeLevel, yearsOfService);
 
@@ -497,21 +507,25 @@ function PunishmentChecklist({
                     ))}
                   </div>
                 )}
-                {p.fieldType === "grade" && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-mid">Reduce to</span>
-                    <select
-                      className="input-underline text-xs w-28"
-                      value={responses[`${p.key}_detail`] || ""}
-                      onChange={(e) => setResponse(`${p.key}_detail`, e.target.value)}
-                    >
-                      <option value="">Select grade</option>
-                      {ENLISTED_GRADES.slice(0, ENLISTED_GRADES.indexOf(accusedGrade)).reverse().map((g) => (
-                        <option key={g} value={g}>{GRADE_TO_RANK_ABBR[g]}/{g}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                {p.fieldType === "grade" && (() => {
+                  // One grade reduction only per MCO 5800.16 para 010302.C
+                  const gradeIdx = ENLISTED_GRADES.indexOf(accusedGrade);
+                  const targetGrade = gradeIdx > 0 ? ENLISTED_GRADES[gradeIdx - 1] : null;
+                  const svc = serviceBranch || "USMC";
+                  return targetGrade ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-neutral-mid">Reduce to</span>
+                      <span className="text-xs font-medium">{getRankAbbr(targetGrade, svc)}/{targetGrade}</span>
+                      <input type="hidden" value={targetGrade} />
+                      {responses[`${p.key}_detail`] !== targetGrade && (
+                        <button type="button" className="btn-ghost text-[10px] px-1 py-0.5" onClick={() => setResponse(`${p.key}_detail`, targetGrade)}>Confirm</button>
+                      )}
+                      {responses[`${p.key}_detail`] === targetGrade && (
+                        <Check size={12} className="text-success" />
+                      )}
+                    </div>
+                  ) : null;
+                })()}
                 <label className={cn(
                   "flex items-center gap-2 p-2 rounded border cursor-pointer text-xs transition-colors",
                   suspended ? "border-amber-300 bg-amber-50 text-amber-800" : "border-dashed border-border text-neutral-mid"
@@ -781,6 +795,7 @@ export default function HearingGuidePanel({ caseId, caseData, onUpdate }: { case
                 accusedGrade={accused.grade}
                 accusedRank={accused.rank}
                 yearsOfService={accused.yearsOfService ?? undefined}
+                serviceBranch={caseData.serviceBranch || "USMC"}
                 responses={responses}
                 setResponse={setResponse}
               />
