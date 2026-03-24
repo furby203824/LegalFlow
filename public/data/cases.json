@@ -2160,7 +2160,21 @@
     "item21Entries": [],
     "signatures": [],
     "evidence": [],
-    "documents": [],
+    "documents": [
+      {
+        "id": "doc-1774381680981-v25z8",
+        "documentVersion": 1,
+        "isCurrent": true,
+        "createdAt": "2026-03-24T19:48:00.981Z",
+        "documentType": "NOTIFICATION_ELECTION_RIGHTS",
+        "generatedById": "user-admin",
+        "generatedAt": "2026-03-24T19:48:00.981Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
+      }
+    ],
     "remedialActions": [],
     "vacationRecordsAsParent": [],
     "flags": [],
