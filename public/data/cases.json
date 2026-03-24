@@ -7,8 +7,8 @@
       {
         "id": "off-1774223160073-A",
         "offenseLetter": "A",
-        "ucmjArticle": "100",
-        "offenseType": "Motivation",
+        "ucmjArticle": "Art. 100  Subordinate compelling surrender",
+        "offenseType": "Subordinate compelling surrender",
         "offenseSummary": "Beat up people and things ",
         "offenseDate": "2026-03-22",
         "offensePlace": "Chow hall",
@@ -210,8 +210,8 @@
       {
         "id": "off-1774220758795-A",
         "offenseLetter": "A",
-        "ucmjArticle": "125",
-        "offenseType": "Test",
+        "ucmjArticle": "Art. 125  Kidnapping",
+        "offenseType": "Kidnapping",
         "offenseSummary": "Test of the summary",
         "offenseDate": "2026-03-05",
         "offensePlace": "Test",
@@ -489,8 +489,8 @@
       {
         "id": "off-1774237255424-A",
         "offenseLetter": "A",
-        "ucmjArticle": "112a",
-        "offenseType": "Drug pop",
+        "ucmjArticle": "Art. 112a  Wrongful use, possession, etc. of controlled substances",
+        "offenseType": "Wrongful use, possession, etc. of controlled substances",
         "offenseSummary": "Found positive use of a controlled substance. ",
         "offenseDate": "2026-03-03",
         "offensePlace": "MCBH",
@@ -1008,7 +1008,7 @@
       {
         "id": "off-1774273009599-A",
         "offenseLetter": "A",
-        "ucmjArticle": "86",
+        "ucmjArticle": "Art. 86  Absence without leave",
         "offenseType": "Absence without leave",
         "offenseSummary": "UA dur the prd 0800, 4 Mar 26 through 0431, 19 Mar 26.",
         "offenseDate": "2026-03-04",
@@ -1024,7 +1024,7 @@
       {
         "id": "off-1774273009599-B",
         "offenseLetter": "B",
-        "ucmjArticle": "107",
+        "ucmjArticle": "Art. 107  False official statements",
         "offenseType": "False official statements",
         "offenseSummary": "Submitted a false statement during interview with IO. ",
         "offenseDate": "2026-03-20",

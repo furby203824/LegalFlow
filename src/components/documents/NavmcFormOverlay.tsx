@@ -157,7 +157,7 @@ function mapCaseToFieldValues(caseData: CaseData): Record<string, string> {
   const letters = ["A", "B", "C", "D", "E"];
   for (let i = 0; i < Math.min(offenses.length, 5); i++) {
     const o = offenses[i];
-    vals[`1${letters[i]} ARTICLE`] = o.ucmjArticle ? `Art. ${o.ucmjArticle}` : "";
+    vals[`1${letters[i]} ARTICLE`] = o.ucmjArticle || "";
     vals[`1${letters[i]} SUMMARY`] = o.shortDescription || o.summary || "";
     vals[`1${letters[i]} FINDING`] = o.finding === "GUILTY" ? "G" : o.finding === "NOT_GUILTY" ? "NG" : "";
   }

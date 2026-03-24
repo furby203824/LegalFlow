@@ -3,7 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/ui/AppShell";
-import { UCMJ_ARTICLES, UCMJ_ARTICLE_NAMES, RANK_GRADE_OPTIONS, USMC_RANK_GRADE_OPTIONS, NAVY_RANK_GRADE_OPTIONS, RANK_TO_GRADE, GRADES } from "@/types";
+import { UCMJ_ARTICLES, UCMJ_ARTICLE_NAMES, ucmjOffenseName, ucmjArticleNumber, RANK_GRADE_OPTIONS, USMC_RANK_GRADE_OPTIONS, NAVY_RANK_GRADE_OPTIONS, RANK_TO_GRADE, GRADES } from "@/types";
 import type { Rank, ServiceBranch } from "@/types";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, AlertOctagon, Info, Plus, Trash2, HelpCircle, ChevronDown, ChevronUp, FileText, RefreshCw } from "lucide-react";
@@ -481,9 +481,9 @@ export default function NewCasePage() {
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="UCMJ Article" required>
-                    <select className="input-underline" value={o.ucmjArticle} onChange={(e) => { const art = e.target.value; updateOffense(oi, "ucmjArticle", art, { offenseType: UCMJ_ARTICLE_NAMES[art] || "", ...(art === "85" || art === "86" ? { hasDuration: true } : {}) }); }} required>
+                    <select className="input-underline" value={o.ucmjArticle} onChange={(e) => { const art = e.target.value; const artNum = ucmjArticleNumber(art); updateOffense(oi, "ucmjArticle", art, { offenseType: ucmjOffenseName(art), ...(artNum === "85" || artNum === "86" ? { hasDuration: true } : {}) }); }} required>
                       <option value="">Select article</option>
-                      {UCMJ_ARTICLES.map((a) => <option key={a} value={a}>Art. {a} — {UCMJ_ARTICLE_NAMES[a] || a}</option>)}
+                      {UCMJ_ARTICLES.map((a) => <option key={a} value={a}>{a}</option>)}
                     </select>
                   </Field>
                   <Field label="Offense Type" required>
