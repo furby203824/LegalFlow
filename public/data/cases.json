@@ -1418,7 +1418,7 @@
   {
     "id": "case-1774294101445-2c51m",
     "createdAt": "2026-03-23",
-    "updatedAt": "2026-03-23",
+    "updatedAt": "2026-03-24",
     "offenses": [
       {
         "id": "off-1774294100720-A",
@@ -1448,7 +1448,19 @@
     "punishment": null,
     "appeal": null,
     "chargeSheet": null,
-    "hearingRecord": null,
+    "hearingRecord": {
+      "id": "hr-1774310880621-6sug1",
+      "currentStep": 16,
+      "responses": {
+        "finding_A": "GUILTY"
+      },
+      "appealAuthority": "Commanding Officer, 1st Bn, 5th Marines",
+      "appellateRightsReader": "",
+      "completed": false,
+      "lastUpdatedBy": "user-admin",
+      "lastUpdatedByName": "admin",
+      "lastUpdatedAt": "2026-03-24T00:08:00.621Z"
+    },
     "item21Entries": [],
     "signatures": [
       {
