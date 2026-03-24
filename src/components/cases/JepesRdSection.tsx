@@ -28,8 +28,12 @@ function jepesApplicability(c: CaseData): "jepes" | "pes" | null {
   if (!hasGuilty) return null;
 
   const fromGrade = (pun.reductionFromGrade || c.accusedGrade) as Grade;
-  if (JEPES_GRADES.includes(fromGrade)) return "jepes";
-  if (fromGrade === "E5") return "pes";
+  const service = c.serviceBranch || "USMC";
+
+  // JEPES applies to USMC E1-E4 only. USN is never covered.
+  if (service === "USMC" && JEPES_GRADES.includes(fromGrade)) return "jepes";
+  // PES advisory for USMC E5 reductions only
+  if (service === "USMC" && fromGrade === "E5") return "pes";
   return null;
 }
 

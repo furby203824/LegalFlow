@@ -1,7 +1,8 @@
 import { differenceInDays, addMonths, parseISO } from "date-fns";
-import type { Grade, CommanderGradeLevel } from "@/types";
+import type { Grade, CommanderGradeLevel, ServiceBranch } from "@/types";
 import { getGradeNumber, RANK_TO_GRADE } from "@/types";
 import type { Rank } from "@/types";
+import { checkReductionAuthority } from "@/utils/reductionAuthority";
 
 // ============================================================================
 // LegalFlow Validation Engine
@@ -225,33 +226,52 @@ export function vrR3004(amount: number | undefined): ValidationResult | null {
   return null;
 }
 
-/** VR-R3-005: Reduction E-6+ blocked */
-export function vrR3005(reductionImposed: boolean | undefined, accusedGrade: Grade): ValidationResult | null {
+/** VR-R3-005: Statutory Prohibition — USMC E-6+, USN E-7+ */
+export function vrR3005(reductionImposed: boolean | undefined, accusedGrade: Grade, serviceBranch?: ServiceBranch, commanderGradeLevel?: CommanderGradeLevel): ValidationResult | null {
   if (!reductionImposed) return null;
-  const num = getGradeNumber(accusedGrade);
-  if (accusedGrade.startsWith("E") && num >= 6) {
+  const svc = serviceBranch || "USMC";
+  const cmdLevel = commanderGradeLevel || "COMPANY_GRADE";
+  const check = checkReductionAuthority(accusedGrade, svc, cmdLevel);
+  if (check.reason === "STATUTORY") {
     return {
       ruleId: "VR-R3-005",
       type: "HARD_BLOCK",
       field: "reduction",
-      message: "Marines in the grade of E-6 or above may not be reduced in paygrade at NJP per MCO 5800.16 para 010302.C. Reduction cannot be imposed for this Marine.",
+      message: check.message,
     };
   }
   return null;
 }
 
-/** VR-R3-006: Reduction one grade only */
+/** VR-R3-006: Promotion Authority — CG lacks authority over certain grades */
+export function vrR3006_promotionAuthority(reductionImposed: boolean | undefined, accusedGrade: Grade, serviceBranch?: ServiceBranch, commanderGradeLevel?: CommanderGradeLevel): ValidationResult | null {
+  if (!reductionImposed) return null;
+  const svc = serviceBranch || "USMC";
+  const cmdLevel = commanderGradeLevel || "COMPANY_GRADE";
+  const check = checkReductionAuthority(accusedGrade, svc, cmdLevel);
+  if (check.reason === "PROMOTION_AUTHORITY") {
+    return {
+      ruleId: "VR-R3-006",
+      type: "HARD_BLOCK",
+      field: "reduction",
+      message: check.message,
+    };
+  }
+  return null;
+}
+
+/** VR-R3-006-legacy / VR-R3-007: One grade reduction only */
 export function vrR3006(fromGrade: string | undefined, toGrade: string | undefined): ValidationResult | null {
   if (!fromGrade || !toGrade) return null;
   const fromNum = getGradeNumber(fromGrade as Grade);
   const toNum = getGradeNumber(toGrade as Grade);
-  if (fromNum - toNum > 1) {
+  if (fromNum - toNum !== 1) {
     const correctGrade = `E${fromNum - 1}`;
     return {
-      ruleId: "VR-R3-006",
+      ruleId: "VR-R3-007",
       type: "HARD_BLOCK",
       field: "reduction_to_grade",
-      message: `Marines may only be reduced to the next inferior paygrade per MCO 5800.16 para 010302.C. A reduction from ${fromGrade} must be to ${correctGrade} only.`,
+      message: `Reduction must be to the next inferior paygrade only per MCO 5800.16 para 010302.C. A reduction from ${fromGrade} must be to ${correctGrade}.`,
     };
   }
   return null;
@@ -368,7 +388,8 @@ export function vrR3010(p: PunishmentInput, accusedGrade: Grade): {
 export function validatePunishment(
   p: PunishmentInput,
   gradeLevel: CommanderGradeLevel,
-  accusedGrade: Grade
+  accusedGrade: Grade,
+  serviceBranch?: ServiceBranch
 ): ValidationResult[] {
   const results: ValidationResult[] = [];
 
@@ -378,8 +399,11 @@ export function validatePunishment(
   const r4 = vrR3004(p.forfeitureAmount);
   if (r4) results.push(r4);
 
-  const r5 = vrR3005(p.reductionImposed, accusedGrade);
+  const r5 = vrR3005(p.reductionImposed, accusedGrade, serviceBranch, gradeLevel);
   if (r5) results.push(r5);
+
+  const r5b = vrR3006_promotionAuthority(p.reductionImposed, accusedGrade, serviceBranch, gradeLevel);
+  if (r5b) results.push(r5b);
 
   const r6 = vrR3006(p.reductionFromGrade || accusedGrade, p.reductionToGrade);
   if (r6) results.push(r6);

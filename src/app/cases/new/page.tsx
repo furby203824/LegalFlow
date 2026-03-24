@@ -410,12 +410,14 @@ export default function NewCasePage() {
                 commanderGrade === "O3" ? "border-primary bg-blue-50" : commanderGrade === "O4" ? "border-primary bg-blue-50" : "border-border"
               )}>
                 <div className="text-sm font-medium">
-                  {commanderGrade === "O3" ? "Company Grade (O-3 and below)" : "Field Grade and Above (O-4+, all WO)"}
+                  {commanderGrade === "O3"
+                    ? "Company Grade (O-3 and below) — reduction not authorized at NJP"
+                    : "Field Grade and above (Major and above) — reduction authorized for eligible grades"}
                 </div>
                 <div className="text-xs text-neutral-mid mt-0.5">
                   {commanderGrade === "O3"
-                    ? "Limits: Custody 7d, Forfeiture 7d pay, Extra 14d, Restriction 14d"
-                    : "Limits: Custody 30d, Forfeiture 2mo half pay, Extra 45d, Restriction 60d"}
+                    ? "Limits: Custody 7d, Forfeiture 7d pay, Extra 14d, Restriction 14d. No reduction authority."
+                    : "Limits: Custody 30d, Forfeiture 2mo half pay, Extra 45d, Restriction 60d. Reduction eligible per grade."}
                 </div>
               </div>
               <p className="text-xs text-neutral-mid mt-2">

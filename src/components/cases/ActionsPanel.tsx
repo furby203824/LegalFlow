@@ -8,6 +8,8 @@ import {
   AlertTriangle, AlertOctagon, Info, Clock, Lock, FileText, Download, Upload, Printer, CheckCircle,
 } from "lucide-react";
 import { performPhaseAction } from "@/services/api";
+import { checkReductionAuthority, getReductionLimitNote } from "@/utils/reductionAuthority";
+import type { ServiceBranch as ReductionServiceBranch, CommanderGradeLevel as ReductionCGL } from "@/utils/reductionAuthority";
 import { generatePdfDocument } from "@/services/documents";
 import PdfViewer from "@/components/documents/PdfViewer";
 import NavmcFormOverlay, { generateOverlayPdf } from "@/components/documents/NavmcFormOverlay";
@@ -762,7 +764,10 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
 
   const accusedGrade: string = caseData.accusedGrade || "";
   const gradeNum = accusedGrade.startsWith("E") ? parseInt(accusedGrade.replace("E", ""), 10) : 0;
-  const canReduce = gradeNum >= 2 && gradeNum <= 5;
+  const serviceBranch: ReductionServiceBranch = (caseData.serviceBranch || "USMC") as ReductionServiceBranch;
+  const cmdGradeLevel: ReductionCGL = (caseData.commanderGradeLevel || "COMPANY_GRADE") as ReductionCGL;
+  const reductionCheck = checkReductionAuthority(accusedGrade, serviceBranch, cmdGradeLevel);
+  const canReduce = gradeNum >= 2 && !reductionCheck.blocked;
   const reducedGrade = canReduce ? `E${gradeNum - 1}` : "";
 
   const handleReductionToggle = (checked: boolean) => {
@@ -803,6 +808,19 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
           <button type="button" className="btn-ghost text-[10px] px-1 py-0.5 shrink-0" onClick={() => setRestrDays(String(isField ? 60 : 14))}>Max</button>
         </div>
       </div>
+      {/* Reduction Authority Panel */}
+      {reductionCheck.blocked ? (
+        <div className="text-xs mb-2 p-2 rounded bg-red-50 border border-red-200 text-red-700">
+          <div className="font-semibold mb-1">Reduction Authority — {serviceBranch} / {isField ? "Field Grade" : "Company Grade"}</div>
+          <p>{reductionCheck.message}</p>
+          <p className="text-red-500 mt-0.5">Citation: {reductionCheck.citation}</p>
+        </div>
+      ) : gradeNum >= 2 ? (
+        <div className="text-xs mb-2 p-2 rounded bg-gray-50 border border-gray-200 text-neutral-mid">
+          <div className="font-semibold text-neutral-dark mb-1">Reduction Authority — {serviceBranch} / {isField ? "Field Grade" : "Company Grade"}</div>
+          <p>{getReductionLimitNote(serviceBranch, cmdGradeLevel)}</p>
+        </div>
+      ) : null}
       {canReduce ? (
         <>
           <label className="flex items-center gap-2 text-xs mb-2">
@@ -815,10 +833,9 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
             </div>
           )}
         </>
-      ) : (
+      ) : gradeNum >= 2 ? null : (
         <div className="text-xs text-neutral-mid mb-2">
-          Reduction not available for grade {accusedGrade}.
-          {gradeNum >= 6 ? " Marines E-6 and above may not be reduced at NJP." : ""}
+          Reduction not available — already at lowest grade.
         </div>
       )}
       {hasPun && (
@@ -859,6 +876,7 @@ function PunishmentAction({ caseData, loading, onSubmit }: { caseData: CaseData;
           forfeitureMonths: forfAmt ? parseInt(forfMo) : undefined,
           reductionImposed: reduction,
           reductionToGrade: reduction ? redGrade : undefined,
+          reductionFromGrade: reduction ? accusedGrade : undefined,
           extraDutiesDays: extraDays ? parseInt(extraDays) : undefined,
           restrictionDays: restrDays ? parseInt(restrDays) : undefined,
           suspensionImposed: suspImposed,

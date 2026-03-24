@@ -11,6 +11,7 @@ import { differenceInDays } from "date-fns";
 import type { UserRole, Grade } from "@/types";
 import { JEPES_GRADES, USMC_GRADE_TO_RANK, NAVY_GRADE_TO_RANK } from "@/types";
 import { getDescendantUnitIds } from "@/lib/units";
+import { checkReductionAuthority, isJepesApplicable } from "@/utils/reductionAuthority";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Rec = Record<string, any>;
@@ -304,11 +305,26 @@ export async function performPhaseAction(caseId: string, action: string, data: R
         await audit("UPDATE", "Case destroyed - no punishment imposed");
         return { message: "Case destroyed - no punishment imposed" };
       }
+      // Reduction authority gate (MCO 5800.16 para 010302.C + MCO P1400.32D para 1200.3b)
+      if (punishment.reductionImposed) {
+        const svc = (njpCase.serviceBranch || njpCase.accusedServiceBranch || "USMC") as "USMC" | "USN";
+        const cmdLevel = (njpCase.commanderGradeLevel || "COMPANY_GRADE") as "COMPANY_GRADE" | "FIELD_GRADE_AND_ABOVE";
+        const fromGrade = punishment.reductionFromGrade || njpCase.accusedGrade;
+        const redCheck = checkReductionAuthority(fromGrade, svc, cmdLevel);
+        if (redCheck.blocked) {
+          throw new Error(redCheck.message);
+        }
+        // One grade reduction only
+        const fromNum = parseInt((fromGrade || "").replace("E", ""), 10);
+        const toNum = parseInt((punishment.reductionToGrade || "").replace("E", ""), 10);
+        if (fromNum - toNum !== 1) {
+          throw new Error(`Reduction must be to the next inferior paygrade only (E${fromNum - 1}) per MCO 5800.16 para 010302.C.`);
+        }
+      }
       // Set suspensionStatus when suspension is imposed
       if (punishment.suspensionImposed) {
         punishment.suspensionStatus = "ACTIVE";
       }
-      // Simplified punishment storage (validation happens in UI)
       await casesStore.upsertPunishment(caseId, punishment);
       await casesStore.update(caseId, { njpDate: punishment.punishmentDate });
       await audit("UPDATE", "Punishment entered");
@@ -432,13 +448,13 @@ export async function performPhaseAction(caseId: string, action: string, data: R
           generatedAt: new Date().toISOString(),
         });
       }
-      // JEPES RD Occasion detection (MCO 1616.1)
+      // JEPES RD Occasion detection (MCO 1616.1) — USMC E1-E4 only
       const pun = njpCase.punishment;
       const hasGuilty = (njpCase.offenses || []).some((o: Rec) => o.finding === "G" || o.finding === "GUILTY");
       const reductionFromGrade = (pun?.reductionFromGrade || njpCase.accusedGrade) as Grade;
-      if (pun?.reductionImposed && hasGuilty && JEPES_GRADES.includes(reductionFromGrade)) {
-        const isUsmc = (njpCase.serviceBranch || njpCase.accusedServiceBranch || "USMC") === "USMC";
-        const gradeToRank = isUsmc ? USMC_GRADE_TO_RANK : NAVY_GRADE_TO_RANK;
+      const caseSvc = (njpCase.serviceBranch || njpCase.accusedServiceBranch || "USMC") as "USMC" | "USN";
+      if (isJepesApplicable(reductionFromGrade, caseSvc, !!pun?.reductionImposed, hasGuilty)) {
+        const gradeToRank = caseSvc === "USMC" ? USMC_GRADE_TO_RANK : NAVY_GRADE_TO_RANK;
         const prevRank = njpCase.accusedRank || gradeToRank[reductionFromGrade] || reductionFromGrade;
         const newGrade = (pun.reductionToGrade || reductionFromGrade) as Grade;
         const newRank = gradeToRank[newGrade] || newGrade;
