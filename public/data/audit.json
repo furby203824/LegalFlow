@@ -1395,5 +1395,16 @@
     "userName": "admin",
     "action": "UPDATE",
     "notes": "Member rights acknowledged"
+  },
+  {
+    "id": "audit-1774381723321-anjba",
+    "timestamp": "2026-03-24T19:48:43.321Z",
+    "caseId": "case-1774381671908-9ib50",
+    "caseNumber": "CASE-2026-0007",
+    "userId": "user-admin",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "SIGN",
+    "notes": "Item 2 signed - NJP accepted"
   }
 ]
