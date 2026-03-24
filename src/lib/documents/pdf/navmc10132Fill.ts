@@ -9,7 +9,7 @@
 import { PDFDocument, PDFName, PDFDict, PDFNumber } from "pdf-lib";
 import type { CaseData, Navmc10132Version } from "../types";
 import { punishmentAbbreviated, punishmentFull } from "../punishmentText";
-import { fmtStandard, fmtTitleCase } from "../dateFormatters";
+import { fmtStandard, fmtTitleCase, fmtISO } from "../dateFormatters";
 
 /**
  * Strip the rich text (/RV) flag from a text field so pdf-lib can
@@ -286,13 +286,13 @@ export async function fillNavmc10132Pdf(
     setCheckbox(form, "2 ACC REFUSE TO SIGN", !!data.item2RefusalNoted);
 
     if (data.item2SignedDate) {
-      setText(form, "2 ACC ELECTION AND RIGHTS DATE_af_date", fmtStandard(data.item2SignedDate));
+      setText(form, "2 ACC ELECTION AND RIGHTS DATE_af_date", fmtISO(data.item2SignedDate));
     }
   }
 
   // ═══ Item 3: CO Certification (HEARING and FINAL) ═══
   if (version !== "PARTIAL" && data.item3SignedDate) {
-    setText(form, "3 RIGHTS ATTEST DATE_af_date", fmtStandard(data.item3SignedDate));
+    setText(form, "3 RIGHTS ATTEST DATE_af_date", fmtISO(data.item3SignedDate));
   }
 
   // ═══ Item 4: UA/Desertion (HEARING and FINAL) ═══
@@ -367,19 +367,19 @@ export async function fillNavmc10132Pdf(
 
   // ═══ Item 10: Date of Notice (HEARING and FINAL) ═══
   if (version !== "PARTIAL" && data.dateNoticeToAccused) {
-    setText(form, "10 DATE OF DISPOSITION NOTICE", fmtStandard(data.dateNoticeToAccused));
+    setText(form, "10 DATE OF DISPOSITION NOTICE", fmtISO(data.dateNoticeToAccused));
   }
 
   // ═══ Item 11: Appeal Advisement Date (HEARING and FINAL) ═══
   if (version !== "PARTIAL" && data.item11SignedDate) {
-    setText(form, "11 APPEAL ADVISEMENT DATE_af_date", fmtStandard(data.item11SignedDate));
+    setText(form, "11 APPEAL ADVISEMENT DATE_af_date", fmtISO(data.item11SignedDate));
   }
 
   // ═══ Item 12: Appeal Intent (HEARING and FINAL) ═══
   if (version !== "PARTIAL" && data.appealIntent) {
     setDropdown(form, "12 INTEND APPEAL", mapAppealIntent(data.appealIntent));
     if (data.item12SignedDate) {
-      setText(form, "12 APPEAL INTENT DATE_af_date", fmtStandard(data.item12SignedDate));
+      setText(form, "12 APPEAL INTENT DATE_af_date", fmtISO(data.item12SignedDate));
     }
   }
 
@@ -389,7 +389,7 @@ export async function fillNavmc10132Pdf(
     if (data.appealNotFiled) {
       setCheckbox(form, "13 NOT APPEALED", true);
     } else if (data.appealFiledDate) {
-      setText(form, "13 DATE OF APPEAL IF ANY_af_date", fmtStandard(data.appealFiledDate));
+      setText(form, "13 DATE OF APPEAL IF ANY_af_date", fmtISO(data.appealFiledDate));
     }
 
     // Item 14: Appeal authority decision
@@ -397,12 +397,12 @@ export async function fillNavmc10132Pdf(
       setText(form, "14 APPEAL DECISION", mapAppealOutcome(data.appealOutcome));
     }
     if (data.appealAuthoritySignedDate) {
-      setText(form, "14 APPEAL DECISION DATE_af_date", fmtStandard(data.appealAuthoritySignedDate));
+      setText(form, "14 APPEAL DECISION DATE_af_date", fmtISO(data.appealAuthoritySignedDate));
     }
 
     // Item 15: Notice of appeal decision
     if (data.dateNoticeAppealDecision) {
-      setText(form, "15 DATE OF NOTICE OF APPEAL DECISION_af_date", fmtStandard(data.dateNoticeAppealDecision));
+      setText(form, "15 DATE OF NOTICE OF APPEAL DECISION_af_date", fmtISO(data.dateNoticeAppealDecision));
     }
 
     // Item 16: Admin completion
@@ -410,7 +410,7 @@ export async function fillNavmc10132Pdf(
       setText(form, "16 FINAL ADMIN UD", data.item16UdNumber);
     }
     if (data.item16Dtd) {
-      setText(form, "16 FINAL ADMIN DTD", fmtStandard(data.item16Dtd));
+      setText(form, "16 FINAL ADMIN DTD", fmtISO(data.item16Dtd));
     }
   }
 
