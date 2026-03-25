@@ -1593,5 +1593,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated PDF: navmc_10132_pdf"
+  },
+  {
+    "id": "audit-1774404727774-05nyk",
+    "timestamp": "2026-03-25T02:12:07.774Z",
+    "caseId": "case-1774223160076-5vamv",
+    "caseNumber": "CASE-2026-0002",
+    "userId": "user-admin",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated PDF: notification_election_rights"
   }
 ]
