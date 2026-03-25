@@ -1488,7 +1488,7 @@
   {
     "id": "case-1774237256718-s3m2a",
     "createdAt": "2026-03-23",
-    "updatedAt": "2026-03-23",
+    "updatedAt": "2026-03-25",
     "offenses": [
       {
         "id": "off-1774237255424-A",
@@ -1939,11 +1939,25 @@
       {
         "id": "doc-1774270480423-la27r",
         "documentVersion": 4,
-        "isCurrent": true,
+        "isCurrent": false,
         "createdAt": "2026-03-23T12:54:40.423Z",
         "documentType": "NAVMC_10132_PDF",
         "generatedById": "user-1774232428029-skhw5",
         "generatedAt": "2026-03-23T12:54:40.423Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false,
+        "supersededById": "doc-1774404665293-m4pya"
+      },
+      {
+        "id": "doc-1774404665293-m4pya",
+        "documentVersion": 5,
+        "isCurrent": true,
+        "createdAt": "2026-03-25T02:11:05.293Z",
+        "documentType": "NAVMC_10132_PDF",
+        "generatedById": "user-admin",
+        "generatedAt": "2026-03-25T02:11:05.293Z",
         "distributionEsrb": false,
         "distributionOmpf": false,
         "distributionFiles": false,
