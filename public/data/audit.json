@@ -1615,5 +1615,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated PDF: suspects_rights_ack"
+  },
+  {
+    "id": "audit-1774803366588-7g2cm",
+    "timestamp": "2026-03-29T16:56:06.588Z",
+    "caseId": "case-1774294101445-2c51m",
+    "caseNumber": "CASE-2026-0005",
+    "userId": "user-admin",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated PDF: appeal_rights_ack"
   }
 ]
