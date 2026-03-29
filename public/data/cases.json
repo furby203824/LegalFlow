@@ -952,7 +952,7 @@
       {
         "id": "doc-1774311060823-fv1sx",
         "documentVersion": 1,
-        "isCurrent": true,
+        "isCurrent": false,
         "createdAt": "2026-03-24T00:11:00.823Z",
         "documentType": "APPEAL_RIGHTS_ACK",
         "generatedById": "user-co-preparer",
@@ -960,7 +960,8 @@
         "distributionEsrb": false,
         "distributionOmpf": false,
         "distributionFiles": false,
-        "distributionMember": false
+        "distributionMember": false,
+        "supersededById": "doc-1774803366104-h1neb"
       },
       {
         "id": "doc-1774318769039-qbz6u",
@@ -1243,6 +1244,19 @@
         "documentType": "SUSPECTS_RIGHTS_ACK",
         "generatedById": "user-admin",
         "generatedAt": "2026-03-29T16:56:01.375Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
+      },
+      {
+        "id": "doc-1774803366104-h1neb",
+        "documentVersion": 2,
+        "isCurrent": true,
+        "createdAt": "2026-03-29T16:56:06.104Z",
+        "documentType": "APPEAL_RIGHTS_ACK",
+        "generatedById": "user-admin",
+        "generatedAt": "2026-03-29T16:56:06.104Z",
         "distributionEsrb": false,
         "distributionOmpf": false,
         "distributionFiles": false,
