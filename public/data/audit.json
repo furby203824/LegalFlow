@@ -1604,5 +1604,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated PDF: notification_election_rights"
+  },
+  {
+    "id": "audit-1774803361803-cnaw8",
+    "timestamp": "2026-03-29T16:56:01.803Z",
+    "caseId": "case-1774294101445-2c51m",
+    "caseNumber": "CASE-2026-0005",
+    "userId": "user-admin",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated PDF: suspects_rights_ack"
   }
 ]
