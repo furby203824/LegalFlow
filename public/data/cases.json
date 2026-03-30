@@ -2517,7 +2517,7 @@
         "onOrAbout": true,
         "offensePlace": "Marine Corps Base Hawaii",
         "finding": null,
-        "locked": false
+        "locked": true
       },
       {
         "id": "off-1774896539619-B",
@@ -2534,7 +2534,7 @@
         "toTime": "03:48",
         "offensePlace": "Bks 2778",
         "finding": null,
-        "locked": false
+        "locked": true
       }
     ],
     "victims": [
@@ -2546,7 +2546,7 @@
         "victimSex": "Unknown",
         "victimRace": "Unknown",
         "victimEthnicity": "Unknown",
-        "locked": false
+        "locked": true
       },
       {
         "id": "v-1774896539620-B",
@@ -2556,7 +2556,7 @@
         "victimSex": "Unknown",
         "victimRace": "Unknown",
         "victimEthnicity": "Unknown",
-        "locked": false
+        "locked": true
       }
     ],
     "punishment": null,
