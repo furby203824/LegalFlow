@@ -42,6 +42,7 @@ export interface CaseData {
     summary: string;
     offenseDate: string;
     offenseTime: string;
+    onOrAbout?: boolean;
     // Art 85/86 FROM/TO datetime range
     fromDate?: string;
     fromTime?: string;

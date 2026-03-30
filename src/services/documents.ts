@@ -113,7 +113,7 @@ export async function generateDocumentContent(
     offenses: (njpCase.offenses || []).map((o: Rec) => ({
       letter: o.offenseLetter, ucmjArticle: o.ucmjArticle, offenseType: o.offenseType,
       summary: o.offenseSummary,
-      offenseDate: o.offenseDate || o.fromDate || "", offenseTime: o.offenseTime || o.fromTime || "",
+      offenseDate: o.offenseDate || o.fromDate || "", offenseTime: o.offenseTime || o.fromTime || "", onOrAbout: o.onOrAbout !== false,
       fromDate: o.fromDate || "", fromTime: o.fromTime || "",
       toDate: o.toDate || "", toTime: o.toTime || "",
       offensePlace: o.offensePlace,
@@ -245,7 +245,7 @@ export async function generatePdfDocument(
     offenses: (njpCase.offenses || []).map((o: Rec) => ({
       letter: o.offenseLetter, ucmjArticle: o.ucmjArticle, offenseType: o.offenseType,
       summary: o.offenseSummary,
-      offenseDate: o.offenseDate || o.fromDate || "", offenseTime: o.offenseTime || o.fromTime || "",
+      offenseDate: o.offenseDate || o.fromDate || "", offenseTime: o.offenseTime || o.fromTime || "", onOrAbout: o.onOrAbout !== false,
       fromDate: o.fromDate || "", fromTime: o.fromTime || "",
       toDate: o.toDate || "", toTime: o.toTime || "",
       offensePlace: o.offensePlace,

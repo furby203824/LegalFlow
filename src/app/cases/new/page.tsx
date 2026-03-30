@@ -113,6 +113,7 @@ interface OffenseInput {
   summary: string;
   offenseDate: string;
   offenseTime: string;
+  onOrAbout: boolean;
   hasDuration: boolean;
   fromDate: string;
   fromTime: string;
@@ -189,7 +190,7 @@ export default function NewCasePage() {
   }
 
   const [offenses, setOffenses] = useState<OffenseInput[]>([{
-    ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", hasDuration: false, fromDate: "", fromTime: "", toDate: "", toTime: "", offensePlace: "",
+    ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", onOrAbout: true, hasDuration: false, fromDate: "", fromTime: "", toDate: "", toTime: "", offensePlace: "",
     victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }],
   }]);
 
@@ -255,6 +256,7 @@ export default function NewCasePage() {
         offenseSummary: o.summary,
         offenseDate: o.hasDuration ? o.fromDate : o.offenseDate,
         offenseTime: o.hasDuration ? o.fromTime : o.offenseTime,
+        onOrAbout: o.onOrAbout,
         ...(o.hasDuration ? { fromDate: o.fromDate, fromTime: o.fromTime, toDate: o.toDate, toTime: o.toTime } : {}),
         offensePlace: o.offensePlace,
         finding: null,
@@ -488,6 +490,15 @@ export default function NewCasePage() {
                     <input className="input-underline" value={o.offenseType} onChange={(e) => updateOffense(oi, "offenseType", e.target.value)} required readOnly />
                   </Field>
 
+                  {/* "On or about" toggle */}
+                  <div className="sm:col-span-2">
+                    <label className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" checked={o.onOrAbout} onChange={(e) => updateOffense(oi, "onOrAbout", String(e.target.checked), { onOrAbout: e.target.checked })} />
+                      On or about
+                      <span className="text-neutral-mid">&mdash; adds &ldquo;on or about&rdquo; before the date on the UPB</span>
+                    </label>
+                  </div>
+
                   {/* Date/Time — single or FROM/TO range based on hasDuration toggle */}
                   {o.hasDuration ? (
                     <>
@@ -598,7 +609,7 @@ export default function NewCasePage() {
               </div>
             ))}
             {offenses.length < 5 && (
-              <button type="button" onClick={() => setOffenses([...offenses, { ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", hasDuration: false, fromDate: "", fromTime: "", toDate: "", toTime: "", offensePlace: "", victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }] }])} className="btn-ghost text-xs gap-1 mt-2">
+              <button type="button" onClick={() => setOffenses([...offenses, { ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", onOrAbout: true, hasDuration: false, fromDate: "", fromTime: "", toDate: "", toTime: "", offensePlace: "", victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }] }])} className="btn-ghost text-xs gap-1 mt-2">
                 <Plus size={14} /> Add Offense
               </button>
             )}
