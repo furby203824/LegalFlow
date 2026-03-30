@@ -2578,7 +2578,21 @@
         "addedByName": "admin"
       }
     ],
-    "documents": [],
+    "documents": [
+      {
+        "id": "doc-1774896553935-b40wv",
+        "documentVersion": 1,
+        "isCurrent": true,
+        "createdAt": "2026-03-30T18:49:13.935Z",
+        "documentType": "NOTIFICATION_ELECTION_RIGHTS",
+        "generatedById": "user-admin",
+        "generatedAt": "2026-03-30T18:49:13.935Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false
+      }
+    ],
     "remedialActions": [],
     "vacationRecordsAsParent": [],
     "flags": [],
