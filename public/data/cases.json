@@ -2626,7 +2626,7 @@
     "nextActionOwner": "ACCUSED",
     "isOverdue": false,
     "caseNumber": "CASE-2026-0008",
-    "status": "INITIATED",
+    "status": "RIGHTS_ADVISED",
     "currentPhase": "RIGHTS_ADVISEMENT",
     "unitId": "unit-1bn5mar",
     "unitFullString": "1st Bn, 5th Marines",
