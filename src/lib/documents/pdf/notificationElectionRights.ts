@@ -66,7 +66,8 @@ function notificationSection(ctx: PDFContext, data: CaseData, vesselApplies: boo
   // Summary lines for each offense
   for (const o of data.offenses) {
     checkPage(ctx);
-    drawWrapped(ctx, `On or about ${o.offenseDate}${o.offenseTime ? ` at ${o.offenseTime}` : ""}${o.toDate && o.toDate !== o.offenseDate ? ` through ${o.toDate}${o.toTime ? ` at ${o.toTime}` : ""}` : ""}${o.offensePlace ? `, at ${o.offensePlace}` : ""}, ${o.summary}`, 36);
+    const datePrefix = o.onOrAbout !== false ? "On or about " : "";
+    drawWrapped(ctx, `${datePrefix}${o.offenseDate}${o.offenseTime ? ` at ${o.offenseTime}` : ""}${o.toDate && o.toDate !== o.offenseDate ? ` through ${o.toDate}${o.toTime ? ` at ${o.toTime}` : ""}` : ""}${o.offensePlace ? `, at ${o.offensePlace}` : ""}, ${o.summary}`, 36);
     ctx.y -= 2;
   }
   ctx.y -= PARA_SPACING;

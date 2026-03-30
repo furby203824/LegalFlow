@@ -263,7 +263,10 @@ export async function fillNavmc10132Pdf(
 
     // Summary text
     const summaryParts = [o.summary].filter(Boolean);
-    if (o.offenseDate) summaryParts.push(`On or about ${o.offenseDate}${o.offenseTime ? ` at ${o.offenseTime}` : ""}${o.toDate && o.toDate !== o.offenseDate ? ` through ${o.toDate}${o.toTime ? ` at ${o.toTime}` : ""}` : ""}`);
+    if (o.offenseDate) {
+      const datePrefix = o.onOrAbout !== false ? "On or about " : "";
+      summaryParts.push(`${datePrefix}${o.offenseDate}${o.offenseTime ? ` at ${o.offenseTime}` : ""}${o.toDate && o.toDate !== o.offenseDate ? ` through ${o.toDate}${o.toTime ? ` at ${o.toTime}` : ""}` : ""}`);
+    }
     if (o.offensePlace) summaryParts.push(`at ${o.offensePlace}`);
     if (summaryParts.length > 0) setText(form, `1${letter} SUMMARY`, summaryParts.join(". "));
 
