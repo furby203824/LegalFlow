@@ -2564,7 +2564,20 @@
     "chargeSheet": null,
     "hearingRecord": null,
     "item21Entries": [],
-    "signatures": [],
+    "signatures": [
+      {
+        "id": "sig-1774896601396-uke0u",
+        "createdAt": "2026-03-30T18:50:01.396Z",
+        "itemNumber": "2",
+        "signerRole": "SUITE_ADMIN",
+        "signerUserId": "user-admin",
+        "signerName": "CO",
+        "signedDate": "2026-03-30",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": true,
+        "coSignedInstead": true
+      }
+    ],
     "evidence": [
       {
         "id": "ev-1774896542997-944lx",
