@@ -1648,5 +1648,16 @@
     "userName": "admin",
     "action": "GENERATE",
     "notes": "Generated PDF: navmc_10132_pdf"
+  },
+  {
+    "id": "audit-1774896545533-6y9fk",
+    "timestamp": "2026-03-30T18:49:05.533Z",
+    "caseId": "case-1774896540882-j30n1",
+    "caseNumber": "CASE-2026-0008",
+    "userId": "user-admin",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "INSERT",
+    "notes": "Case CASE-2026-0008 initiated"
   }
 ]
