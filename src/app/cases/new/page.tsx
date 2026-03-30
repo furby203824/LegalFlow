@@ -481,7 +481,7 @@ export default function NewCasePage() {
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="UCMJ Article" required>
-                    <select className="input-underline" value={o.ucmjArticle} onChange={(e) => { const art = e.target.value; const artNum = ucmjArticleNumber(art); updateOffense(oi, "ucmjArticle", art, { offenseType: ucmjOffenseName(art), ...(artNum === "85" || artNum === "86" ? { hasDuration: true } : {}) }); }} required>
+                    <select className="input-underline" value={o.ucmjArticle} onChange={(e) => { const art = e.target.value; const artNum = ucmjArticleNumber(art); const isDurationArt = artNum === "85" || artNum === "86"; updateOffense(oi, "ucmjArticle", art, { offenseType: ucmjOffenseName(art), ...(isDurationArt ? { hasDuration: true } : { hasDuration: false, offenseDate: o.fromDate || o.offenseDate, offenseTime: o.fromTime || o.offenseTime }) }); }} required>
                       <option value="">Select article</option>
                       {UCMJ_ARTICLES.map((a) => <option key={a} value={a}>{a}</option>)}
                     </select>
@@ -526,14 +526,11 @@ export default function NewCasePage() {
                           </div>
                         );
                       })()}
-                      {/* Allow removing duration (unless Art 85/86 which requires it) */}
-                      {o.ucmjArticle !== "85" && o.ucmjArticle !== "86" && (
-                        <div className="sm:col-span-2">
-                          <button type="button" onClick={() => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { hasDuration: false, offenseDate: o.fromDate, offenseTime: o.fromTime })} className="text-xs text-primary hover:underline">
-                            Remove duration
-                          </button>
-                        </div>
-                      )}
+                      <div className="sm:col-span-2">
+                        <button type="button" onClick={() => updateOffense(oi, "ucmjArticle", o.ucmjArticle, { hasDuration: false, offenseDate: o.fromDate, offenseTime: o.fromTime })} className="text-xs text-primary hover:underline">
+                          Remove duration
+                        </button>
+                      </div>
                     </>
                   ) : (
                     <>
