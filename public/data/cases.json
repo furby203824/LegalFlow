@@ -2565,7 +2565,19 @@
     "hearingRecord": null,
     "item21Entries": [],
     "signatures": [],
-    "evidence": [],
+    "evidence": [
+      {
+        "id": "ev-1774896542997-944lx",
+        "createdAt": "2026-03-30T18:49:02.997Z",
+        "evidenceType": "PHOTOGRAPHS",
+        "description": "Photo of member sleeping. ",
+        "dateReceived": "2026-03-21",
+        "source": "Cpl Smith",
+        "preInitiation": true,
+        "addedBy": "user-admin",
+        "addedByName": "admin"
+      }
+    ],
     "documents": [],
     "remedialActions": [],
     "vacationRecordsAsParent": [],
