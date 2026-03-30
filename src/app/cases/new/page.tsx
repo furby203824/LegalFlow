@@ -427,11 +427,7 @@ export default function NewCasePage() {
           </Section>
 
           {/* Offenses */}
-          <Section title="Offenses" action={offenses.length < 5 ? (
-            <button type="button" onClick={() => setOffenses([...offenses, { ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", hasDuration: false, fromDate: "", fromTime: "", toDate: "", toTime: "", offensePlace: "", victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }] }])} className="btn-ghost text-xs gap-1">
-              <Plus size={14} /> Add Offense
-            </button>
-          ) : undefined}>
+          <Section title="Offenses">
             <p className="text-xs text-neutral-mid mb-1 flex items-center gap-1">
               <Info size={12} /> Do not include victim PII in offense summaries.
               {" | "}
@@ -574,13 +570,8 @@ export default function NewCasePage() {
 
                 {/* Victim Demographics */}
                 <div className="mt-3 pt-3 border-t border-border">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="mb-2">
                     <span className="text-xs font-medium text-neutral-mid">Victim Demographics</span>
-                    {o.victims.length < 5 && (
-                      <button type="button" onClick={() => { const u = [...offenses]; u[oi].victims.push({ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }); setOffenses(u); }} className="text-xs text-primary hover:underline">
-                        + Add Victim
-                      </button>
-                    )}
                   </div>
                   {o.victims.map((v, vi) => (
                     <div key={vi} className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
@@ -598,9 +589,19 @@ export default function NewCasePage() {
                       </select>
                     </div>
                   ))}
+                  {o.victims.length < 5 && (
+                    <button type="button" onClick={() => { const u = [...offenses]; u[oi].victims.push({ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }); setOffenses(u); }} className="text-xs text-primary hover:underline mt-1">
+                      + Add Victim
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
+            {offenses.length < 5 && (
+              <button type="button" onClick={() => setOffenses([...offenses, { ucmjArticle: "", offenseType: "", summary: "", offenseDate: "", offenseTime: "", hasDuration: false, fromDate: "", fromTime: "", toDate: "", toTime: "", offensePlace: "", victims: [{ status: "Unknown", sex: "Unknown", race: "Unknown", ethnicity: "Unknown" }] }])} className="btn-ghost text-xs gap-1 mt-2">
+                <Plus size={14} /> Add Offense
+              </button>
+            )}
           </Section>
 
           {/* Evidence Checklist */}
