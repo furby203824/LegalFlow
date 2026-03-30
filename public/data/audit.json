@@ -1692,5 +1692,16 @@
     "userName": "admin",
     "action": "SIGN",
     "notes": "Item 2 signed by CO - accused refused to sign, NJP continues"
+  },
+  {
+    "id": "audit-1774896619482-mw6p7",
+    "timestamp": "2026-03-30T18:50:19.482Z",
+    "caseId": "case-1774896540882-j30n1",
+    "caseNumber": "CASE-2026-0008",
+    "userId": "user-admin",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "SIGN",
+    "notes": "Item 3 signed - rights advisement complete"
   }
 ]
