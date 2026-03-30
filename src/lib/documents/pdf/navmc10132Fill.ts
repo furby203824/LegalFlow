@@ -443,10 +443,13 @@ export async function fillNavmc10132Pdf(
     }
   }
 
-  // Flatten all form fields into static text overlays on every version.
-  // This ensures deterministic rendering across all PDF viewers and
-  // prevents inconsistent display when pages are split for preview.
-  form.flatten();
+  // FINAL: flatten form fields into static text overlays (permanent record).
+  // PARTIAL/HEARING: keep form fields intact so the PDF retains its
+  // original template appearance. The PdfViewer flattens a display copy
+  // before splitting pages to ensure consistent in-app rendering.
+  if (version === "FINAL") {
+    form.flatten();
+  }
 
   return pdf.save();
 }
