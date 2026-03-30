@@ -1681,5 +1681,16 @@
     "userName": "admin",
     "action": "UPDATE",
     "notes": "Member rights acknowledged"
+  },
+  {
+    "id": "audit-1774896607562-oh3nv",
+    "timestamp": "2026-03-30T18:50:07.562Z",
+    "caseId": "case-1774896540882-j30n1",
+    "caseNumber": "CASE-2026-0008",
+    "userId": "user-admin",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "SIGN",
+    "notes": "Item 2 signed by CO - accused refused to sign, NJP continues"
   }
 ]
