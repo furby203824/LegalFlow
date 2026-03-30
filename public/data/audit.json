@@ -1659,5 +1659,16 @@
     "userName": "admin",
     "action": "INSERT",
     "notes": "Case CASE-2026-0008 initiated"
+  },
+  {
+    "id": "audit-1774896555854-q6a5b",
+    "timestamp": "2026-03-30T18:49:15.854Z",
+    "caseId": "case-1774896540882-j30n1",
+    "caseNumber": "CASE-2026-0008",
+    "userId": "user-admin",
+    "userRole": "SUITE_ADMIN",
+    "userName": "admin",
+    "action": "GENERATE",
+    "notes": "Generated PDF: notification_election_rights"
   }
 ]
