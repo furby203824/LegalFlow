@@ -62,17 +62,29 @@
     "chargeSheet": null,
     "hearingRecord": {
       "id": "hr-1774896646843-bo731",
-      "currentStep": 15,
+      "currentStep": 20,
       "responses": {
         "finding_A": "GUILTY",
-        "finding_B": "GUILTY"
+        "finding_B": "GUILTY",
+        "pun_forfeiture": "imposed",
+        "pun_forfeiture_months": "2",
+        "pun_forfeiture_detail": "4052",
+        "pun_extra_duties": "imposed",
+        "pun_extra_duties_detail": "30",
+        "pun_extra_duties_susp": "yes",
+        "pun_restriction": "imposed",
+        "pun_restriction_susp": "yes",
+        "pun_restriction_detail": "30",
+        "pun_corr_custody": "",
+        "pun_corr_custody_susp": ""
       },
       "appealAuthority": "Commanding Officer, 5th Marine Regiment",
       "appellateRightsReader": "",
-      "completed": false,
+      "completed": true,
       "lastUpdatedBy": "user-admin",
       "lastUpdatedByName": "admin",
-      "lastUpdatedAt": "2026-04-04T01:14:48.854Z"
+      "lastUpdatedAt": "2026-04-04T01:15:40.701Z",
+      "completedAt": "2026-04-04T01:15:40.701Z"
     },
     "item21Entries": [],
     "signatures": [
