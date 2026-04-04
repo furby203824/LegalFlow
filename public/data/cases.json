@@ -57,7 +57,18 @@
         "locked": true
       }
     ],
-    "punishment": null,
+    "punishment": {
+      "id": "pun-1775265356646-cdjf2",
+      "punishmentDate": "2026-04-04",
+      "forfeitureAmount": 4052,
+      "forfeitureMonths": 2,
+      "reductionImposed": false,
+      "extraDutiesDays": 30,
+      "restrictionDays": 30,
+      "suspensionImposed": true,
+      "suspensionPunishment": "extra, restriction",
+      "suspensionStatus": "ACTIVE"
+    },
     "appeal": null,
     "chargeSheet": null,
     "hearingRecord": {
