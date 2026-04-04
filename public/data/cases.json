@@ -2,7 +2,7 @@
   {
     "id": "case-1774896540882-j30n1",
     "createdAt": "2026-03-30",
-    "updatedAt": "2026-03-30",
+    "updatedAt": "2026-04-04",
     "offenses": [
       {
         "id": "off-1774896539619-A",
@@ -156,11 +156,25 @@
       {
         "id": "doc-1774897805899-8mzbj",
         "documentVersion": 3,
-        "isCurrent": true,
+        "isCurrent": false,
         "createdAt": "2026-03-30T19:10:05.899Z",
         "documentType": "NAVMC_10132_PDF",
         "generatedById": "user-admin",
         "generatedAt": "2026-03-30T19:10:05.899Z",
+        "distributionEsrb": false,
+        "distributionOmpf": false,
+        "distributionFiles": false,
+        "distributionMember": false,
+        "supersededById": "doc-1775264670838-n0ffg"
+      },
+      {
+        "id": "doc-1775264670838-n0ffg",
+        "documentVersion": 4,
+        "isCurrent": true,
+        "createdAt": "2026-04-04T01:04:30.838Z",
+        "documentType": "NAVMC_10132_PDF",
+        "generatedById": "user-admin",
+        "generatedAt": "2026-04-04T01:04:30.837Z",
         "distributionEsrb": false,
         "distributionOmpf": false,
         "distributionFiles": false,
