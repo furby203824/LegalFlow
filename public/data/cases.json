@@ -122,6 +122,18 @@
         "signatureMethod": "ELECTRONIC",
         "refusalNoted": false,
         "coSignedInstead": false
+      },
+      {
+        "id": "sig-1775265372951-pyvfk",
+        "createdAt": "2026-04-04T01:16:12.951Z",
+        "itemNumber": "9",
+        "signerRole": "CERTIFIER",
+        "signerUserId": "user-bn-certifier",
+        "signerName": "Chen, Michael",
+        "signedDate": "2026-04-04",
+        "signatureMethod": "ELECTRONIC",
+        "refusalNoted": false,
+        "coSignedInstead": false
       }
     ],
     "evidence": [
