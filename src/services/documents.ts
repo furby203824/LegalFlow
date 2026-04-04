@@ -325,7 +325,7 @@ export async function generatePdfDocument(
       // Determine version based on case progress
       let navmcVersion: Navmc10132Version = "PARTIAL";
       if (sig16) navmcVersion = "FINAL";
-      else if (sig9) navmcVersion = "FINAL";
+      else if (sig9) navmcVersion = "HEARING";
       else if (sig3) navmcVersion = "HEARING";
       else if (sig2) navmcVersion = "HEARING";
       pdfBytes = await fillNavmc10132Pdf(caseData, navmcVersion);
