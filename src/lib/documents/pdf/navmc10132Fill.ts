@@ -443,11 +443,9 @@ export async function fillNavmc10132Pdf(
     }
   }
 
-  // FINAL: flatten form fields into static text (permanent record).
-  // PARTIAL/HEARING: keep form fields intact so the PDF remains fillable.
-  if (version === "FINAL") {
-    form.flatten();
-  }
+  // Always keep form fields intact so the PDF remains fillable for
+  // preview, download, and print. Flattening for permanent archival
+  // (OMPF/ESR) is handled separately at the upload/closure step.
 
   return pdf.save();
 }
