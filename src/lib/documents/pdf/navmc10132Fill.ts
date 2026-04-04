@@ -443,10 +443,8 @@ export async function fillNavmc10132Pdf(
     }
   }
 
-  // FINAL: flatten form fields into static text overlays (permanent record).
-  // PARTIAL/HEARING: keep form fields intact so the PDF retains its
-  // original template appearance. The PdfViewer flattens a display copy
-  // before splitting pages to ensure consistent in-app rendering.
+  // FINAL: flatten form fields into static text (permanent record).
+  // PARTIAL/HEARING: keep form fields intact so the PDF remains fillable.
   if (version === "FINAL") {
     form.flatten();
   }
