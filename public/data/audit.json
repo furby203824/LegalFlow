@@ -1835,5 +1835,16 @@
     "userName": "bn-certifier",
     "action": "SIGN",
     "notes": "Item 9 signed - punishment imposed"
+  },
+  {
+    "id": "audit-1775265380962-sh1ft",
+    "timestamp": "2026-04-04T01:16:20.962Z",
+    "caseId": "case-1774896540882-j30n1",
+    "caseNumber": "CASE-2026-0008",
+    "userId": "user-bn-certifier",
+    "userRole": "CERTIFIER",
+    "userName": "bn-certifier",
+    "action": "GENERATE",
+    "notes": "Generated PDF: navmc_10132_pdf"
   }
 ]
