@@ -14,7 +14,7 @@
         "offenseTime": "08:47",
         "onOrAbout": true,
         "offensePlace": "Marine Corps Base Hawaii",
-        "finding": null,
+        "finding": "GUILTY",
         "locked": true
       },
       {
@@ -31,7 +31,7 @@
         "toDate": "2026-03-20",
         "toTime": "03:48",
         "offensePlace": "Bks 2778",
-        "finding": null,
+        "finding": "GUILTY",
         "locked": true
       }
     ],
@@ -233,7 +233,7 @@
     "isOverdue": false,
     "caseNumber": "CASE-2026-0008",
     "status": "RIGHTS_ADVISED",
-    "currentPhase": "RIGHTS_ADVISEMENT",
+    "currentPhase": "HEARING",
     "unitId": "unit-1bn5mar",
     "unitFullString": "1st Bn, 5th Marines",
     "accusedName": "Hernandez, Amanda T",
