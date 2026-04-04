@@ -135,13 +135,18 @@ function buildSuspensionText(data: CaseData): string {
   const suspended = data.item6Punishments.filter((p) => p.suspended);
   if (suspended.length === 0) return "";
 
-  const parts = suspended.map((p) => {
-    const desc = punishmentAbbreviated(p);
-    const mo = p.suspensionMonths ? ` susp ${p.suspensionMonths} mos` : " susp";
-    return `${desc}${mo}`;
-  });
+  // Build descriptions without per-punishment "susp" — consolidate at end
+  const parts = suspended.map((p) => punishmentSuspensionDesc(p));
+  let text = parts.join(" and ");
 
-  let text = parts.join("; ");
+  // Consolidate suspension duration from the first suspended punishment
+  const months = suspended.find((p) => p.suspensionMonths)?.suspensionMonths;
+  if (months) {
+    text += ` susp for ${months} mos`;
+  } else {
+    text += " susp";
+  }
+
   if (data.item7SuspensionStartDate && data.item7SuspensionEndDate) {
     text += ` (${fmtStandard(data.item7SuspensionStartDate)} to ${fmtStandard(data.item7SuspensionEndDate)})`;
   }
@@ -149,6 +154,40 @@ function buildSuspensionText(data: CaseData): string {
     text += `. Remission terms: ${data.item7RemissionTerms}`;
   }
   return text;
+}
+
+/**
+ * Abbreviated punishment description for suspension text (Item 7 / Item 21).
+ * Uses slightly longer abbreviations than Item 6 per UPB conventions.
+ */
+function punishmentSuspensionDesc(p: {
+  type: string;
+  duration?: number;
+  amount?: number;
+  months?: number;
+  reducedToGrade?: string;
+}): string {
+  switch (p.type) {
+    case "EXTRA_DUTIES":
+      return `Extra du ${p.duration} days`;
+    case "RESTRICTION":
+      return `Rest ${p.duration} days`;
+    case "CORRECTIONAL_CUSTODY":
+      return `CC ${p.duration} days`;
+    case "FORFEITURE":
+      if (p.months && p.months > 1) {
+        return `Forf $${p.amount}/mo for ${p.months} mos`;
+      }
+      return `Forf $${p.amount}`;
+    case "REDUCTION":
+      return `Red to ${p.reducedToGrade}`;
+    case "ARREST_IN_QUARTERS":
+      return `AiQ ${p.duration} days`;
+    case "DETENTION_OF_PAY":
+      return `Det ${p.duration} days`;
+    default:
+      return punishmentAbbreviated(p);
+  }
 }
 
 /**
@@ -324,9 +363,10 @@ export async function fillNavmc10132Pdf(
     // Item 6: punishment text only — date goes in separate field
     if (punishmentText.length > FIELD_MAX_LENGTH) {
       setText(form, "6 PUNISHMENT IMPOSED", "See supplemental page");
+      const item6DateStr = data.item6Date || data.njpDate || new Date().toISOString().split("T")[0];
       supplementalEntries.push({
-        entryDate: data.item6Date || data.njpDate || new Date().toISOString().split("T")[0],
-        entryText: `Item 6 - Punishment Imposed: ${punishmentText}`,
+        entryDate: item6DateStr,
+        entryText: `Item 6. ${fmtStandard(item6DateStr)}. ${punishmentText}`,
       });
     } else {
       setText(form, "6 PUNISHMENT IMPOSED", punishmentText);
@@ -349,9 +389,10 @@ export async function fillNavmc10132Pdf(
     }
     if (item7Full.length > FIELD_MAX_LENGTH) {
       setText(form, "7 SUSPENSION IF ANY", "See supplemental page");
+      const item7DateStr = data.item6Date || data.njpDate || new Date().toISOString().split("T")[0];
       supplementalEntries.push({
-        entryDate: data.item6Date || data.njpDate || new Date().toISOString().split("T")[0],
-        entryText: `Item 7 - Suspension: ${item7Full}`,
+        entryDate: item7DateStr,
+        entryText: `Item 7. ${fmtStandard(item7DateStr)}. ${item7Full}`,
       });
     } else {
       setText(form, "7 SUSPENSION IF ANY", item7Full);
@@ -424,12 +465,15 @@ export async function fillNavmc10132Pdf(
   // The "21 REMARKS" field is a rich text field in the template;
   // strip the /RV flag so pdf-lib can set text and flatten without error.
   stripRichText(form, "21 REMARKS");
-  const allItem21Entries = [...(data.item21Entries || []), ...supplementalEntries];
-  if (allItem21Entries.length > 0) {
-    const remarks = allItem21Entries
-      .map((e) => `${fmtStandard(e.entryDate)} - ${e.entryText}`)
-      .join("\n");
-    setText(form, "21 REMARKS", remarks);
+  // Regular Item 21 entries use "date - text" format; supplemental entries
+  // already contain the full formatted string in entryText.
+  const regularEntries = (data.item21Entries || []).map(
+    (e) => `${fmtStandard(e.entryDate)} - ${e.entryText}`
+  );
+  const suppEntries = supplementalEntries.map((e) => e.entryText);
+  const allRemarks = [...regularEntries, ...suppEntries];
+  if (allRemarks.length > 0) {
+    setText(form, "21 REMARKS", allRemarks.join("\n"));
   }
 
   // ═══ Booker statement (Item 2 area) ═══
