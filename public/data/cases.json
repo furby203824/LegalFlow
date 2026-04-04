@@ -62,14 +62,17 @@
     "chargeSheet": null,
     "hearingRecord": {
       "id": "hr-1774896646843-bo731",
-      "currentStep": 0,
-      "responses": {},
+      "currentStep": 15,
+      "responses": {
+        "finding_A": "GUILTY",
+        "finding_B": "GUILTY"
+      },
       "appealAuthority": "Commanding Officer, 5th Marine Regiment",
       "appellateRightsReader": "",
       "completed": false,
       "lastUpdatedBy": "user-admin",
       "lastUpdatedByName": "admin",
-      "lastUpdatedAt": "2026-03-30T18:50:46.843Z"
+      "lastUpdatedAt": "2026-04-04T01:14:48.854Z"
     },
     "item21Entries": [],
     "signatures": [
