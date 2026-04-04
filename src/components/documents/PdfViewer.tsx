@@ -30,14 +30,6 @@ export default function PdfViewer({ pdfBytes, className }: PdfViewerProps) {
       try {
         const srcDoc = await PDFDocument.load(pdfBytes);
 
-        // Safety net: flatten any remaining form fields before splitting
-        // pages, in case the source PDF was not already flattened.
-        try {
-          srcDoc.getForm().flatten();
-        } catch {
-          // No form fields — continue
-        }
-
         const count = srcDoc.getPageCount();
         const urls: string[] = [];
 
