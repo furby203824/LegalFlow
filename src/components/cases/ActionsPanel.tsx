@@ -12,7 +12,6 @@ import { checkReductionAuthority, getReductionLimitNote } from "@/utils/reductio
 import type { ServiceBranch as ReductionServiceBranch, CommanderGradeLevel as ReductionCGL } from "@/utils/reductionAuthority";
 import { generatePdfDocument } from "@/services/documents";
 import PdfViewer from "@/components/documents/PdfViewer";
-import NavmcFormOverlay, { generateOverlayPdf } from "@/components/documents/NavmcFormOverlay";
 import HearingGuidePanel from "@/components/cases/HearingGuidePanel";
 import { getSession } from "@/lib/auth";
 import { getAppealAuthorityLabel } from "@/lib/units";
@@ -1396,16 +1395,17 @@ function AdminClosureAction({ caseData, loading, onSubmit }: { caseData: CaseDat
   const [fileName, setFileName] = useState("");
   const [udNumber, setUdNumber] = useState("");
   const [udDate, setUdDate] = useState("");
+  const [pdfData, setPdfData] = useState<{ pdfBytes: Uint8Array; filename: string } | null>(null);
 
   async function handleGenerate() {
     setGenerating(true);
     try {
-      // Generate PDF with overlay text baked into page images — matches displayed preview
-      const result = await generateOverlayPdf(caseData);
+      const result = await generatePdfDocument(caseData.id, "navmc_10132_pdf");
       const blob = new Blob([result.pdfBytes as BlobPart], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
       setPdfFilename(result.filename);
+      setPdfData(result);
       setStep("upload");
     } catch (err) {
       console.error("PDF generation failed:", err);
@@ -1488,7 +1488,7 @@ function AdminClosureAction({ caseData, loading, onSubmit }: { caseData: CaseDat
                     </button>
                   </div>
                 </div>
-                <NavmcFormOverlay caseData={caseData} />
+                {pdfData && <PdfViewer pdfBytes={pdfData.pdfBytes} className="h-[500px]" />}
               </div>
             )}
 
