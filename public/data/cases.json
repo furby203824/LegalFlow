@@ -67,7 +67,8 @@
       "restrictionDays": 30,
       "suspensionImposed": true,
       "suspensionPunishment": "extra, restriction",
-      "suspensionStatus": "ACTIVE"
+      "suspensionStatus": "ACTIVE",
+      "locked": true
     },
     "appeal": null,
     "chargeSheet": null,
